@@ -68,6 +68,8 @@
 (require 'url-http)
 (require 'url-vars)
 
+(require 'gerrit-rest)
+
 (defvar gerrit-upload-topic-history nil "List of recently used topic names.")
 (defvar gerrit-upload-args-history nil "List of recently used args for git-review cmd.")
 
@@ -459,8 +461,6 @@ down the URL structure to send the request."
 ;; magit-insert-section)
 (defvar magit-open-reviews-issue-section-map
   (let ((map (make-sparse-keymap)))
-    ;; (define-key map "jT" #'magit-todos-jump-to-todos)
-    ;; (define-key map "jl" #'magit-todos-list)
     (define-key map (kbd "RET") #'gerrit-magit-open-reviews--open-gerrit-change)
     map)
   "Keymap for `magit-open-reviews' top-level section.")
