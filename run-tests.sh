@@ -24,13 +24,17 @@ fi
 
 "$EMACS" -Q -batch \
          --eval "$INIT_PACKAGE_EL" \
+         -L . \
          -l gerrit.el \
+      	 -l gerrit-rest.el \
          --eval "(setq byte-compile-error-on-warn ${ERROR_ON_WARN})" \
          -f batch-byte-compile \
          gerrit.el test/gerrit.el-test.el
 
 "$EMACS" -Q -batch \
          --eval "$INIT_PACKAGE_EL" \
+         -L . \
          -l gerrit.el \
+       	 -l gerrit-rest.el \
          -l test/gerrit.el-test.el \
          -f ert-run-tests-batch-and-exit
