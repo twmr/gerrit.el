@@ -11,5 +11,4 @@
  (depends-on "el-mock")
  (depends-on "hydra")
  (depends-on "magit")
- (depends-on "dash")
 )

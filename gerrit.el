@@ -58,7 +58,6 @@
 ;;; Code:
 
 (require 'cl-lib)  ;; for cl-remove-duplicates
-(require 'dash)
 (require 'hydra)
 (require 'json)
 (require 'magit)
