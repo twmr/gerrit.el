@@ -2,6 +2,7 @@
 (source melpa)
 
 (package-file "gerrit.el")
+(files "*.el")
 
 (development
  (depends-on "f")
