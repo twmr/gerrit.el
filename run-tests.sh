@@ -13,6 +13,7 @@ INIT_PACKAGE_EL="(progn
          --eval "(unless (package-installed-p 'cl-lib) (package-install 'cl-lib))" \
          --eval "(unless (package-installed-p 'hydra) (package-install 'hydra))" \
          --eval "(unless (package-installed-p 'magit) (package-install 'magit))" \
+         --eval "(unless (package-installed-p 's) (package-install 's))" \
          --eval "(unless (package-installed-p 'dash) (package-install 'dash))"
 
 # Byte compile, failing on byte compiler errors, or on warnings unless ignored
