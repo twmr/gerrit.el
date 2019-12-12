@@ -6,9 +6,15 @@ gerrit.el
 
 TODO
 
+This code is tested using git-review=0.27 and gerrit=2.x.
+
 ## Installation
 
-This package is NOT YET available on
+Make sure that [git-review](https://opendev.org/opendev/git-review) is
+installed and that every cloned gerrit repo has a gerrit-specific pre-commit
+hook configured (`git review -s`).
+
+This emacs package is NOT YET available on
 [MELPA](http://melpa.org/#/gerrit).
 
 Example `use-package` config
@@ -33,4 +39,9 @@ unmaintained https://github.com/terranpro/magit-gerrit. Uses the
 interface for performing gerrit requests.
 
 
-* [gerrit-download](https://github.com/chmouel/gerrit-download.el) Downloads gerrit change and shows the diff in a diff buffer. Uses `git-review` under the hood.
+* [gerrit-download](https://github.com/chmouel/gerrit-download.el) Downloads
+  gerrit change and shows the diff in a diff buffer. Uses `git-review` under
+  the hood.
+
+* [gerrit-el](https://github.com/iartarisi/gerrit-el) reimplementation of
+  the gerrit code review Web UI in emacs.
