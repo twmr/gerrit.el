@@ -24,3 +24,13 @@ Example `use-package` config
     (global-set-key (kbd "C-x i") 'gerrit-upload)
     (global-set-key (kbd "C-x o") 'gerrit-download)))
 ```
+
+## Similar elisp packages
+
+* [magit-gerrit](https://github.com/darcylee/magit-gerrit) Fork of
+unmaintained https://github.com/terranpro/magit-gerrit. Uses the
+[`ssh`](https://gerrit-review.googlesource.com/Documentation/cmd-index.html)
+interface for performing gerrit requests.
+
+
+* [gerrit-download](https://github.com/chmouel/gerrit-download.el) Downloads gerrit change and shows the diff in a diff buffer. Uses `git-review` under the hood.
