@@ -4,9 +4,19 @@ Status](https://travis-ci.org/thisch/gerrit.el.svg?branch=master)](https://travi
 gerrit.el
 =========
 
-TODO
+This package is currently mainly an emacs interface for the `git-review` CLI
+tool. It allows you to upload (`gerrit-upload`) and download
+(`gerrit-download`) gerrit changes. In the latter case it is possible to
+specify reviewer(s), topic name, WIP flag and custom (git-review)
+parameters.
 
-This code is tested using git-review=0.27 and gerrit=2.x.
+Both the upload and download interfaces are implemented using the great
+[hydra](https://github.com/abo-abo/hydra) package.
+
+This package also contains a minimalistic open-reviews status-section
+(`gerrit-magit-insert-status`) for magit status buffers.
+
+This code is tested using git-review=0.27 and gerrit=2.16.
 
 ## Installation
 
@@ -37,7 +47,6 @@ Example `use-package` config
 unmaintained https://github.com/terranpro/magit-gerrit. Uses the
 [`ssh`](https://gerrit-review.googlesource.com/Documentation/cmd-index.html)
 interface for performing gerrit requests.
-
 
 * [gerrit-download](https://github.com/chmouel/gerrit-download.el) Downloads
   gerrit change and shows the diff in a diff buffer. Uses `git-review` under
