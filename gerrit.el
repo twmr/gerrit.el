@@ -73,7 +73,6 @@
 (defvar gerrit-upload-ready-for-review nil "...")
 
 (defalias 'gerrit-dump-variable 'recentf-dump-variable)
-(defalias 'gerrit-save-file-modes 'recentf-save-file-modes)
 
 (defgroup gerrit nil
   "Maintain a menu of recently opened files."
