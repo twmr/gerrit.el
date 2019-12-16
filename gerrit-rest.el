@@ -3,7 +3,9 @@
 ;; Copyright (C) 2019 Thomas Hisch <t.hisch@gmail.com>
 ;;
 ;; Author: Thomas Hisch <t.hisch@gmail.com>
+;; Version: 0.1
 ;; URL: https://github.com/thisch/gerrit.el
+;; Package-Requires: ((emacs "25.1") (s "1.12.0"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -39,7 +41,7 @@
   (setq gerrit-rest-api-debug-flag (not gerrit-rest-api-debug-flag))
   (message "set gerrit-rest debug flag to '%s'" gerrit-rest-api-debug-flag))
 
-(defun gerrit--encode-payload (payload)
+(defun gerrit-rest--encode-payload (payload)
   (and payload
        (progn
          (unless (stringp payload)
@@ -112,7 +114,7 @@ down the URL structure to send the request."
   (interactive "sEnter a changenr: \nsEnter assignee: ")
   ;; TODO error handling?
   (gerrit-rest-sync "PUT"
-                    (gerrit--encode-payload `((assignee . ,assignee)))
+                    (gerrit-rest--encode-payload `((assignee . ,assignee)))
                     (format "/changes/%s/assignee"  changenr)))
 
 (defun gerrit-rest-open-reviews-for-project (project)
