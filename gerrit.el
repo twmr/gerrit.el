@@ -150,10 +150,6 @@ Read data from the file specified by `gerrit-save-file'."
       (load-file file))))
 
 (defmacro gerrit-upload-completing-set (msg history &optional history-excludes)
-  ;;; what if I want to enter only a substring ?
-  ;;; C-M-j:  (exits with the current input instead of the current
-  ;;;          candidate (like other commands).)
-
   `(let* ((reduced-history (-difference ,history ,history-excludes))
           (value (completing-read
                  ,msg
@@ -239,6 +235,7 @@ Read data from the file specified by `gerrit-save-file'."
                             gerrit-upload-args-history)))
 
 (defun gerrit-upload-toggle-ready-for-review ()
+  "Toggle git-review's -W parameter on/off."
   (interactive)
   (setq gerrit-upload-ready-for-review (not gerrit-upload-ready-for-review)))
 
@@ -260,6 +257,7 @@ Read data from the file specified by `gerrit-save-file'."
     cmdstr))
 
 (defun gerrit-upload-run ()
+  "Run git-review."
   (interactive)
   (let ((cmdstr (gerrit-upload-create-git-review-cmd)))
     ;; (message cmdstr)
