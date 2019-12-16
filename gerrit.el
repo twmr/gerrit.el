@@ -62,15 +62,15 @@
 (defvar gerrit-upload-topic-history nil "List of recently used topic names.")
 (defvar gerrit-upload-args-history nil "List of recently used args for git-review cmd.")
 
-(defvar gerrit--usernames nil "")
+(defvar gerrit--usernames nil)
 
 ;; these two vars are mainly needed for the hydra-based implementation because
 ;; I don't know how I can communicate between different heads of the hydra
-(defvar gerrit-last-reviewers nil "...")
-(defvar gerrit-last-topic nil "...")
-(defvar gerrit-last-assignee nil "...")
-(defvar gerrit-upload-args nil "...")
-(defvar gerrit-upload-ready-for-review nil "...")
+(defvar gerrit-last-reviewers nil)
+(defvar gerrit-last-topic nil)
+(defvar gerrit-last-assignee nil)
+(defvar gerrit-upload-args nil)
+(defvar gerrit-upload-ready-for-review nil)
 
 (defalias 'gerrit-dump-variable 'recentf-dump-variable)
 
