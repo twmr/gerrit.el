@@ -32,8 +32,18 @@
 
 (require 's)
 
+(defvar gerrit-host)
+
 (defvar gerrit-rest-api-debug-flag nil
   "Non-nil means enable debugging of problems with the rest API of gerrit.")
+
+(defun gerrit-rest-authentication ()
+  "Return an encoded string with gerrit username and password."
+  (let ((pass-entry (auth-source-user-and-password gerrit-host)))
+    (if-let ((username (nth 0 pass-entry))
+             (password (nth 1 pass-entry)))
+        (base64-encode-string
+         (concat username ":" password)))))
 
 (defun gerrit-rest-toggle-api-debug-flag ()
   "Toggle the internal debug flag."
@@ -55,7 +65,7 @@ down the URL structure to send the request."
   (let ((url-request-method method)
         (url-request-extra-headers
          `(("Content-Type" . "application/json")
-           ("Authorization" . ,(concat "Basic " (gerrit-authentication)))))
+           ("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
         (url-request-data data)
         (target (concat "https://" gerrit-host "/a" path)))
 

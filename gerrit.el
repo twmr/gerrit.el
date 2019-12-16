@@ -105,14 +105,6 @@ A nil value means to save the whole lists."
   :group 'gerrit
   :type 'string)
 
-(defun gerrit-authentication ()
-  "Return an encoded string with gerrit username and password."
-  (let ((pass-entry (auth-source-user-and-password gerrit-host)))
-    (if-let ((username (nth 0 pass-entry))
-             (password (nth 1 pass-entry)))
-        (base64-encode-string
-         (concat username ":" password)))))
-
 (defun gerrit-save-lists ()
   "Save the recent lists.
 Write data into the file specified by `gerrit-save-file'."
