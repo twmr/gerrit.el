@@ -296,22 +296,6 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 
 
 (defun gerrit-magit-insert-status ()
-  ;; (magit-insert-section (open-reviews)
-  ;;   ;; the behavoir should be similar to "Recent commits"
-  ;;   (magit-insert-heading "Open Gerrit Reviews")
-  ;;   (dolist (loopvar `(1245 1249 1222 1234 0091))
-  ;;     ;; (magit-insert-heading
-  ;;     (progn
-  ;;       (magit-insert-section (open-reviews-issue loopvar t)
-  ;;         (magit-insert-heading
-  ;;           (format (format "%%%ds (%%s) %%s\n" (1+ 4)) ;1+ accounts for #
-  ;;                   (propertize (format "#%d" loopvar))
-  ;;                   (propertize "version7.0" 'face '(:foreground "red"))
-  ;;                   (propertize "foobar")))
-  ;;         (insert "metadata1\n"))
-  ;;       ))
-  ;;   (insert ?\n)))
-
   (magit-insert-section (open-reviews)
     (magit-insert-heading "Open Gerrit Reviews")
     (dolist (loopvar (gerrit-magit--fetch-open-reviews))
