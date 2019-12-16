@@ -105,6 +105,11 @@ A nil value means to save the whole lists."
   :group 'gerrit
   :type 'string)
 
+(defcustom gerrit-change-max-nr-digits 5
+  "Number of digits used for displaying gerrit changes."
+  :group 'gerrit
+  :type 'int)
+
 (defun gerrit-save-lists ()
   "Save the recent lists.
 Write data into the file specified by `gerrit-save-file'."
@@ -299,20 +304,24 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   (magit-insert-section (open-reviews)
     (magit-insert-heading "Open Gerrit Reviews")
     (dolist (loopvar (gerrit-magit--fetch-open-reviews))
-      (progn
+      ;; TODO don't hardcode element indices here
+      (let ((changenr (nth 0 loopvar))
+            (branch (nth 1 loopvar))
+            (topicname (nth 2 loopvar))
+            (subject (nth 3 loopvar)))
         (magit-insert-section (open-reviews-issue loopvar t)
           (magit-insert-heading
-            (format (format "%%%ds %%%ds %%s" (1+ 4) 40)
-                    (format "#%d" (nth 0 loopvar))
+            ;; TODO determine gerrit-change-nr-digits automatically here
+            (format (format "%%%ds %%%ds %%s" gerrit-change-max-nr-digits 40)
+                    (format "#%d" changenr)
                     (concat
                      "("
-                     (let ((topicname (nth 2 loopvar)))
-                       (if (< 0 (length topicname))
-                           (propertize (format "%s@" topicname) 'face '(:foreground "green"))
-                         ""))
-                     (propertize (nth 1 loopvar) 'face '(:foreground "red"))
+                     (if (< 0 (length topicname))
+                         (propertize (concat topicname "@") 'face '(:foreground "green"))
+                       "")
+                     (propertize branch 'face '(:foreground "red"))
                      ")")
-                    (nth 3 loopvar))))))
+                    subject)))))
     (insert ?\n)))
 
 ;; don't rename this var, as it is required for magit-sections (see
