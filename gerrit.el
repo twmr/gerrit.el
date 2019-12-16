@@ -349,7 +349,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
     map)
   "Keymap for `magit-open-reviews' top-level section.")
 
-(defun gerrit-magit-open-reviews--open-gerrit-change()
+(defun gerrit-magit-open-reviews--open-gerrit-change ()
   (interactive)
   (browse-url (format
                "https://%s/c/%s"
