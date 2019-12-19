@@ -275,7 +275,6 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 "
   ("r" gerrit-upload-add-reviewer "Add reviewer")
   ("R" gerrit-upload-remove-reviewer "Remove reviewer")
-  ;; ("g" gerrit-upload-add-review-group "Add review group")
   ("a" gerrit-upload-set-assignee "Set assignee")
   ("t" gerrit-upload-set-topic "Set topic")
   ("v" gerrit-upload-toggle-ready-for-review "Toggle ready-for-review")
