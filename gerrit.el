@@ -337,7 +337,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") #'gerrit-magit-open-reviews--open-gerrit-change)
     map)
-  "Keymap for `magit-open-reviews' top level section. The prefix magit- prefix is requred by `magit-insert-section'.")
+  "Keymap for `magit-open-reviews' top level section.  The prefix magit- prefix is requred by `magit-insert-section'.")
 
 (defun gerrit-magit-open-reviews--open-gerrit-change ()
   "Open the gerrit change under point in the browser."
