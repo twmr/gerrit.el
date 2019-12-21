@@ -146,14 +146,13 @@ Read data from the file specified by `gerrit-save-file'."
     (when (file-readable-p file)
       (load-file file))))
 
-(defmacro gerrit-upload-completing-set (msg history &optional history-excludes)
-  `(let* ((reduced-history (-difference ,history ,history-excludes))
-          (value (completing-read
+(defmacro gerrit-upload-completing-set (msg history)
+  "Call `completing-read' using prompt MSG and use the collection HISTORY."
+  `(let ((value (completing-read
                  ,msg
-                 reduced-history
+                 ,history
                  nil nil nil nil
-                 ;; default value set to LRU reviewers value
-                 (car reduced-history))))
+                 (car ,history))))
      (unless (equal "" value)
        ;; todo simplify the duplicate handling
        (push value ,history)
