@@ -72,7 +72,7 @@
 (defvar gerrit-upload-args nil)
 (defvar gerrit-upload-ready-for-review nil)
 
-(defalias 'gerrit-dump-variable 'recentf-dump-variable)
+(defalias 'gerrit-dump-variable #'recentf-dump-variable)
 
 (defgroup gerrit nil
   "Maintain a menu of recently opened files."
@@ -161,6 +161,15 @@ Read data from the file specified by `gerrit-save-file'."
 
 (defmacro gerrit-upload-completing-set-with-fixed-collection
     (msg collection history &optional history-excludes)
+  "Call `completing-read' using prompt MSG and use the collection COLLECTION.
+
+Contraty to `gerrit-upload-completing-set' this macro uses
+a (fixed) collection that may be different from the history
+HISTORY of selected values.
+
+To determine the default value in `completing-read' an optional
+list HISTORY-EXCLUDES may be used, whose entries are removed from
+HISTORY."
   `(let* ((reduced-history (-difference ,history ,history-excludes))
           (value (completing-read
                   ,msg
@@ -169,7 +178,7 @@ Read data from the file specified by `gerrit-save-file'."
                   t ;; require match
                   nil ;; initial input
                   nil ;; history
-                  ;; default value set to LRU reviewers value
+                  ;; default value set to LRU value
                   (car reduced-history))))
      (unless (equal "" value)
        ;; todo simplify the duplicate handling
@@ -280,7 +289,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   ("a" gerrit-upload-set-args "Set additional args")
   ("RET" gerrit-upload-run "Run git-reivew" :color blue))
 
-(defalias 'gerrit-upload 'hydra-gerrit-upload/body)
+(defalias 'gerrit-upload #'hydra-gerrit-upload/body)
 
 (defun gerrit-download ()
   "Download change from the gerrit server."
@@ -299,6 +308,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 
 
 (defun gerrit-magit-insert-status ()
+  "Show all open gerrit reviews when called in the magit-status-section via `magit-status-section-hook'."
   (magit-insert-section (open-reviews)
     (magit-insert-heading "Open Gerrit Reviews")
     (dolist (loopvar (gerrit-magit--fetch-open-reviews))
@@ -328,9 +338,10 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") #'gerrit-magit-open-reviews--open-gerrit-change)
     map)
-  "Keymap for `magit-open-reviews' top-level section.")
+  "Keymap for `magit-open-reviews' top level section.")
 
 (defun gerrit-magit-open-reviews--open-gerrit-change ()
+  "Open the gerrit change under point in the browser."
   (interactive)
   (browse-url (format
                "https://%s/c/%s"

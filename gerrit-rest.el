@@ -51,13 +51,6 @@
   (setq gerrit-rest-api-debug-flag (not gerrit-rest-api-debug-flag))
   (message "set gerrit-rest debug flag to '%s'" gerrit-rest-api-debug-flag))
 
-(defun gerrit-rest--encode-payload (payload)
-  (and payload
-       (progn
-         (unless (stringp payload)
-           (setq payload (json-encode-list payload)))
-         (encode-coding-string payload 'utf-8))))
-
 (defun gerrit-rest-sync (method data &optional path)
   "Interact with the API using method METHOD and data DATA.
 Optional arg PATH may be provided to specify another location further
@@ -87,9 +80,11 @@ down the URL structure to send the request."
         (insert ?\n)))))
 
 (defun gerrit-rest--escape-project (project)
+  "Escape project name PROJECT for usage in REST API requets."
   (s-replace-all '(("/" . "%2F")) project))
 
 (defun gerrit-rest-get-server-version ()
+  "Return the gerrit server version."
   (interactive)
   (message (prin1-to-string (gerrit-rest-sync "GET" nil "/config/server/version"))))
 
@@ -124,10 +119,12 @@ down the URL structure to send the request."
   (interactive "sEnter a changenr: \nsEnter assignee: ")
   ;; TODO error handling?
   (gerrit-rest-sync "PUT"
-                    (gerrit-rest--encode-payload `((assignee . ,assignee)))
+                    (encode-coding-string (json-encode-list
+                                           `((assignee . ,assignee))) 'utf-8)
                     (format "/changes/%s/assignee"  changenr)))
 
 (defun gerrit-rest-open-reviews-for-project (project)
+  "Return list of open reviews returned for the project PROJECT."
   (interactive "sEnter gerrit project: ")
   (let* ((json-array-type 'list)
          (req (format (concat "/changes/?q=is:open+project:%s&"
@@ -136,7 +133,7 @@ down the URL structure to send the request."
                               "o=CURRENT_COMMIT&"
                               "o=DETAILED_LABELS&"
                               "o=DETAILED_ACCOUNTS")
-                      (funcall 'gerrit-rest--escape-project project)))
+                      (funcall #'gerrit-rest--escape-project project)))
          (resp (gerrit-rest-sync "GET" nil req)))
     ;; (setq open-reviews-response resp) ;; for debugging only (use M-x ielm)
     resp))
