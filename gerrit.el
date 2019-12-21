@@ -163,7 +163,7 @@ Read data from the file specified by `gerrit-save-file'."
     (msg collection history &optional history-excludes)
   "Call `completing-read' using prompt MSG and use the collection COLLECTION.
 
-Contraty to `gerrit-upload-completing-set' this macro uses
+Contrary to `gerrit-upload-completing-set' this macro uses
 a (fixed) collection that may be different from the history
 HISTORY of selected values.
 
