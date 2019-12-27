@@ -1,5 +1,8 @@
 #!/bin/sh -e
 
+set -x
+set -e
+
 EMACS="${EMACS:=emacs}"
 
 INIT_PACKAGE_EL="(progn
@@ -29,7 +32,7 @@ fi
       	 -l gerrit-rest.el \
          --eval "(setq byte-compile-error-on-warn ${ERROR_ON_WARN})" \
          -f batch-byte-compile \
-         gerrit.el test/gerrit.el-test.el
+         gerrit.el gerrit-rest.el test/gerrit.el-test.el
 
 "$EMACS" -Q -batch \
          --eval "$INIT_PACKAGE_EL" \
