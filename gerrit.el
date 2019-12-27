@@ -48,14 +48,9 @@
 
 (require 'cl-lib)  ;; for cl-remove-duplicates
 (require 'hydra)
-(require 'json)
 (require 'magit)
 (require 'recentf)
 (require 's)
-(require 'subr-x)
-(require 'url)
-(require 'url-http)
-(require 'url-vars)
 
 (require 'gerrit-rest)
 

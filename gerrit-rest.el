@@ -30,7 +30,9 @@
 
 ;;; Code:
 
+(eval-when-compile (require 'subr-x)) ;; if-let
 (require 's)
+(require 'json)
 
 (defvar gerrit-host)
 
