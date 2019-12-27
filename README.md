@@ -24,14 +24,14 @@ Make sure that [git-review](https://opendev.org/opendev/git-review) is
 installed and that every cloned gerrit repo has a gerrit-specific pre-commit
 hook configured (`git review -s`).
 
-This emacs package is NOT YET available on
+This emacs package is available on
 [MELPA](http://melpa.org/#/gerrit).
 
 Example `use-package` config
 
 ``` el
 (use-package gerrit
-  :load-path "~/path/to/repo/"
+  :ensure t
   :custom
   (gerrit-host "gerrit.my.domain")
   :config
