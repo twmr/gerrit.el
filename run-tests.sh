@@ -35,6 +35,14 @@ fi
          gerrit.el gerrit-rest.el test/gerrit.el-test.el
 
 "$EMACS" -Q -batch \
+         --eval '(progn (package-initialize) (byte-compile-file "gerrit-rest.el"))'
+"$EMACS" -Q -batch \
+         --eval '(package-initialize)' \
+         -l gerrit-rest.el \
+         --eval '(byte-compile-file "gerrit.el")'
+
+
+"$EMACS" -Q -batch \
          --eval "$INIT_PACKAGE_EL" \
          -L . \
          -l gerrit.el \
