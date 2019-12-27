@@ -1,4 +1,4 @@
-;;; gerrit.el --- Gerrit integration in Emacs -*- lexical-binding: t; -*-
+;;; gerrit.el --- Gerrit integration -*- lexical-binding: t; -*-
 
 ;; Author: Thomas Hisch <t.hisch@gmail.com>
 ;; Maintainer: Thomas Hisch <t.hisch@gmail.com>
