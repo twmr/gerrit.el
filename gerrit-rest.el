@@ -88,7 +88,7 @@ down the URL structure to send the request."
 (defun gerrit-rest-get-server-version ()
   "Return the gerrit server version."
   (interactive)
-  (message (prin1-to-string (gerrit-rest-sync "GET" nil "/config/server/version"))))
+  (prin1-to-string (gerrit-rest-sync "GET" nil "/config/server/version")))
 
 (defun gerrit-rest-get-topic-info (topicname)
   "Return information about an open topic with TOPICNAME."
