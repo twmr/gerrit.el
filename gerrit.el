@@ -311,6 +311,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
       (let ((changenr (nth 0 loopvar))
             (branch (nth 1 loopvar))
             (topicname (nth 2 loopvar))
+            ;; TODO owner
             (subject (nth 3 loopvar)))
         (magit-insert-section (open-reviews-issue loopvar t)
           (magit-insert-heading
@@ -365,7 +366,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   (condition-case nil
       (mapcar (lambda (change) (seq-map (lambda (fieldname) (cdr
                                   (assoc fieldname (cdr change))))
-                          (list '_number 'branch 'topic 'subject)))
+                          (list '_number 'branch 'topic 'subject 'owner)))
               (gerrit-rest-open-reviews-for-project (gerrit-get-current-project)))
     (error '())))
 
