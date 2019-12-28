@@ -316,15 +316,15 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
           (magit-insert-heading
             ;; TODO determine gerrit-change-nr-digits automatically here
             (format (format "%%%ds %%%ds %%s" gerrit-change-max-nr-digits 40)
-                    (format "#%d" changenr)
+                    (propertize (format "#%d" changenr) 'face 'magit-hash)
                     (concat
                      "("
                      (if (< 0 (length topicname))
-                         (propertize (concat topicname "@") 'face '(:foreground "green"))
+                         (propertize (concat topicname "@") 'face 'magit-tag)
                        "")
-                     (propertize branch 'face '(:foreground "red"))
+                     (propertize branch 'face 'magit-branch-remote)
                      ")")
-                    subject)))))
+                    (propertize subject 'face 'magit-subject-good))))))
     (insert ?\n)))
 
 ;; don't rename this var, as it is required for magit-sections
