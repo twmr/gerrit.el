@@ -270,7 +270,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 "
   ("r" gerrit-upload-add-reviewer "Add reviewer")
   ("R" gerrit-upload-remove-reviewer "Remove reviewer")
-  ("a" gerrit-upload-set-assignee "Set assignee")
+  ("a" gerrit-upload-set-assignee "Set assignee (does not work currently, see gh issue: #2)")
   ("t" gerrit-upload-set-topic "Set topic")
   ("v" gerrit-upload-toggle-ready-for-review "Toggle ready-for-review")
   ("a" gerrit-upload-set-args "Set additional args")
