@@ -262,6 +262,7 @@ HISTORY."
                                            (gerrit-load-lists)
                                            (setq gerrit-last-topic "")
                                            (setq gerrit-last-reviewers '())
+                                           (setq gerrit-last-assignee "")
                                            (setq gerrit-upload-args gerrit-upload-default-args)
                                            (setq gerrit-upload-ready-for-review nil))
                                :after-exit (gerrit-save-lists))
