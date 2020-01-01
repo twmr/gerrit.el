@@ -4,7 +4,7 @@
 ;; Maintainer: Thomas Hisch <t.hisch@gmail.com>
 ;; URL: https://github.com/thisch/gerrit.el
 ;; Version: 0.1
-;; Package-Requires: ((emacs "25.1") (hydra "0.15.0") (magit "2.13.1") (s "1.12.0"))
+;; Package-Requires: ((emacs "25.1") (hydra "0.15.0") (magit "2.13.1") (s "1.12.0") (dash "0.2.15"))
 ;; Keywords: extensions
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -39,6 +39,7 @@
 ;;; Code:
 
 (require 'cl-lib)  ;; for cl-remove-duplicates
+(require 'dash)
 (require 'hydra)
 (require 'magit)
 (require 'recentf)
@@ -299,26 +300,37 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   "Show all open gerrit reviews when called in the magit-status-section via `magit-status-section-hook'."
   (magit-insert-section (open-reviews)
     (magit-insert-heading "Open Gerrit Reviews")
-    (dolist (loopvar (gerrit-magit--fetch-open-reviews))
-      ;; TODO don't hardcode element indices here
-      (let ((changenr (nth 0 loopvar))
-            (branch (nth 1 loopvar))
-            (topicname (nth 2 loopvar))
-            ;; TODO owner
-            (subject (nth 3 loopvar)))
-        (magit-insert-section (open-reviews-issue loopvar t)
-          (magit-insert-heading
-            ;; TODO determine gerrit-change-nr-digits automatically here
-            (format (format "%%%ds %%%ds %%s" gerrit-change-max-nr-digits 40)
-                    (propertize (format "#%d" changenr) 'face 'magit-hash)
-                    (concat
-                     "("
-                     (if (< 0 (length topicname))
-                         (propertize (concat topicname "@") 'face 'magit-tag)
-                       "")
-                     (propertize branch 'face 'magit-branch-remote)
-                     ")")
-                    (propertize subject 'face 'magit-subject-good))))))
+    (let* ((fetched-reviews (gerrit-rest-open-reviews-for-project (gerrit-get-current-project)))
+           (fetched-reviews-string-lists
+            (seq-map (lambda (change) (list
+                                 (number-to-string (cdr (assoc '_number change)))
+                                 (cdr (assoc 'branch change))
+                                 (or (cdr (assoc 'topic change)) "") ;; topic may be nil
+                                 (cdr (assoc 'subject change))))
+                    (seq-map #'cdr fetched-reviews)))
+           (max-column-sizes (seq-reduce
+                              (lambda (a b) (--zip-with (max it other)
+                                                   a ;; list of ints
+                                                   (seq-map #'length b) ;; convert list of strs to list of numbers
+                                                   ))
+                              ;; results is a list of lists of strings
+                              fetched-reviews-string-lists
+                              ;; initial value
+                              (mapcar #'length (car fetched-reviews-string-lists))))
+
+           ;; TODO only left-align topic and subject?
+           (format-str (mapconcat (lambda (x) (concat "%-" (number-to-string x) "s")) max-column-sizes " ")))
+
+      (seq-do (lambda (review)
+                ;; TODO unpack review list (similiar to python)?
+                (magit-insert-section (open-reviews-issue review t)
+                  (magit-insert-heading
+                    (format format-str
+                            (propertize (nth 0 review) 'face 'magit-hash)
+                            (propertize (nth 1 review) 'face 'magit-tag)
+                            (propertize (nth 2 review) 'face 'magit-branch-remote)
+                            (propertize (nth 3 review) 'face 'magit-subject-good)))))
+              fetched-reviews-string-lists))
     (insert ?\n)))
 
 ;; don't rename this var, as it is required for magit-sections
@@ -334,12 +346,12 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   (browse-url (format
                "https://%s/c/%s"
                gerrit-host
+               ;; (oref (magit-current-section) value) returns the object
+               ;; passed as the 2nd arg to (magit-insert-section)
+
                ;; TODO change code s.t. s-chop-prefix is not needed
-               ;; TODO what does (oref (magit-current-section) value) return?
                (s-chop-prefix "#"
-                              ;; TOOD avoid using prin1-to-string?!?
-                              (prin1-to-string (nth 0 (oref (magit-current-section) value)))))))
-  ;; (message (prin1-to-string (nth 0 (oref (magit-current-section) value)))))
+                              (nth 0 (oref (magit-current-section) value))))))
 
 (defun gerrit-get-current-project ()
   "Return the gerrit project name, e.g., 'software/jobdeck'."
@@ -348,20 +360,8 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
    ".git"
    (nth 1 (s-split ":" (nth 0
                             (magit-config-get-from-cached-list
+                             ;; TODO read remote name from .git-review file
                              "remote.origin.url"))))))
-
-(defun gerrit-magit--fetch-open-reviews ()
-  "Return a sequence of (number branch topic subject)."
-  (interactive)
-  ;; we need the following information:
-  ;; changenr, version, name, CR/V, assignee, topic, fixes/related ticket
-  ;; sort by modification-date?
-  (condition-case nil
-      (mapcar (lambda (change) (seq-map (lambda (fieldname) (cdr
-                                  (assoc fieldname (cdr change))))
-                          (list '_number 'branch 'topic 'subject 'owner)))
-              (gerrit-rest-open-reviews-for-project (gerrit-get-current-project)))
-    (error '())))
 
 
 
