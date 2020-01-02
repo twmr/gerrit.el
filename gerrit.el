@@ -298,40 +298,43 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 
 (defun gerrit-magit-insert-status ()
   "Show all open gerrit reviews when called in the magit-status-section via `magit-status-section-hook'."
-  (magit-insert-section (open-reviews)
-    (magit-insert-heading "Open Gerrit Reviews")
-    (let* ((fetched-reviews (gerrit-rest-open-reviews-for-project (gerrit-get-current-project)))
-           (fetched-reviews-string-lists
-            (seq-map (lambda (change) (list
-                                 (number-to-string (cdr (assoc '_number change)))
-                                 (cdr (assoc 'branch change))
-                                 (or (cdr (assoc 'topic change)) "") ;; topic may be nil
-                                 (cdr (assoc 'subject change))))
-                    (seq-map #'cdr fetched-reviews)))
-           (max-column-sizes (seq-reduce
-                              (lambda (a b) (--zip-with (max it other)
-                                                   a ;; list of ints
-                                                   (seq-map #'length b) ;; convert list of strs to list of numbers
-                                                   ))
-                              ;; results is a list of lists of strings
-                              fetched-reviews-string-lists
-                              ;; initial value
-                              (mapcar #'length (car fetched-reviews-string-lists))))
 
-           ;; TODO only left-align topic and subject?
-           (format-str (mapconcat (lambda (x) (concat "%-" (number-to-string x) "s")) max-column-sizes " ")))
+ (when-let ((fetched-reviews (condition-case nil
+                                 (gerrit-rest-open-reviews-for-project (gerrit-get-current-project))
+                               (error '()))))
+   (magit-insert-section (open-reviews)
+     (magit-insert-heading "Open Gerrit Reviews")
+     (let* ((fetched-reviews-string-lists
+             (seq-map (lambda (change) (list
+                                   (number-to-string (cdr (assoc '_number change)))
+                                   (cdr (assoc 'branch change))
+                                   (or (cdr (assoc 'topic change)) "") ;; topic may be nil
+                                   (cdr (assoc 'subject change))))
+                      (seq-map #'cdr fetched-reviews)))
+            (max-column-sizes (seq-reduce
+                               (lambda (a b) (--zip-with (max it other)
+                                                    a ;; list of ints
+                                                    (seq-map #'length b) ;; convert list of strs to list of numbers
+                                                    ))
+                               ;; results is a list of lists of strings
+                               fetched-reviews-string-lists
+                               ;; initial value
+                               (mapcar #'length (car fetched-reviews-string-lists))))
 
-      (seq-do (lambda (review)
-                ;; TODO unpack review list (similiar to python)?
-                (magit-insert-section (open-reviews-issue review t)
-                  (magit-insert-heading
-                    (format format-str
-                            (propertize (nth 0 review) 'face 'magit-hash)
-                            (propertize (nth 1 review) 'face 'magit-tag)
-                            (propertize (nth 2 review) 'face 'magit-branch-remote)
-                            (propertize (nth 3 review) 'face 'magit-subject-good)))))
-              fetched-reviews-string-lists))
-    (insert ?\n)))
+            ;; TODO only left-align topic and subject?
+            (format-str (mapconcat (lambda (x) (concat "%-" (number-to-string x) "s")) max-column-sizes " ")))
+
+       (seq-do (lambda (review)
+                 ;; TODO unpack review list (similiar to python)?
+                 (magit-insert-section (open-reviews-issue review t)
+                   (magit-insert-heading
+                     (format format-str
+                             (propertize (nth 0 review) 'face 'magit-hash)
+                             (propertize (nth 1 review) 'face 'magit-tag)
+                             (propertize (nth 2 review) 'face 'magit-branch-remote)
+                             (propertize (nth 3 review) 'face 'magit-subject-good)))))
+               fetched-reviews-string-lists))
+     (insert ?\n))))
 
 ;; don't rename this var, as it is required for magit-sections
 (defvar magit-open-reviews-issue-section-map
