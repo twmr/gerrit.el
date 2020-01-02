@@ -128,12 +128,14 @@ down the URL structure to send the request."
 (defun gerrit-rest-open-reviews-for-project (project)
   "Return list of open reviews returned for the project PROJECT."
   (interactive "sEnter gerrit project: ")
+  ;; see https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
   (let* ((json-array-type 'list)
+         (limit-entries 25)
          (req (format (concat "/changes/?q=is:open+project:%s&"
-                              "o=DOWNLOAD_COMMANDS&"
                               "o=CURRENT_REVISION&"
                               "o=CURRENT_COMMIT&"
                               "o=DETAILED_LABELS&"
+                              (format "n=%d&" limit-entries)
                               "o=DETAILED_ACCOUNTS")
                       (funcall #'gerrit-rest--escape-project project)))
          (resp (gerrit-rest-sync "GET" nil req)))
