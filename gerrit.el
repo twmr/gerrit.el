@@ -333,14 +333,14 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
             (format-str (mapconcat (lambda (x) (concat "%-" (number-to-string x) "s")) max-column-sizes " ")))
 
        (seq-do (lambda (review)
-                 ;; TODO unpack review list (similiar to python)?
-                 (magit-insert-section (open-reviews-issue review t)
-                   (magit-insert-heading
-                     (format format-str
-                             (propertize (nth 0 review) 'face 'magit-hash)
-                             (propertize (nth 1 review) 'face 'magit-tag)
-                             (propertize (nth 2 review) 'face 'magit-branch-remote)
-                             (propertize (nth 3 review) 'face 'magit-subject-good)))))
+                 (seq-let (number topic branch subject) review
+                   (magit-insert-section (open-reviews-issue review t)
+                     (magit-insert-heading
+                       (format format-str
+                               (propertize number 'face 'magit-hash)
+                               (propertize topic 'face 'magit-tag)
+                               (propertize branch 'face 'magit-branch-remote)
+                               (propertize subject 'face 'magit-subject-good))))))
                fetched-reviews-string-lists))
      (insert ?\n))))
 
