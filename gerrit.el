@@ -183,11 +183,10 @@ HISTORY."
     (setq gerrit--usernames (gerrit-rest--get-gerrit-usernames)))
 
   ;; exclude the ones from the history that have already been added
-  (push (gerrit-upload-completing-set-with-fixed-collection
+  (gerrit-upload-completing-set-with-fixed-collection
          "Reviewer: "
          gerrit--usernames
-         gerrit-last-reviewers)
-        gerrit-last-reviewers))
+         gerrit-last-reviewers))
 
 (defun gerrit-upload-remove-reviewer ()
   "Interactively ask for to-be-removed reviewer name."
