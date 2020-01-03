@@ -286,7 +286,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   ("t" gerrit-upload-set-topic "Set topic")
   ("v" gerrit-upload-toggle-ready-for-review "Toggle ready-for-review")
   ("A" gerrit-upload-set-args "Set additional args")
-  ("RET" gerrit-upload-run "Run git-reivew" :color blue))
+  ("RET" gerrit-upload-run "Upload" :color blue))
 
 (defalias 'gerrit-upload #'hydra-gerrit-upload/body)
 
