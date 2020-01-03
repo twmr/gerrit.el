@@ -202,15 +202,16 @@ HISTORY."
   (interactive)
   (unless gerrit--usernames
     (setq gerrit--usernames (gerrit-rest--get-gerrit-usernames)))
-  (completing-read
-   "Assignee: "
-   gerrit--usernames
-   nil ;; predicate
-   t ;; require match
-   nil ;; initial
-   nil ;; hist (output only?)
-   ;; def
-   nil))
+  (setq gerrit-last-assignee
+        (completing-read
+         "Assignee: "
+         gerrit--usernames
+         nil ;; predicate
+         t ;; require match
+         nil ;; initial
+         nil ;; hist (output only?)
+         ;; def
+         nil)))
 
 (defun gerrit-upload-set-topic ()
   "Interactively ask for a topic name."
@@ -252,8 +253,16 @@ HISTORY."
   "Run git-review."
   (interactive)
   (let ((cmdstr (gerrit-upload-create-git-review-cmd)))
-    ;; (message cmdstr)
-    (magit-git-command cmdstr)))
+    (if gerrit-last-assignee
+      ;; see #2
+      (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+"
+                                                     (shell-command-to-string cmdstr))))
+          ;; TODO confimration?
+          (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
+                            (message "Setting assignee of %s to %s" changenr gerrit-last-assignee)
+                            (gerrit-rest--set-assignee changenr gerrit-last-assignee)))
+                  matched-changes))
+      (magit-git-command cmdstr))))
 
 (defhydra hydra-gerrit-upload (:color amaranth ;; foreign-keys warning, blue heads exit hydra
                                :hint nil ;; show hint in the echo area
@@ -271,10 +280,10 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 "
   ("r" gerrit-upload-add-reviewer "Add reviewer")
   ("R" gerrit-upload-remove-reviewer "Remove reviewer")
-  ("a" gerrit-upload-set-assignee "Set assignee (does not work currently, see gh issue: #2)")
+  ("a" gerrit-upload-set-assignee "Set assignee")
   ("t" gerrit-upload-set-topic "Set topic")
   ("v" gerrit-upload-toggle-ready-for-review "Toggle ready-for-review")
-  ("a" gerrit-upload-set-args "Set additional args")
+  ("A" gerrit-upload-set-args "Set additional args")
   ("RET" gerrit-upload-run "Run git-reivew" :color blue))
 
 (defalias 'gerrit-upload #'hydra-gerrit-upload/body)
