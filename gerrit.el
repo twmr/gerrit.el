@@ -256,14 +256,19 @@ HISTORY."
   (interactive)
   (let ((cmdstr (gerrit-upload-create-git-review-cmd)))
     (if gerrit-last-assignee
-      ;; see #2
-      (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+"
-                                                     (shell-command-to-string cmdstr))))
-          ;; TODO confimration?
-          (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
-                            (message "Setting assignee of %s to %s" changenr gerrit-last-assignee)
-                            (gerrit-rest--set-assignee changenr gerrit-last-assignee)))
-                  matched-changes))
+        ;; see #2
+        (progn
+          ;; TODO create a temporary buffer for the output of git-review?
+          (message "Running %s" cmdstr)
+          (let ((git-review-output (shell-command-to-string cmdstr)))
+            (message git-review-output)
+            (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+"
+                                                           git-review-output)))
+                ;; TODO confirmation?
+                (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
+                                 (message "Setting assignee of %s to %s" changenr gerrit-last-assignee)
+                                 (gerrit-rest--set-assignee changenr gerrit-last-assignee)))
+                        matched-changes))))
       (magit-git-command cmdstr))))
 
 (defhydra hydra-gerrit-upload (:color amaranth ;; foreign-keys warning, blue heads exit hydra
