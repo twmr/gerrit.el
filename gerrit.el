@@ -255,8 +255,10 @@ HISTORY."
   "Run git-review."
   (interactive)
   (let ((cmdstr (gerrit-upload-create-git-review-cmd)))
-    (if gerrit-last-assignee
-        ;; see #2
+    (if (string= "" gerrit-last-assignee)
+        (magit-git-command cmdstr)
+        ;; see #2 (Is it possible to use magit-git-command and pass the
+        ;; output of the git review to a defun that sets the assignee?)
         (progn
           ;; TODO create a temporary buffer for the output of git-review?
           (message "Running %s" cmdstr)
@@ -268,8 +270,8 @@ HISTORY."
                 (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
                                  (message "Setting assignee of %s to %s" changenr gerrit-last-assignee)
                                  (gerrit-rest--set-assignee changenr gerrit-last-assignee)))
-                        matched-changes))))
-      (magit-git-command cmdstr))))
+                        matched-changes)))))))
+
 
 (defhydra hydra-gerrit-upload (:color amaranth ;; foreign-keys warning, blue heads exit hydra
                                :hint nil ;; show hint in the echo area
