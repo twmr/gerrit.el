@@ -90,6 +90,11 @@ down the URL structure to send the request."
   (interactive)
   (prin1-to-string (gerrit-rest-sync "GET" nil "/config/server/version")))
 
+(defun gerrit-rest-get-server-info ()
+  "Return the gerrit server info."
+  (interactive)
+  (gerrit-rest-sync "GET" nil "/config/server/info"))
+
 (defun gerrit-rest-get-topic-info (topicname)
   "Return information about an open topic with TOPICNAME."
   ;; TODO create new buffer and insert stuff there
