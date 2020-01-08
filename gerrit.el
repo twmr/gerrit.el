@@ -261,7 +261,7 @@ HISTORY."
           ;; TODO create a temporary buffer for the output of git-review?
           (message "Running %s" cmdstr)
           (let ((git-review-output (shell-command-to-string cmdstr)))
-            (message git-review-output)
+            (message "%s" git-review-output)
             (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+"
                                                            git-review-output)))
                 ;; TODO confirmation?
