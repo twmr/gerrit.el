@@ -349,7 +349,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                                (propertize number 'face 'magit-hash)
                                (propertize topic 'face 'magit-tag)
                                (propertize branch 'face 'magit-branch-remote)
-                               (propertize subject 'face 'magit-subject-good))))))
+                               (propertize subject 'face 'magit-section-highlight))))))
                fetched-reviews-string-lists))
      (insert ?\n))))
 
