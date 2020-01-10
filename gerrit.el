@@ -381,7 +381,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                       ;; TODO read remote name from .git-review file
                       "remote.origin.url"))))
     (if (s-starts-with? "https://" origin-url)
-        (nth 3 (s-split-up-to "/" origin-url 3 t)) ;; return the endpoint (everything after the 3rd /)
+        (nth 2 (s-split-up-to "/" origin-url 3 t)) ;; return the endpoint (everything after the 3rd /)
       (s-chop-suffix
        ".git"
        (nth 1 (s-split ":" origin-url))))))
