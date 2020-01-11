@@ -1,4 +1,3 @@
 *.elc
 /.symbol-dumps
 /.cask/
-/elpa/
