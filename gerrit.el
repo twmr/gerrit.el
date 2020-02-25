@@ -254,6 +254,7 @@ HISTORY."
 (defun gerrit-upload-run ()
   "Run git-review."
   (interactive)
+  (magit-stash-save "gerrit.el stash" t t t)
   (let ((cmdstr (gerrit-upload-create-git-review-cmd)))
     (if (string= "" gerrit-last-assignee)
         (magit-git-command cmdstr)
@@ -270,7 +271,10 @@ HISTORY."
                 (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
                                  (message "Setting assignee of %s to %s" changenr gerrit-last-assignee)
                                  (gerrit-rest--set-assignee changenr gerrit-last-assignee)))
-                        matched-changes)))))))
+                        matched-changes))))))
+
+  (magit-stash-pop)
+  )
 
 
 (defhydra hydra-gerrit-upload (:color amaranth ;; foreign-keys warning, blue heads exit hydra
