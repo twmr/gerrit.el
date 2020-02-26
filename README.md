@@ -41,6 +41,14 @@ Example `use-package` config
     (global-set-key (kbd "C-x o") 'gerrit-download)))
 ```
 
+In the case of the gerrit server `review.opendev.org`, the following
+variables have to be set:
+
+``` el
+(setq gerrit-host "review.opendev.org") ;; runs gerrit-2.13
+(setq gerrit-rest-endpoint-prefix "") ;; needed for older gerrit server versions
+```
+
 ## Similar elisp packages
 
 * [magit-gerrit](https://github.com/darcylee/magit-gerrit) Fork of
