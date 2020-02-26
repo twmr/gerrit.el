@@ -36,6 +36,13 @@
 
 (defvar gerrit-host)
 
+(defcustom gerrit-rest-endpoint-prefix "/a"
+  "String that is appended to 'gerrit-host`.
+For newer gerrit servers this needs to be set to /a, whereas on older
+servers it needs to be set to an empty string."
+  :group 'gerrit
+  :type 'str)
+
 (defvar gerrit-rest-api-debug-flag nil
   "Non-nil means enable debugging of problems with the rest API of gerrit.")
 
@@ -62,7 +69,7 @@ down the URL structure to send the request."
          `(("Content-Type" . "application/json")
            ("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
         (url-request-data data)
-        (target (concat "https://" gerrit-host "/a" path)))
+        (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix path)))
 
     (if (not gerrit-rest-api-debug-flag)
         (with-current-buffer (url-retrieve-synchronously target t)
