@@ -33,7 +33,7 @@ Example `use-package` config
 (use-package gerrit
   :ensure t
   :custom
-  (gerrit-host "gerrit.my.domain")
+  (gerrit-host "gerrit.my.domain")  ;; is needed for REST API calls
   :config
   (progn
     (add-hook 'magit-status-sections-hook #'gerrit-magit-insert-status t)
@@ -41,13 +41,17 @@ Example `use-package` config
     (global-set-key (kbd "C-x o") 'gerrit-download)))
 ```
 
-In the case of the gerrit server `review.opendev.org`, the following
+In the case of the gerrit server [review.opendev.org](https://review.opendev.org), the following
 variables have to be set:
 
 ``` el
 (setq gerrit-host "review.opendev.org") ;; runs gerrit-2.13
-(setq gerrit-rest-endpoint-prefix "") ;; needed for older gerrit server versions
+(setq gerrit-rest-endpoint-prefix "") ;; needed for older(?) gerrit server versions
 ```
+
+## Debugging
+
+TODO
 
 ## Similar elisp packages
 
