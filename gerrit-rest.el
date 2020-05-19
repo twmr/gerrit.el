@@ -30,7 +30,7 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'subr-x)) ;; if-let
+(eval-when-compile (require 'subr-x)) ;; when-let
 (require 's)
 (require 'json)
 
@@ -49,10 +49,10 @@ servers it needs to be set to an empty string."
 (defun gerrit-rest-authentication ()
   "Return an encoded string with gerrit username and password."
   (let ((pass-entry (auth-source-user-and-password gerrit-host)))
-    (if-let ((username (nth 0 pass-entry))
-             (password (nth 1 pass-entry)))
-        (base64-encode-string
-         (concat username ":" password)))))
+    (when-let ((username (nth 0 pass-entry))
+               (password (nth 1 pass-entry)))
+      (base64-encode-string
+       (concat username ":" password)))))
 
 (defun gerrit-rest-toggle-api-debug-flag ()
   "Toggle the internal debug flag."
