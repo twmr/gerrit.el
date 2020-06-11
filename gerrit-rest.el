@@ -33,6 +33,7 @@
 (eval-when-compile (require 'subr-x)) ;; when-let
 (require 's)
 (require 'json)
+(require 'cl-lib)
 
 (defvar gerrit-host)
 
@@ -113,9 +114,9 @@ down the URL structure to send the request."
                          "o=CURRENT_COMMIT&"
                          "o=DETAILED_LABELS&"
                          "o=DETAILED_ACCOUNTS"))
-         (req (format fmtstr topicname))
-         (resp (gerrit-rest-sync "GET" nil req)))
-    (message "%s" (prin1-to-string resp))))
+         (json-array-type 'list)
+         (req (format fmtstr topicname)))
+    (gerrit-rest-sync "GET" nil req)))
 
 (defun gerrit-rest--get-gerrit-usernames ()
   "Return a list of usernames of all active gerrit users."
@@ -199,6 +200,27 @@ A comment MESSAGE can be provided."
          (json-array-type 'list)
          (resp (gerrit-rest-sync "GET" nil req)))
     (assoc 'labels (cdr resp))))
+
+;;  topic commands
+
+(defun gerrit-rest-topic-set-vote (topic vote message)
+  "Set a Code-Review vote VOTE for all changes of a topic TOPIC.
+A comment MESSAGE can be provided."
+ (interactive "sEnter a topic: \nsEnter vote [-2, -1, 0, +1, +2]: \nsEnter message: ")
+ (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
+          (let ((changenr (cdr (assoc 'change_id (cdr change-info)))))
+            (message "Setting vote %s for %s" vote changenr)
+            (gerrit-rest-change-set-vote changenr vote message)
+            )))
+
+(defun gerrit-rest-topic-verify (topic vote message)
+  "Verify a topic TOPIC by voting with VOTE.
+A comment MESSAGE can be provided."
+ (interactive "sEnter a topic: \nsEnter vote [-1, 0, +1]: \nsEnter message: ")
+ (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
+          (let ((changenr (cdr (assoc 'change_id (cdr change-info)))))
+            (message "Setting Verify-vote %s for %s" vote changenr)
+            (gerrit-rest-change-verify changenr vote message))))
 
 (provide 'gerrit-rest)
 
