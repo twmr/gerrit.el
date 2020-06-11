@@ -31,6 +31,9 @@
 ;;   The git-review command line tool as well as the REST API is used for
 ;;   these defuns under the hood.
 ;;
+;; * gerrit-dashboard, defun for displaying a dashboard, similiar to the
+;;   one of the gerrit webinterface
+;;
 ;; * open-reviews section for the magit-status buffer (`magit-gerrit-insert-status`)
 ;;
 ;;     section local keymap:
@@ -61,6 +64,9 @@
 (defvar gerrit-last-assignee nil)
 (defvar gerrit-upload-args nil)
 (defvar gerrit-upload-ready-for-review nil)
+
+(defvar gerrit-dashboard-query "status:open AND (NOT label:Code-Review=2) AND assignee:self"
+  "Query search string that is used for the data shown in the gerrit-dashboard.")
 
 (defalias 'gerrit-dump-variable #'recentf-dump-variable)
 
@@ -391,6 +397,81 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
        (nth 1 (s-split ":" origin-url))))))
 
 
+
+;; dashboard
+
+(defun gerrit--combined-level-to-numberstr (combined-label verify)
+  (interactive)
+  (if verify
+      (pcase combined-label
+        ('approved "+1")
+        ('rejected "-1")
+        (default ""))
+    (pcase combined-label
+      ('approved "+2")
+      ('recommended "+1")
+      ('disliked "-1")
+      ('rejected "-2")
+      (default ""))))
+
+(defun gerrit-dashboard--get-data (expression)
+  (gerrit--init-accounts)
+  (seq-map (lambda (change)
+             (let ((subject (cdr (assoc 'subject change)))
+                   (owner (cdr (car (cdr (assoc 'owner change)))))
+                   (assignee (cdr (car (cdr (assoc 'assignee change)))))
+                   (repo (cdr (assoc 'project change)))
+                   (branch (cdr (assoc 'branch change)))
+                   (updated (cdr (assoc 'updated change)))
+                   (insertions (cdr (assoc 'insertions change)))
+                   (deletions (cdr (assoc 'deletions change)))
+                   ;; is one of the symbols
+                   ;; 'rejected, 'approved, 'disliked or 'recommended (or nil)
+                   (CR-vote (car (car
+                                  (cdr (assoc 'Code-Review
+                                              (cdr (assoc 'labels
+                                                          change)))))))
+                   ;; is one of the symbols
+                   ;; 'approved or 'disliked (or nil)
+                   (verified (car (car
+                                   (cdr (assoc 'Verified
+                                               (cdr (assoc 'labels
+                                                           change)))))))
+                   )
+
+               `(nil  [,subject
+                       ,(alist-get owner gerrit--accounts)
+                       ,(alist-get assignee gerrit--accounts)
+                       ,repo
+                       ,branch
+                       ;; TODO convert datetime str to pretty relative time (eg. 3min ago)
+                       ;; take a look at  magit-log-format-author-margin (style = age-abbreviated)
+                       ,updated
+                       ;; TODO finish this
+                       ,(if (< (+ deletions insertions) 15) "S" "L")
+                       ,(gerrit--combined-level-to-numberstr CR-vote nil)
+                       ,(gerrit--combined-level-to-numberstr verified t)
+                       ])))
+           (gerrit-rest-change-query expression)))
+
+(define-derived-mode gerrit-dashboard-mode tabulated-list-mode "gerrit-dashboard"
+  "gerrit-dashboard mode"
+  (let ((columns
+         [("Subject" 55) ("Owner" 15) ("Assignee" 15) ("Repo" 24) ("Branch" 12) ("Updated" 12) ("Size" 3)
+          ("CR" 2) ("V" 2)])
+        (rows
+         (gerrit-dashboard--get-data gerrit-dashboard-query)))
+    (setq tabulated-list-format columns)
+    (setq tabulated-list-entries rows)
+    (tabulated-list-init-header)
+    (tabulated-list-print)))
+
+;;;###autoload
+(defun gerrit-dashboard ()
+  "Show a dashboard in a new buffer."
+  (interactive)
+  (switch-to-buffer "*gerrit-dashboard*")
+  (gerrit-dashboard-mode))
 
 (provide 'gerrit)
 ;;; gerrit.el ends here

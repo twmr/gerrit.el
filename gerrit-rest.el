@@ -223,6 +223,19 @@ A comment MESSAGE can be provided."
             (message "Setting Verify-vote %s for %s" vote changenr)
             (gerrit-rest-change-verify changenr vote message))))
 
+(defun gerrit-rest-change-query (expression)
+  "Return information about changes that match EXPRESSION."
+  (interactive "sEnter a search expression: ")
+  (let ((req (concat (format "/changes/?q=%s&" expression)
+                     "o=CURRENT_REVISION&"
+                     "o=CURRENT_COMMIT&"
+                     "o=LABELS"
+                     ;; "o=DETAILED_LABELS"
+                     ;; "o=DETAILED_ACCOUNTS"))
+                     ))
+        (json-array-type 'list))
+    (gerrit-rest-sync "GET" nil req)))
+
 (provide 'gerrit-rest)
 
 ;;; gerrit-rest.el ends here
