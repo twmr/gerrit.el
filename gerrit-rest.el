@@ -154,6 +154,52 @@ down the URL structure to send the request."
     ;; (setq open-reviews-response resp) ;; for debugging only (use M-x ielm)
     resp))
 
+(defun gerrit-rest-change-set-vote (changenr vote message)
+  "Set a Code-Review vote VOTE of a change CHANGENR.
+A comment MESSAGE can be provided."
+  (interactive "sEnter a changenr: \nsEnter vote [-2, -1, 0, +1, +2]: \nsEnter message: ")
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode-list
+                                           `((message . ,message)
+                                             (labels .
+                                               ((Code-Review . ,vote))))) 'utf-8)
+                    (format "/changes/%s/revisions/current/review" changenr)))
+
+(defun gerrit-rest-change-verify (changenr vote message)
+  "Verify a change CHANGENR by voting with VOTE.
+A comment MESSAGE can be provided."
+  (interactive "sEnter a changenr: \nsEnter vote [-1, 0, +1]: \nsEnter message: ")
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode-list
+                                           `((message . ,message)
+                                             (labels .
+                                               ((Code-Review . ,vote))))) 'utf-8)
+                    (format "/changes/%s/revisions/current/review" changenr)))
+
+(defun gerrit-rest-change-set-Work-in-Progress (changenr)
+  "Set the state of the change CHANGENR to Work-in-Progress."
+  (interactive "sEnter a changenr: ")
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode-list
+                                           `((message . ,"Set using gerrit.el"))) 'utf-8)
+                    (format "/changes/%s/wip" changenr)))
+
+(defun gerrit-rest-change-set-Ready-for-Review (changenr)
+  "Set the state of the change CHANGENR to Reday-for-Review."
+  (interactive "sEnter a changenr: ")
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode-list
+                                           `((message . ,"Set using gerrit.el"))) 'utf-8)
+                    (format "/changes/%s/ready" changenr)))
+
+(defun gerrit-rest-change-get-labels (changenr)
+  "Returns the current labels dictionary of a change CHANGENR."
+  (interactive "sEnter changenr: ")
+  (let* ((req (format "/changes/%s/revisions/current/review" changenr))
+         (json-array-type 'list)
+         (resp (gerrit-rest-sync "GET" nil req)))
+    (assoc 'labels (cdr resp))))
+
 (provide 'gerrit-rest)
 
 ;;; gerrit-rest.el ends here
