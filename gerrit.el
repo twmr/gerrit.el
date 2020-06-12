@@ -401,18 +401,16 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 ;; dashboard
 
 (defun gerrit--combined-level-to-numberstr (combined-label verify)
-  (interactive)
-  (if verify
-      (pcase combined-label
-        ('approved "+1")
-        ('rejected "-1")
-        (default ""))
-    (pcase combined-label
-      ('approved "+2")
-      ('recommended "+1")
-      ('disliked "-1")
-      ('rejected "-2")
-      (default ""))))
+  (or (if verify
+          (pcase combined-label
+            ('approved "+1")
+            ('rejected "-1"))
+        (pcase combined-label
+          ('approved "+2")
+          ('recommended "+1")
+          ('disliked "-1")
+          ('rejected "-2")))
+      ""))
 
 (defun gerrit-dashboard--get-data (expression)
   (gerrit--init-accounts)
