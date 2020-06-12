@@ -52,7 +52,7 @@
 (defvar gerrit-upload-topic-history nil "List of recently used topic names.")
 (defvar gerrit-upload-args-history nil "List of recently used args for git-review cmd.")
 
-(defvar gerrit--usernames nil)
+(defvar gerrit--accounts nil)
 
 ;; these two vars are mainly needed for the hydra-based implementation because
 ;; I don't know how I can communicate between different heads of the hydra
@@ -126,6 +126,12 @@ Write data into the file specified by `gerrit-save-file'."
   :group 'gerrit
   :type 'string)
 
+(defun gerrit--init-accounts ()
+  "Intialize `gerrit--accounts`."
+  (unless gerrit--accounts
+    (setq gerrit--accounts (gerrit-rest--get-gerrit-accounts)))
+)
+
 (defun gerrit-load-lists ()
   "Load a previously saved recent list.
 Read data from the file specified by `gerrit-save-file'."
@@ -181,13 +187,12 @@ HISTORY."
 (defun gerrit-upload-add-reviewer ()
   "Interactively ask for to-be-added reviewer name."
   (interactive)
-  (unless gerrit--usernames
-    (setq gerrit--usernames (gerrit-rest--get-gerrit-usernames)))
+  (gerrit--init-accounts)
 
   ;; exclude the ones from the history that have already been added
   (gerrit-upload-completing-set-with-fixed-collection
          "Reviewer: "
-         gerrit--usernames
+         (seq-map #'cdr gerrit--accounts) ;; usernames
          gerrit-last-reviewers))
 
 (defun gerrit-upload-remove-reviewer ()
@@ -202,12 +207,11 @@ HISTORY."
 (defun gerrit-upload-set-assignee ()
   "Interactively ask for an assignee."
   (interactive)
-  (unless gerrit--usernames
-    (setq gerrit--usernames (gerrit-rest--get-gerrit-usernames)))
+  (gerrit--init-accounts)
   (setq gerrit-last-assignee
         (completing-read
          "Assignee: "
-         gerrit--usernames
+         (seq-map #'cdr gerrit--accounts) ;; usernames
          nil ;; predicate
          t ;; require match
          nil ;; initial

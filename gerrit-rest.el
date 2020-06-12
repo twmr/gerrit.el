@@ -118,11 +118,12 @@ down the URL structure to send the request."
          (req (format fmtstr topicname)))
     (gerrit-rest-sync "GET" nil req)))
 
-(defun gerrit-rest--get-gerrit-usernames ()
-  "Return a list of usernames of all active gerrit users."
+(defun gerrit-rest--get-gerrit-accounts ()
+  "Return a list of cons cells of all active gerrit users."
   (interactive)
   (condition-case nil
-      (mapcar (lambda (account-info) (cdr (assoc 'username (cdr account-info))))
+      (mapcar (lambda (account-info) (cons (cdr (assoc '_account_id account-info))
+                                      (cdr (assoc 'username account-info))))
               (let ((json-array-type 'list))
                 ;; see https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html
                 ;; and https://gerrit-review.googlesource.com/Documentation/user-search-accounts.html#_search_operators
