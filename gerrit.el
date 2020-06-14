@@ -442,6 +442,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                    (assignee (cdr (car (cdr (assoc 'assignee change)))))
                    (repo (cdr (assoc 'project change)))
                    (branch (cdr (assoc 'branch change)))
+                   (topic (cdr (assoc 'topic change)))
                    (updated (cdr (assoc 'updated change)))
                    (insertions (cdr (assoc 'insertions change)))
                    (deletions (cdr (assoc 'deletions change)))
@@ -464,6 +465,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                        ,(or (alist-get assignee gerrit--accounts-alist) "")
                        ,repo
                        ,branch
+                       ,(or topic "")
                        ;; TODO convert datetime str to pretty relative time (eg. 3min ago)
                        ;; take a look at  magit-log-format-author-margin (style = age-abbreviated)
                        ,updated
@@ -487,6 +489,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
    ("Assignee" 15)
    ("Repo" 24)
    ("Branch" 12)
+   ("Topic" 15)
    ("Updated" 12)
    ("Size" 3)
    ("CR" 2)
@@ -505,6 +508,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                                                (format "%s (%d)" (car conscell) (length section-data))
                                                'face 'gerrit-section)
                                              ;; TOOD use len(columns) instead
+                                             ""
                                              ""
                                              ""
                                              ""
