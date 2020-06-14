@@ -438,6 +438,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 (defun gerrit-dashboard--get-data (expression)
   (gerrit--init-accounts)
   (seq-map (lambda (change)
+             ;; TODO convert this into an alist
              (let ((subject (cdr (assoc 'subject change)))
                    (owner (cdr (car (cdr (assoc 'owner change)))))
                    (assignee (cdr (car (cdr (assoc 'assignee change)))))
