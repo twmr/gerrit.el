@@ -471,12 +471,12 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                        ])))
            (gerrit-rest-change-query expression)))
 
-(defvar gerrit-dashboard-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "l") 'test-function)
-    (define-key map (kbd "g") 'gerrit-dashboard) ;; refresh
-    (define-key map (kbd "a") 'gerrit-rest--set-assignee) ;; refresh
-   map))
+;; (defvar gerrit-dashboard-mode-map
+;;   (let ((map (make-sparse-keymap)))
+;;     (define-key map (kbd "l") 'test-function)
+;;     (define-key map (kbd "g") 'gerrit-dashboard) ;; refresh
+;;     (define-key map (kbd "a") 'gerrit-rest--set-assignee) ;; refresh
+;;    map))
 
 (defvar gerrit-dashboard-columns
   [("Subject" 55)
