@@ -119,7 +119,7 @@ down the URL structure to send the request."
     (gerrit-rest-sync "GET" nil req)))
 
 (defun gerrit-rest--get-gerrit-accounts ()
-  "Return a list of cons cells of all active gerrit users."
+  "Return an alist of all active gerrit users."
   (interactive)
   (condition-case nil
       (mapcar (lambda (account-info) (cons (cdr (assoc '_account_id account-info))

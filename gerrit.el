@@ -55,7 +55,7 @@
 (defvar gerrit-upload-topic-history nil "List of recently used topic names.")
 (defvar gerrit-upload-args-history nil "List of recently used args for git-review cmd.")
 
-(defvar gerrit--accounts nil)
+(defvar gerrit--accounts-alist nil)
 
 ;; these two vars are mainly needed for the hydra-based implementation because
 ;; I don't know how I can communicate between different heads of the hydra
@@ -137,9 +137,9 @@ Write data into the file specified by `gerrit-save-file'."
   :type 'string)
 
 (defun gerrit--init-accounts ()
-  "Intialize `gerrit--accounts`."
-  (unless gerrit--accounts
-    (setq gerrit--accounts (gerrit-rest--get-gerrit-accounts)))
+  "Intialize `gerrit--accounts-alist`."
+  (unless gerrit--accounts-alist
+    (setq gerrit--accounts-alist (gerrit-rest--get-gerrit-accounts)))
 )
 
 (defun gerrit-load-lists ()
@@ -202,7 +202,7 @@ HISTORY."
   ;; exclude the ones from the history that have already been added
   (gerrit-upload-completing-set-with-fixed-collection
          "Reviewer: "
-         (seq-map #'cdr gerrit--accounts) ;; usernames
+         (seq-map #'cdr gerrit--accounts-alist) ;; usernames
          gerrit-last-reviewers))
 
 (defun gerrit-upload-remove-reviewer ()
@@ -221,7 +221,7 @@ HISTORY."
   (setq gerrit-last-assignee
         (completing-read
          "Assignee: "
-         (seq-map #'cdr gerrit--accounts) ;; usernames
+         (seq-map #'cdr gerrit--accounts-alist) ;; usernames
          nil ;; predicate
          t ;; require match
          nil ;; initial
@@ -457,8 +457,8 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                    )
 
                `(nil  [,subject
-                       ,(alist-get owner gerrit--accounts)
-                       ,(or (alist-get assignee gerrit--accounts) "")
+                       ,(alist-get owner gerrit--accounts-alist)
+                       ,(or (alist-get assignee gerrit--accounts-alist) "")
                        ,repo
                        ,branch
                        ;; TODO convert datetime str to pretty relative time (eg. 3min ago)
