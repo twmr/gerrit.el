@@ -508,16 +508,8 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                          (append acc `((nil [,(propertize
                                                (format "%s (%d)" (car conscell) (length section-data))
                                                'face 'gerrit-section)
-                                             ;; TOOD use len(columns) instead
-                                             ""
-                                             ""
-                                             ""
-                                             ""
-                                             ""
-                                             ""
-                                             ""
-                                             ""
-                                             ""]))
+                                             ;; is there an easier way to add len(columns)-1 times ""?
+                                             ,@(seq-map (lambda (x) "") (number-sequence 1 (1- (length columns))))]))
                                  section-data)))
                      gerrit-dashboard-query-alist '())))
     (setq tabulated-list-format columns)
