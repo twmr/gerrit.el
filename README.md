@@ -4,14 +4,23 @@
 gerrit.el
 =========
 
-This package is currently mainly an emacs interface for the `git-review` CLI
-tool. It allows you to upload (`gerrit-upload`) and download
-(`gerrit-download`) gerrit changes. In the latter case it is possible to
-specify reviewer(s), topic name, WIP flag and custom (git-review)
-parameters.
+This package uses the gerrit REST interface and the `git-review` CLI
+tool to add support for
 
-Both the upload and download interfaces are implemented using the great
-[hydra](https://github.com/abo-abo/hydra) package.
+* uploading changes (`gerrit-upload`)
+* downloading changes (`gerrit-download`)
+* creating a dashboard  (`gerrit-dashboard`).
+
+The emacs interfaces for uploading and downloading changes require
+`git-review` and are implemented using the great
+[hydra](https://github.com/abo-abo/hydra) package. In the case of the
+`gerrit-upload` hydra it is possible to
+
+* specify reviewers
+* set an assignee
+* set a topic name
+* set WIP flag
+* specify custom parameters for `git-review`.
 
 This package also contains a minimalistic open-reviews status-section
 (`gerrit-magit-insert-status`) for magit status buffers.
