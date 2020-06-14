@@ -65,6 +65,7 @@
 (defvar gerrit-upload-args nil)
 (defvar gerrit-upload-ready-for-review nil)
 
+(defvar gerrit-dashboard-buffer-name "*gerrit-dashboard*" nil)
 (defvar gerrit-dashboard-query-alist
   '(("Assigned to me" . "assignee:self (-is:wip OR owner:self OR assignee:self) is:open -is:ignored")
     ("Work in progress" . "is:open owner:self is:wip")
@@ -528,7 +529,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 (defun gerrit-dashboard ()
   "Show a dashboard in a new buffer."
   (interactive)
-  (switch-to-buffer "*gerrit-dashboard*")
+  (switch-to-buffer gerrit-dashboard-buffer-name)
   (gerrit-dashboard-mode))
 
 (provide 'gerrit)
