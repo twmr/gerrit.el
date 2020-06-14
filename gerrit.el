@@ -65,7 +65,11 @@
 (defvar gerrit-upload-args nil)
 (defvar gerrit-upload-ready-for-review nil)
 
-(defvar gerrit-dashboard-query "status:open AND (NOT label:Code-Review=2) AND assignee:self"
+(defvar gerrit-dashboard-query-alist
+  '(("Assigned to me" . "assignee:self (-is:wip OR owner:self OR assignee:self) is:open -is:ignored")
+    ("Work in progress" . "is:open owner:self is:wip")
+    ("Outgoing reviews" . "is:open owner:self -is:wip -is:ignored")
+    )
   "Query search string that is used for the data shown in the gerrit-dashboard.")
 
 (defalias 'gerrit-dump-variable #'recentf-dump-variable)
@@ -400,16 +404,31 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 
 ;; dashboard
 
+(defface gerrit-fail
+  '((t (:foreground "red4")))
+  "Used for negative votes."
+  :group 'faces)
+
+(defface gerrit-success
+  '((t (:foreground "green4")))
+  "Used for positive votes."
+  :group 'faces)
+
+(defface gerrit-section
+  '((t (:foreground "green4")))
+  "Used for the section names in the dashboard."
+  :group 'faces)
+
 (defun gerrit--combined-level-to-numberstr (combined-label verify)
   (or (if verify
           (pcase combined-label
-            ('approved "+1")
-            ('rejected "-1"))
+            ('approved (propertize "+1" 'face 'gerrit-success))
+            ('rejected (propertize "❌" 'face 'gerrit-fail)))
         (pcase combined-label
-          ('approved "+2")
-          ('recommended "+1")
-          ('disliked "-1")
-          ('rejected "-2")))
+          ('approve (propertize "✔" 'face 'gerrit-success))
+          ('recommended (propertize "+1" 'face 'gerrit-success))
+          ('disliked (propertize "-1" 'face 'gerrit-fail))
+          ('rejected (propertize "-2" 'face 'gerrit-fail))))
       ""))
 
 (defun gerrit-dashboard--get-data (expression)
@@ -439,7 +458,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 
                `(nil  [,subject
                        ,(alist-get owner gerrit--accounts)
-                       ,(alist-get assignee gerrit--accounts)
+                       ,(or (alist-get assignee gerrit--accounts) "")
                        ,repo
                        ,branch
                        ;; TODO convert datetime str to pretty relative time (eg. 3min ago)
@@ -452,13 +471,47 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                        ])))
            (gerrit-rest-change-query expression)))
 
+(defvar gerrit-dashboard-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "l") 'test-function)
+    (define-key map (kbd "g") 'gerrit-dashboard) ;; refresh
+    (define-key map (kbd "a") 'gerrit-rest--set-assignee) ;; refresh
+   map))
+
+(defvar gerrit-dashboard-columns
+  [("Subject" 55)
+   ("Owner" 15)
+   ("Assignee" 15)
+   ("Repo" 24)
+   ("Branch" 12)
+   ("Updated" 12)
+   ("Size" 3)
+   ("CR" 2)
+   ("V" 2)]
+  "Column-names and column-sizes of the gerrit dashboard."
+  )
+
 (define-derived-mode gerrit-dashboard-mode tabulated-list-mode "gerrit-dashboard"
   "gerrit-dashboard mode"
-  (let ((columns
-         [("Subject" 55) ("Owner" 15) ("Assignee" 15) ("Repo" 24) ("Branch" 12) ("Updated" 12) ("Size" 3)
-          ("CR" 2) ("V" 2)])
+  (let* ((columns gerrit-dashboard-columns)
         (rows
-         (gerrit-dashboard--get-data gerrit-dashboard-query)))
+         (seq-reduce (lambda (acc conscell)
+                       (let ((section-data
+                              (gerrit-dashboard--get-data (cdr conscell))))
+                         (append acc `((nil [,(propertize
+                                               (format "%s (%d)" (car conscell) (length section-data))
+                                               'face 'gerrit-section)
+                                             ;; TOOD use len(columns) instead
+                                             ""
+                                             ""
+                                             ""
+                                             ""
+                                             ""
+                                             ""
+                                             ""
+                                             ""]))
+                                 section-data)))
+                     gerrit-dashboard-query-alist '())))
     (setq tabulated-list-format columns)
     (setq tabulated-list-entries rows)
     (tabulated-list-init-header)
