@@ -418,7 +418,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   :group 'faces)
 
 (defface gerrit-section
-  '((t (:foreground "green4")))
+  '((t (:foreground "green4" :weight bold :underline t)))
   "Used for the section names in the dashboard."
   :group 'faces)
 
