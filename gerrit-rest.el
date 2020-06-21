@@ -77,9 +77,21 @@ down the URL structure to send the request."
           (json-read-from-string
            (progn
              (goto-char (point-min))
-             (buffer-substring (search-forward-regexp
-                                (concat "^" (regexp-quote ")]}'") "$"))
-                               (point-max)))))
+             ;; if there is an error in search-forward-regexp, write
+             ;; the buffer contents to a *gerrit-rest-status* buffer
+             (if-let ((pos (search-forward-regexp (concat "^" (regexp-quote ")]}'") "$") nil t)))
+                 (buffer-substring pos (point-max))
+                 ;; ")]}'" was not found in the REST response
+                 (let ((buffer (get-buffer-create "*gerrit-rest-status*"))
+                       (contents (buffer-substring (point-min) (point-max))))
+                   (with-current-buffer buffer
+                     (goto-char (point-max))
+                     (insert ?\n)
+                     (insert (format "%s: %s (%s)" url-request-method target url-request-extra-headers))
+                     (insert ?\n)
+                     (insert contents)
+                     (error (concat "error with gerrit request (take a look at the "
+                                    "*gerrit-rest-status* buffer for more information"))))))))
       (progn
         ;; TODO improve this, fontify json data?
         (switch-to-buffer (url-retrieve-synchronously target))
