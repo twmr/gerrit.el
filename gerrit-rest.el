@@ -74,14 +74,12 @@ down the URL structure to send the request."
 
     (if (not gerrit-rest-api-debug-flag)
         (with-current-buffer (url-retrieve-synchronously target t)
-          (let ((resp (json-read-from-string
-                       (progn
-                         (goto-char (point-min))
-                         (buffer-substring (search-forward-regexp
-                                            (concat "^" (regexp-quote ")]}'") "$"))
-                                           (point-max))))))
-
-            resp))
+          (json-read-from-string
+           (progn
+             (goto-char (point-min))
+             (buffer-substring (search-forward-regexp
+                                (concat "^" (regexp-quote ")]}'") "$"))
+                               (point-max)))))
       (progn
         ;; TODO improve this, fontify json data?
         (switch-to-buffer (url-retrieve-synchronously target))
