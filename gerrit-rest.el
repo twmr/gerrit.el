@@ -52,20 +52,6 @@ servers it needs to be set to an empty string."
       (base64-encode-string
        (concat username ":" password)))))
 
-(defmacro gerrit-rest--read-json (str)
-  "Read json string STR."
-  (if (progn
-        (require 'json)
-        (fboundp 'json-parse-string))
-      `(json-parse-string ,str
-                          :object-type 'plist
-                          :null-object nil
-                          :false-object nil)
-    `(let ((json-array-type 'list)
-           (json-object-type 'plist)
-           (json-false nil))
-       (json-read-from-string ,str))))
-
 (defun gerrit-rest-sync (method data &optional path)
   "Interact with the API using method METHOD and data DATA.
 Optional arg PATH may be provided to specify another location further
@@ -78,7 +64,7 @@ down the URL structure to send the request."
         (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix path)))
 
     (with-current-buffer (url-retrieve-synchronously target t)
-      (gerrit-rest--read-json
+      (json-read-from-string
        (progn
          (goto-char (point-min))
          ;; if there is an error in search-forward-regexp, write
@@ -122,6 +108,7 @@ down the URL structure to send the request."
                          "o=CURRENT_COMMIT&"
                          "o=DETAILED_LABELS&"
                          "o=DETAILED_ACCOUNTS"))
+         (json-array-type 'list)
          (req (format fmtstr topicname)))
     (gerrit-rest-sync "GET" nil req)))
 
@@ -131,9 +118,10 @@ down the URL structure to send the request."
   (condition-case nil
       (mapcar (lambda (account-info) (cons (cdr (assoc '_account_id account-info))
                                       (cdr (assoc 'username account-info))))
-              ;; see https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html
-              ;; and https://gerrit-review.googlesource.com/Documentation/user-search-accounts.html#_search_operators
-              (gerrit-rest-sync "GET" nil "/accounts/?q=is:active&o=DETAILS&S=0"))
+              (let ((json-array-type 'list))
+                ;; see https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html
+                ;; and https://gerrit-review.googlesource.com/Documentation/user-search-accounts.html#_search_operators
+                (gerrit-rest-sync "GET" nil "/accounts/?q=is:active&o=DETAILS&S=0")))
     (error '())))
 
 (defun gerrit-rest--set-assignee (changenr assignee)
@@ -149,7 +137,8 @@ down the URL structure to send the request."
   "Return list of open reviews returned for the project PROJECT."
   (interactive "sEnter gerrit project: ")
   ;; see https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
-  (let* ((limit-entries 25)
+  (let* ((json-array-type 'list)
+         (limit-entries 25)
          (req (format (concat "/changes/?q=is:open+project:%s&"
                               "o=CURRENT_REVISION&"
                               "o=CURRENT_COMMIT&"
@@ -203,6 +192,7 @@ A comment MESSAGE can be provided."
   "Returns the current labels dictionary of a change CHANGENR."
   (interactive "sEnter changenr: ")
   (let* ((req (format "/changes/%s/revisions/current/review" changenr))
+         (json-array-type 'list)
          (resp (gerrit-rest-sync "GET" nil req)))
     (assoc 'labels (cdr resp))))
 
@@ -230,14 +220,15 @@ A comment MESSAGE can be provided."
 (defun gerrit-rest-change-query (expression)
   "Return information about changes that match EXPRESSION."
   (interactive "sEnter a search expression: ")
-  (gerrit-rest-sync "GET" nil
-                    (concat (format "/changes/?q=%s&" expression)
-                            "o=CURRENT_REVISION&"
-                            "o=CURRENT_COMMIT&"
-                            "o=LABELS"
-                            ;; "o=DETAILED_LABELS"
-                            ;; "o=DETAILED_ACCOUNTS"))
-                            )))
+  (let ((req (concat (format "/changes/?q=%s&" expression)
+                     "o=CURRENT_REVISION&"
+                     "o=CURRENT_COMMIT&"
+                     "o=LABELS"
+                     ;; "o=DETAILED_LABELS"
+                     ;; "o=DETAILED_ACCOUNTS"))
+                     ))
+        (json-array-type 'list))
+    (gerrit-rest-sync "GET" nil req)))
 
 (provide 'gerrit-rest)
 
