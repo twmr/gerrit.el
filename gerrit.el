@@ -419,7 +419,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   :group 'faces)
 
 (defface gerrit-section
-  '((t (:foreground "green4" :weight bold :underline t)))
+  '((t (:inherit 'magit-section-heading)))
   "Used for the section names in the dashboard."
   :group 'faces)
 
@@ -517,7 +517,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
    ("Repo" 24)
    ("Branch" 12)
    ("Topic" 15)
-   ("Updated" 12)
+   ("Updated" 26)
    ("Size" 3)
    ("CR" 2)
    ("V" 2)]
@@ -531,11 +531,12 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
          (seq-reduce (lambda (acc conscell)
                        (let ((section-data
                               (gerrit-dashboard--get-data (cdr conscell))))
-                         (append acc `((nil [,(propertize
+                         (append acc `((nil [""
+                                             ,(propertize
                                                (format "%s (%d)" (car conscell) (length section-data))
                                                'face 'gerrit-section)
-                                             ;; is there an easier way to add len(columns)-1 times ""?
-                                             ,@(seq-map (lambda (_) "") (number-sequence 1 (1- (length columns))))]))
+                                             ;; is there an easier way to add len(columns)-2 times ""?
+                                             ,@(seq-map (lambda (_) "") (number-sequence 2 (1- (length columns))))]))
                                  section-data)))
                      gerrit-dashboard-query-alist '())))
     (use-local-map gerrit-dashboard-mode-map)
