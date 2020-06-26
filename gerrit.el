@@ -490,7 +490,6 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                     (gerrit-dashboard--get-change-metadata change))))
            (gerrit-rest-change-query expression)))
 
-
 (defun gerrit-dashboard--entry-number ()
   "Return the change number as a string under point."
   (interactive)
