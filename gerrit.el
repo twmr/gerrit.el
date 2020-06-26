@@ -156,6 +156,18 @@ Read data from the file specified by `gerrit-save-file'."
     (when (file-readable-p file)
       (load-file file))))
 
+(defun gerrit--read-assignee ()
+  "Ask for the name of an assignee."
+  (completing-read
+   "Assignee: "
+   (seq-map #'cdr gerrit--accounts-alist) ;; usernames
+   nil ;; predicate
+   t ;; require match
+   nil ;; initial
+   nil ;; hist (output only?)
+   ;; def
+   nil))
+
 (defmacro gerrit-upload-completing-set (msg history)
   "Call `completing-read' using prompt MSG and use the collection HISTORY."
   `(let ((value (completing-read
@@ -222,16 +234,7 @@ HISTORY."
   "Interactively ask for an assignee."
   (interactive)
   (gerrit--init-accounts)
-  (setq gerrit-last-assignee
-        (completing-read
-         "Assignee: "
-         (seq-map #'cdr gerrit--accounts-alist) ;; usernames
-         nil ;; predicate
-         t ;; require match
-         nil ;; initial
-         nil ;; hist (output only?)
-         ;; def
-         nil)))
+  (setq gerrit-last-assignee (gerrit--read-assignee)))
 
 (defun gerrit-upload-set-topic ()
   "Interactively ask for a topic name."
@@ -503,9 +506,28 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                gerrit-host
                (gerrit-dashboard--entry-number))))
 
+(defun gerrit-dashboard-assign-change ()
+  "Set assignee of the change under point."
+  (interactive)
+  (let ((change-number (gerrit-dashboard--entry-number))
+        (assignee (gerrit--read-assignee)))
+    (message "setting assignee of change %s to %s" change-number assignee)
+    (gerrit-rest--set-assignee change-number assignee)
+    ;; TODO refresh dashboard
+    ))
+
+(defun gerrit-dashboard-assign-change-to-me ()
+  "Set assignee of the change under point."
+  (interactive)
+  (gerrit-rest--set-assignee (gerrit-dashboard--entry-number) "self")
+  ;; TODO refresh dashboard
+  )
+
 (defvar gerrit-dashboard-mode-map
   (let ((map (make-sparse-keymap)))
-    ;; TODO refresh, assign, vote, ....
+    ;; TODO refresh, vote, ....
+    (define-key map (kbd "a") 'gerrit-dashboard-assign-change)
+    (define-key map (kbd "A") 'gerrit-dashboard-assign-change-to-me)
     (define-key map (kbd "o") 'gerrit-dashboard-browse-change)
    map))
 
