@@ -411,6 +411,20 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 
 ;; dashboard
 
+(defvar gerrit-dashboard-columns
+  [("Number" 8)
+   ("Subject" 55)
+   ("Owner" 15)
+   ("Assignee" 15)
+   ("Repo" 24)
+   ("Branch" 12)
+   ("Topic" 15)
+   ("Updated" 26)
+   ("Size" 3)
+   ("CR" 2)
+   ("V" 2)]
+  "Column-names and column-sizes of the gerrit dashboard.")
+
 (defface gerrit-fail
   '((t (:foreground "red4")))
   "Used for negative votes."
@@ -438,30 +452,38 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
           ('rejected (propertize "-2" 'face 'gerrit-fail))))
       ""))
 
+(defun gerrit--alist-get-recursive (&rest args)
+  "Recursively find keys in an alist (last elem of ARGS)."
+  (let* ((alist (car (last args)))
+         (keys (nbutlast args)))
+    (condition-case nil
+        (progn
+          (while keys
+            (setq alist (alist-get (pop keys) alist)))
+          alist)
+      (error nil))))
+
 (defun gerrit-dashboard--get-change-metadata (change)
   "Convert a json object returned by the `gerrit-rest-change-query` for CHANGE into an alist."
-  `((number . ,(cdr (assoc '_number change))) ;; int
-    (subject . ,(cdr (assoc 'subject change))) ;; string
-    (owner . ,(cdr (car (cdr (assoc 'owner change))))) ;; optional string
-    (assignee . ,(cdr (car (cdr (assoc 'assignee change))))) ;; optional string
-    (repo . ,(cdr (assoc 'project change))) ;; string
-    (branch . ,(cdr (assoc 'branch change))) ;; string
-    (topic . ,(cdr (assoc 'topic change))) ;; optional string
-    (updated . ,(cdr (assoc 'updated change))) ;; string
-    (insertions . ,(cdr (assoc 'insertions change))) ;; int
-    (deletions . ,(cdr (assoc 'deletions change))) ;; int
+  `((number . ,(alist-get '_number change)) ;; int
+    (subject . ,(alist-get 'subject change)) ;; string
+    ;; alist-get 'owner => (_account_id . 1017133)
+    (owner . ,(gerrit--alist-get-recursive 'owner '_account_id change))
+    (assignee . ,(cdr (car (alist-get 'assignee change)))) ;; optional string
+    (repo . ,(alist-get 'project change)) ;; string
+    (branch . ,(alist-get 'branch change)) ;; string
+    (topic . ,(alist-get 'topic change)) ;; optional string
+    (updated . ,(alist-get 'updated change)) ;; string
+    (insertions . ,(alist-get 'insertions change)) ;; int
+    (deletions . ,(alist-get 'deletions change)) ;; int
     ;; is one of the symbols
     ;; 'rejected, 'approved, 'disliked or 'recommended (or nil)
-    (CR-vote . ,(car (car
-                     (cdr (assoc 'Code-Review
-                                 (cdr (assoc 'labels
-                                             change)))))))
+    (CR-vote . ,(caar (gerrit--alist-get-recursive
+                       'labels 'Code-Review change)))
     ;; is one of the symbols
     ;; 'approved or 'disliked (or nil)
-    (verified . ,(car (car
-                       (cdr (assoc 'Verified
-                                   (cdr (assoc 'labels
-                                               change)))))))))
+    (verified . ,(caar (gerrit--alist-get-recursive
+                        'labels 'Verified change)))))
 
 (defun gerrit-dashboard--change-metadata-2-entry (change-metadata)
   `[,(propertize
@@ -560,21 +582,6 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
     (define-key map (kbd "g") 'gerrit-dashboard--refresh--and-point-restore)
     (define-key map (kbd "o") 'gerrit-dashboard-browse-change)
    map))
-
-(defvar gerrit-dashboard-columns
-  [("Number" 8)
-   ("Subject" 55)
-   ("Owner" 15)
-   ("Assignee" 15)
-   ("Repo" 24)
-   ("Branch" 12)
-   ("Topic" 15)
-   ("Updated" 26)
-   ("Size" 3)
-   ("CR" 2)
-   ("V" 2)]
-  "Column-names and column-sizes of the gerrit dashboard."
-  )
 
 (define-derived-mode gerrit-dashboard-mode tabulated-list-mode "gerrit-dashboard"
   "gerrit-dashboard mode"
