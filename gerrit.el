@@ -435,47 +435,55 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
           ('rejected (propertize "-2" 'face 'gerrit-fail))))
       ""))
 
+(defun gerrit-dashboard--get-change-metadata (change)
+  "Convert a json object returned by the `gerrit-rest-change-query` for CHANGE into an alist."
+  `((number . ,(cdr (assoc '_number change))) ;; int
+    (subject . ,(cdr (assoc 'subject change))) ;; string
+    (owner . ,(cdr (car (cdr (assoc 'owner change))))) ;; optional string
+    (assignee . ,(cdr (car (cdr (assoc 'assignee change))))) ;; optional string
+    (repo . ,(cdr (assoc 'project change))) ;; string
+    (branch . ,(cdr (assoc 'branch change))) ;; string
+    (topic . ,(cdr (assoc 'topic change))) ;; optional string
+    (updated . ,(cdr (assoc 'updated change))) ;; string
+    (insertions . ,(cdr (assoc 'insertions change))) ;; int
+    (deletions . ,(cdr (assoc 'deletions change))) ;; int
+    ;; is one of the symbols
+    ;; 'rejected, 'approved, 'disliked or 'recommended (or nil)
+    (CR-vote . ,(car (car
+                     (cdr (assoc 'Code-Review
+                                 (cdr (assoc 'labels
+                                             change)))))))
+    ;; is one of the symbols
+    ;; 'approved or 'disliked (or nil)
+    (verified . ,(car (car
+                       (cdr (assoc 'Verified
+                                   (cdr (assoc 'labels
+                                               change)))))))))
+
+(defun gerrit-dashboard--change-metadata-2-entry (change-metadata)
+  `[,(number-to-string (alist-get 'number change-metadata))
+    ,(alist-get 'subject change-metadata)
+    ,(or (alist-get (alist-get 'owner change-metadata) gerrit--accounts-alist) "")
+    ,(or (alist-get (alist-get 'assignee change-metadata) gerrit--accounts-alist) "")
+    ,(alist-get 'repo change-metadata)
+    ,(alist-get 'branch change-metadata)
+    ,(or (alist-get 'topic change-metadata) "")
+    ;; TODO convert datetime str to pretty relative time (eg. 3min ago)
+    ;; take a look at  magit-log-format-author-margin (style = age-abbreviated)
+    ,(alist-get 'updated change-metadata)
+    ;; TODO finish this
+    ,(if (< (+ (alist-get 'deletions change-metadata)
+               (alist-get 'insertions change-metadata)) 15) "S" "L")
+    ,(gerrit--combined-level-to-numberstr (alist-get 'CR-vote change-metadata) nil)
+    ,(gerrit--combined-level-to-numberstr (alist-get 'verified change-metadata) t)
+    ])
+
 (defun gerrit-dashboard--get-data (expression)
+  "Return a list with \"tabulated-list-entries\" matching a gerrit search query EXPRESSION."
   (gerrit--init-accounts)
   (seq-map (lambda (change)
-             ;; TODO convert this into an alist
-             (let ((subject (cdr (assoc 'subject change)))
-                   (owner (cdr (car (cdr (assoc 'owner change)))))
-                   (assignee (cdr (car (cdr (assoc 'assignee change)))))
-                   (repo (cdr (assoc 'project change)))
-                   (branch (cdr (assoc 'branch change)))
-                   (topic (cdr (assoc 'topic change)))
-                   (updated (cdr (assoc 'updated change)))
-                   (insertions (cdr (assoc 'insertions change)))
-                   (deletions (cdr (assoc 'deletions change)))
-                   ;; is one of the symbols
-                   ;; 'rejected, 'approved, 'disliked or 'recommended (or nil)
-                   (CR-vote (car (car
-                                  (cdr (assoc 'Code-Review
-                                              (cdr (assoc 'labels
-                                                          change)))))))
-                   ;; is one of the symbols
-                   ;; 'approved or 'disliked (or nil)
-                   (verified (car (car
-                                   (cdr (assoc 'Verified
-                                               (cdr (assoc 'labels
-                                                           change)))))))
-                   )
-
-               `(nil  [,subject
-                       ,(alist-get owner gerrit--accounts-alist)
-                       ,(or (alist-get assignee gerrit--accounts-alist) "")
-                       ,repo
-                       ,branch
-                       ,(or topic "")
-                       ;; TODO convert datetime str to pretty relative time (eg. 3min ago)
-                       ;; take a look at  magit-log-format-author-margin (style = age-abbreviated)
-                       ,updated
-                       ;; TODO finish this
-                       ,(if (< (+ deletions insertions) 15) "S" "L")
-                       ,(gerrit--combined-level-to-numberstr CR-vote nil)
-                       ,(gerrit--combined-level-to-numberstr verified t)
-                       ])))
+             `(nil ,(gerrit-dashboard--change-metadata-2-entry
+                    (gerrit-dashboard--get-change-metadata change))))
            (gerrit-rest-change-query expression)))
 
 ;; (defvar gerrit-dashboard-mode-map
@@ -486,7 +494,8 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 ;;    map))
 
 (defvar gerrit-dashboard-columns
-  [("Subject" 55)
+  [("Number" 8)
+   ("Subject" 55)
    ("Owner" 15)
    ("Assignee" 15)
    ("Repo" 24)
