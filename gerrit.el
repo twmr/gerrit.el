@@ -513,21 +513,51 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
         (assignee (gerrit--read-assignee)))
     (message "setting assignee of change %s to %s" change-number assignee)
     (gerrit-rest--set-assignee change-number assignee)
-    ;; TODO refresh dashboard
-    ))
+    ;; refresh dashboard
+    (gerrit-dashboard--refresh--and-point-restore)))
 
 (defun gerrit-dashboard-assign-change-to-me ()
   "Set assignee of the change under point."
-  (interactive)
+   (interactive)
   (gerrit-rest--set-assignee (gerrit-dashboard--entry-number) "self")
-  ;; TODO refresh dashboard
-  )
+  ;; refresh dashboard
+  (gerrit-dashboard--refresh--and-point-restore))
+
+(defun gerrit-dashboard--get-list-entries ()
+  "Get the all entries used for \"tabulated-list-entries\"."
+  (seq-reduce (lambda (acc conscell)
+                (let ((section-data
+                       (gerrit-dashboard--get-data (cdr conscell))))
+                  (append acc `((nil [""
+                                      ,(propertize
+                                        (format "%s (%d)" (car conscell) (length section-data))
+                                        'face 'gerrit-section)
+                                      ;; is there an easier way to add len(columns)-2 times ""?
+                                      ,@(seq-map (lambda (_) "") (number-sequence 2 (1- (length gerrit-dashboard-columns))))]))
+                          section-data)))
+              gerrit-dashboard-query-alist '()))
+
+(defun gerrit-dashboard--refresh ()
+  "Refresh dashboard."
+  (interactive)
+  (setq tabulated-list-format gerrit-dashboard-columns)
+  (setq tabulated-list-entries (gerrit-dashboard--get-list-entries))
+  (tabulated-list-init-header)
+  (tabulated-list-print))
+
+(defun gerrit-dashboard--refresh--and-point-restore ()
+  "Refresh dashboard and restore current position of point."
+  (interactive)
+  (let ((ppos (point)))
+    (gerrit-dashboard--refresh)
+    (goto-char ppos)))
 
 (defvar gerrit-dashboard-mode-map
   (let ((map (make-sparse-keymap)))
-    ;; TODO refresh, vote, ....
+    ;; TODO vote, ....
     (define-key map (kbd "a") 'gerrit-dashboard-assign-change)
     (define-key map (kbd "A") 'gerrit-dashboard-assign-change-to-me)
+    (define-key map (kbd "g") 'gerrit-dashboard--refresh--and-point-restore)
     (define-key map (kbd "o") 'gerrit-dashboard-browse-change)
    map))
 
@@ -548,24 +578,8 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 
 (define-derived-mode gerrit-dashboard-mode tabulated-list-mode "gerrit-dashboard"
   "gerrit-dashboard mode"
-  (let* ((columns gerrit-dashboard-columns)
-        (rows
-         (seq-reduce (lambda (acc conscell)
-                       (let ((section-data
-                              (gerrit-dashboard--get-data (cdr conscell))))
-                         (append acc `((nil [""
-                                             ,(propertize
-                                               (format "%s (%d)" (car conscell) (length section-data))
-                                               'face 'gerrit-section)
-                                             ;; is there an easier way to add len(columns)-2 times ""?
-                                             ,@(seq-map (lambda (_) "") (number-sequence 2 (1- (length columns))))]))
-                                 section-data)))
-                     gerrit-dashboard-query-alist '())))
-    (use-local-map gerrit-dashboard-mode-map)
-    (setq tabulated-list-format columns)
-    (setq tabulated-list-entries rows)
-    (tabulated-list-init-header)
-    (tabulated-list-print)))
+  (use-local-map gerrit-dashboard-mode-map)
+  (gerrit-dashboard--refresh))
 
 ;;;###autoload
 (defun gerrit-dashboard ()
