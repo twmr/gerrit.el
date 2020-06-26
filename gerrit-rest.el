@@ -44,9 +44,6 @@ servers it needs to be set to an empty string."
   :group 'gerrit
   :type 'str)
 
-(defvar gerrit-rest-api-debug-flag nil
-  "Non-nil means enable debugging of problems with the rest API of gerrit.")
-
 (defun gerrit-rest-authentication ()
   "Return an encoded string with gerrit username and password."
   (let ((pass-entry (auth-source-user-and-password gerrit-host)))
@@ -54,12 +51,6 @@ servers it needs to be set to an empty string."
                (password (nth 1 pass-entry)))
       (base64-encode-string
        (concat username ":" password)))))
-
-(defun gerrit-rest-toggle-api-debug-flag ()
-  "Toggle the internal debug flag."
-  (interactive)
-  (setq gerrit-rest-api-debug-flag (not gerrit-rest-api-debug-flag))
-  (message "set gerrit-rest debug flag to '%s'" gerrit-rest-api-debug-flag))
 
 (defun gerrit-rest-sync (method data &optional path)
   "Interact with the API using method METHOD and data DATA.
@@ -72,32 +63,25 @@ down the URL structure to send the request."
         (url-request-data data)
         (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix path)))
 
-    (if (not gerrit-rest-api-debug-flag)
-        (with-current-buffer (url-retrieve-synchronously target t)
-          (json-read-from-string
-           (progn
-             (goto-char (point-min))
-             ;; if there is an error in search-forward-regexp, write
-             ;; the buffer contents to a *gerrit-rest-status* buffer
-             (if-let ((pos (search-forward-regexp (concat "^" (regexp-quote ")]}'") "$") nil t)))
-                 (buffer-substring pos (point-max))
-                 ;; ")]}'" was not found in the REST response
-                 (let ((buffer (get-buffer-create "*gerrit-rest-status*"))
-                       (contents (buffer-substring (point-min) (point-max))))
-                   (with-current-buffer buffer
-                     (goto-char (point-max))
-                     (insert ?\n)
-                     (insert (format "%s: %s (%s)" url-request-method target url-request-extra-headers))
-                     (insert ?\n)
-                     (insert contents)
-                     (error (concat "error with gerrit request (take a look at the "
-                                    "*gerrit-rest-status* buffer for more information"))))))))
-      (progn
-        ;; TODO improve this, fontify json data?
-        (switch-to-buffer (url-retrieve-synchronously target))
-        (goto-char (point-min))
-        (insert target)
-        (insert ?\n)))))
+    (with-current-buffer (url-retrieve-synchronously target t)
+      (json-read-from-string
+       (progn
+         (goto-char (point-min))
+         ;; if there is an error in search-forward-regexp, write
+         ;; the buffer contents to a *gerrit-rest-status* buffer
+         (if-let ((pos (search-forward-regexp (concat "^" (regexp-quote ")]}'") "$") nil t)))
+             (buffer-substring pos (point-max))
+           ;; ")]}'" was not found in the REST response
+           (let ((buffer (get-buffer-create "*gerrit-rest-status*"))
+                 (contents (buffer-substring (point-min) (point-max))))
+             (with-current-buffer buffer
+               (goto-char (point-max))
+               (insert ?\n)
+               (insert (format "%s: %s (%s)" url-request-method target url-request-extra-headers))
+               (insert ?\n)
+               (insert contents)
+               (error (concat "error with gerrit request (take a look at the "
+                              "*gerrit-rest-status* buffer for more information"))))))))))
 
 (defun gerrit-rest--escape-project (project)
   "Escape project name PROJECT for usage in REST API requets."
