@@ -486,12 +486,25 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                     (gerrit-dashboard--get-change-metadata change))))
            (gerrit-rest-change-query expression)))
 
-;; (defvar gerrit-dashboard-mode-map
-;;   (let ((map (make-sparse-keymap)))
-;;     (define-key map (kbd "l") 'test-function)
-;;     (define-key map (kbd "g") 'gerrit-dashboard) ;; refresh
-;;     (define-key map (kbd "a") 'gerrit-rest--set-assignee) ;; refresh
-;;    map))
+
+(defun gerrit-dashboard--entry-number ()
+  "Return the change number as a string under point."
+  (interactive)
+  (aref (tabulated-list-get-entry) 0))
+
+(defun gerrit-dashboard-browse-change ()
+  "Open the change under point in a browser."
+  (interactive)
+  (browse-url (format
+               "https://%s/c/%s"
+               gerrit-host
+               (gerrit-dashboard--entry-number))))
+
+(defvar gerrit-dashboard-mode-map
+  (let ((map (make-sparse-keymap)))
+    ;; TODO refresh, assign, vote, ....
+    (define-key map (kbd "o") 'gerrit-dashboard-browse-change)
+   map))
 
 (defvar gerrit-dashboard-columns
   [("Number" 8)
@@ -522,6 +535,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                                              ,@(seq-map (lambda (_) "") (number-sequence 1 (1- (length columns))))]))
                                  section-data)))
                      gerrit-dashboard-query-alist '())))
+    (use-local-map gerrit-dashboard-mode-map)
     (setq tabulated-list-format columns)
     (setq tabulated-list-entries rows)
     (tabulated-list-init-header)
