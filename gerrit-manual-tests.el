@@ -1,4 +1,7 @@
+(require 'cl-lib)
 (require 'gerrit-rest)
+(require 'gerrit)
+
 
 (ert-deftest test-with-authorization-gh ()
   (let* (
@@ -36,3 +39,14 @@
     ;; version)
     (should-error (gerrit-dashboard--get-data "is:open -is:ignored")
                   :type '(error "tmp"))))
+
+(ert-deftest test-dashboard-getchange-metadata-gh ()
+  (let* (
+         (gerrit-host "review.gerrithub.io")
+         (gerrit-rest-endpoint-prefix "/a")
+         (data (seq-map #'gerrit-dashboard--get-change-metadata
+                        (gerrit-rest-change-query "is:open limit:3"))))
+    (should (= (length data) 3))
+    (should (cl-every #'numberp  (seq-map (lambda (change) (alist-get 'number change)) data)))))
+
+;;; gerrit-manual-tests.el ends here
