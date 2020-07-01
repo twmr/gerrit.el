@@ -72,8 +72,7 @@
     ("Outgoing reviews" . "is:open owner:self -is:wip -is:ignored")
     ("Incoming reviews" .  "is:open -owner:self -is:wip -is:ignored (reviewer:self OR assignee:self)")
     ("CCed On" . "is:open -is:ignored cc:self")
-    ("Recently closed" . "is:closed -is:ignored (-is:wip OR owner:self) (owner:self OR reviewer:self OR assignee:self OR cc:self) limit:15")
-    )
+    ("Recently closed" . "is:closed -is:ignored (-is:wip OR owner:self) (owner:self OR reviewer:self OR assignee:self OR cc:self) limit:15"))
   "Query search string that is used for the data shown in the gerrit-dashboard.")
 
 (defalias 'gerrit-dump-variable #'recentf-dump-variable)
@@ -143,8 +142,8 @@ Write data into the file specified by `gerrit-save-file'."
 (defun gerrit--init-accounts ()
   "Intialize `gerrit--accounts-alist`."
   (unless gerrit--accounts-alist
-    (setq gerrit--accounts-alist (gerrit-rest--get-gerrit-accounts)))
-)
+    (setq gerrit--accounts-alist (gerrit-rest--get-gerrit-accounts))))
+
 
 (defun gerrit-load-lists ()
   "Load a previously saved recent list.
