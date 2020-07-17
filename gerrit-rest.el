@@ -202,7 +202,7 @@ A comment MESSAGE can be provided."
                     (format "/changes/%s/ready" changenr)))
 
 (defun gerrit-rest-change-get-labels (changenr)
-  "Returns the current labels dictionary of a change CHANGENR."
+  "Return the current labels dictionary of a change CHANGENR."
   (interactive "sEnter changenr: ")
   (let* ((req (format "/changes/%s/revisions/current/review" changenr))
          (resp (gerrit-rest-sync "GET" nil req)))

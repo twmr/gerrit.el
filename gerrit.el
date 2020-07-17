@@ -513,9 +513,17 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                  'face 'magit-branch-remote)
     ,(propertize (or (alist-get 'topic change-metadata) "")
                  'face 'magit-tag)
-    ;; TODO convert datetime str to pretty relative time (eg. 3min ago)
+
+    ;; convert datetime str to pretty relative time (eg. 3min ago)
     ;; take a look at  magit-log-format-author-margin (style = age-abbreviated)
-    ,(alist-get 'updated change-metadata)
+    ,(apply #'format "%s %s ago"
+            (magit--age
+             (float-time
+              (encode-time
+               (parse-time-string
+                (alist-get 'updated change-metadata))))
+             nil))
+
     ;; TODO finish this
     ,(if (< (+ (alist-get 'deletions change-metadata)
                (alist-get 'insertions change-metadata)) 15) "S" "L")
