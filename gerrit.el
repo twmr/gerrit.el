@@ -580,6 +580,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
     (define-key map (kbd "A") 'gerrit-dashboard-assign-change-to-me)
     (define-key map (kbd "g") 'gerrit-dashboard--refresh--and-point-restore)
     (define-key map (kbd "o") 'gerrit-dashboard-browse-change)
+    ;; <C-down> -> forward-paragraph
    map))
 
 (define-derived-mode gerrit-dashboard-mode tabulated-list-mode "gerrit-dashboard"
@@ -592,6 +593,10 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   "Show a dashboard in a new buffer."
   (interactive)
   (switch-to-buffer gerrit-dashboard-buffer-name)
+  ;; all lines that don't start with a changenr are header-lines that are
+  ;; treated as the beginning of a paragraph
+  (setq paragraph-start "^[^0-9]")
+
   (gerrit-dashboard-mode))
 
 (provide 'gerrit)
