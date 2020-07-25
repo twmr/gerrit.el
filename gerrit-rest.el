@@ -36,6 +36,7 @@
 (require 'cl-lib)
 
 (defvar gerrit-host)
+(defvar gerrit-patch-buffer)
 
 (defcustom gerrit-rest-endpoint-prefix "/a"
   "String that is appended to 'gerrit-host`.
@@ -257,16 +258,19 @@ A comment MESSAGE can be provided."
         (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix
                         (format "/changes/%s/revisions/current/patch" changenr))))
     (message "Opening patch of %s" changenr)
-    (with-current-buffer (url-retrieve-synchronously target t)
-      ;; download patch into new buffer and wash content, i.e., run base64-decode-region on it
+    (setq gerrit-patch-buffer (get-buffer-create "*gerrit-patch*"))
 
-      (error "No yet fully implemented")
-      ;; TODO
-      ;; strip header
-      ;; base64-decode-region (inplace) patch
-      ;; highlight-buffer (use magit?)
-      ;; switch-to-buffer
-      )))
+    (with-current-buffer gerrit-patch-buffer
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (url-insert-file-contents target)
+        (base64-decode-region (point-min) (point-max)))
+      (unless buffer-read-only
+        (read-only-mode t))
+      (unless (bound-and-true-p diff-mode)
+        (diff-mode)))
+
+    (switch-to-buffer gerrit-patch-buffer)))
 
 (provide 'gerrit-rest)
 
