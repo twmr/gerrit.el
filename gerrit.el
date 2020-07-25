@@ -544,6 +544,11 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                gerrit-host
                (gerrit-dashboard--entry-number))))
 
+(defun gerrit-dashboard-open-change ()
+  "Open the patch of the change under point in a new buffer."
+  (interactive)
+  (gerrit-rest-change-patch (gerrit-dashboard--entry-number)))
+
 (defun gerrit-dashboard-assign-change ()
   "Set assignee of the change under point."
   (interactive)
@@ -597,6 +602,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
     (define-key map (kbd "A") 'gerrit-dashboard-assign-change-to-me)
     (define-key map (kbd "g") 'gerrit-dashboard--refresh--and-point-restore)
     (define-key map (kbd "o") 'gerrit-dashboard-browse-change)
+    (define-key map (kbd "RET") 'gerrit-dashboard-open-change)
     ;; <C-down> -> forward-paragraph
    map))
 

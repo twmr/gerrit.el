@@ -246,6 +246,27 @@ A comment MESSAGE can be provided."
   (gerrit-rest-sync "GET" nil
                    (format "/changes/%s" changenr)))
 
+(defun gerrit-rest-change-patch (changenr)
+  "Download latest patch of change with CHANGENR and open it in new buffer."
+  (interactive "sEnter changenr: ")
+  ;; does not return json
+  (let ((url-request-method "GET")
+        (url-request-extra-headers
+         `(("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
+        (url-request-data nil)
+        (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix
+                        (format "/changes/%s/revisions/current/patch" changenr))))
+    (message "Opening patch of %s" changenr)
+    (with-current-buffer (url-retrieve-synchronously target t)
+      ;; download patch into new buffer and wash content, i.e., run base64-decode-region on it
+
+      (error "No yet fully implemented")
+      ;; TODO
+      ;; strip header
+      ;; base64-decode-region (inplace) patch
+      ;; highlight-buffer (use magit?)
+      ;; switch-to-buffer
+      )))
 
 (provide 'gerrit-rest)
 
