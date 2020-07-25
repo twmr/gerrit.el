@@ -413,6 +413,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 (defvar gerrit-dashboard-columns
   [("Number" 8)
    ("Subject" 55)
+   ("Status" 10)
    ("Owner" 15)
    ("Assignee" 15)
    ("Repo" 24)
@@ -466,6 +467,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   "Convert a json object returned by the `gerrit-rest-change-query` for CHANGE into an alist."
   `((number . ,(alist-get '_number change)) ;; int
     (subject . ,(alist-get 'subject change)) ;; string
+    (status . ,(alist-get 'status change)) ;; string
     ;; alist-get 'owner => (_account_id . 1017133)
     (owner . ,(gerrit--alist-get-recursive 'owner '_account_id change))
     (assignee . ,(cdr (car (alist-get 'assignee change)))) ;; optional string
@@ -473,8 +475,11 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
     (branch . ,(alist-get 'branch change)) ;; string
     (topic . ,(alist-get 'topic change)) ;; optional string
     (updated . ,(alist-get 'updated change)) ;; string
+    (mergeable . ,(alist-get 'mergeable change)) ;; json-boolean
     (insertions . ,(alist-get 'insertions change)) ;; int
     (deletions . ,(alist-get 'deletions change)) ;; int
+    (wip . ,(alist-get 'work_in_progress change)) ;; t/nil
+
     ;; is one of the symbols
     ;; 'rejected, 'approved, 'disliked or 'recommended (or nil)
     (CR-vote . ,(caar (gerrit--alist-get-recursive
@@ -489,6 +494,18 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
       (number-to-string (alist-get 'number change-metadata))
       'face 'magit-hash)
     ,(propertize (alist-get 'subject change-metadata) 'face 'magit-section-highlight)
+
+    ,(if (eq (alist-get 'mergeable change-metadata) :json-false)
+         (propertize "Merge conflict" 'face 'gerrit-fail)
+       (if (alist-get 'wip change-metadata)
+           "WIP"
+         (let ((status (alist-get 'status change-metadata)))
+           (pcase status
+             ("NEW" "-")
+             ("MERGED" (propertize "Merged" 'face 'gerrit-success))
+             ("ABANDONED" "Abandoned")
+             (_ "")))))
+
     ,(or (alist-get (alist-get 'owner change-metadata) gerrit--accounts-alist) "")
     ,(or (alist-get (alist-get 'assignee change-metadata) gerrit--accounts-alist) "")
     ,(alist-get 'repo change-metadata)
