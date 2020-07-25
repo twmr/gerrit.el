@@ -240,6 +240,13 @@ A comment MESSAGE can be provided."
                             ;; "o=DETAILED_ACCOUNTS"))
                             )))
 
+(defun gerrit-rest-change-get (changenr)
+  "Return information about change with CHANGENR."
+  (interactive "sEnter changenr: ")
+  (gerrit-rest-sync "GET" nil
+                   (format "/changes/%s" changenr)))
+
+
 (provide 'gerrit-rest)
 
 ;;; gerrit-rest.el ends here
