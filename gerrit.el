@@ -618,6 +618,11 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 (define-derived-mode gerrit-dashboard-mode tabulated-list-mode "gerrit-dashboard"
   "gerrit-dashboard mode"
   (use-local-map gerrit-dashboard-mode-map)
+
+  ;; all lines that don't start with a changenr are header-lines that are
+  ;; treated as the beginning of a paragraph
+  (setq-local paragraph-start "^[^0-9]")
+
   (gerrit-dashboard--refresh))
 
 ;;;###autoload
@@ -625,10 +630,6 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   "Show a dashboard in a new buffer."
   (interactive)
   (switch-to-buffer gerrit-dashboard-buffer-name)
-  ;; all lines that don't start with a changenr are header-lines that are
-  ;; treated as the beginning of a paragraph
-  (setq paragraph-start "^[^0-9]")
-
   (gerrit-dashboard-mode))
 
 (provide 'gerrit)
