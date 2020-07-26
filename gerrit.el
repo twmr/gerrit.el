@@ -420,7 +420,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
    ("Repo" 24)
    ("Branch" 12)
    ("Topic" 15)
-   ("Updated" 26)
+   ("Updated" 12)
    ("Size" 3)
    ("CR" 2)
    ("V" 2)]
