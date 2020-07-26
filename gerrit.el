@@ -47,6 +47,7 @@
 (require 'dash)
 (require 'hydra)
 (require 'magit)
+(require 'magit-margin) ;; for magit--age
 (require 'recentf)
 (require 's)
 
@@ -519,9 +520,9 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
     ,(apply #'format "%s %s ago"
             (magit--age
              (float-time
-              (encode-time
-               (parse-time-string
-                (alist-get 'updated change-metadata))))
+              (apply #'encode-time
+                     (parse-time-string
+                      (alist-get 'updated change-metadata))))
              nil))
 
     ;; TODO finish this
