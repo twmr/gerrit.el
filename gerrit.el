@@ -31,7 +31,7 @@
 ;;   The git-review command line tool as well as the REST API is used for
 ;;   these defuns under the hood.
 ;;
-;; * gerrit-dashboard, defun for displaying a dashboard, similiar to the
+;; * gerrit-dashboard, defun for displaying a dashboard, similar to the
 ;;   one of the gerrit webinterface
 ;;
 ;; * open-reviews section for the magit-status buffer (`magit-gerrit-insert-status`)
