@@ -66,10 +66,6 @@ variables have to be set:
 
 ![gerrit-upload](https://user-images.githubusercontent.com/206581/88589947-356a1480-d05a-11ea-8964-e7d0b4bc8a18.png)
 
-## Debugging
-
-TODO
-
 ## Similar elisp packages
 
 * [magit-gerrit](https://github.com/darcylee/magit-gerrit) Fork of
