@@ -623,6 +623,11 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   ;; treated as the beginning of a paragraph
   (setq-local paragraph-start "^[^0-9]")
 
+  ;; some variables have to be made buffer-local s.t. refreshing of
+  ;; dashboards works as expected.
+  (setq-local gerrit-dashboard-columns gerrit-dashboard-columns)
+  (setq-local gerrit-dashboard-query-alist gerrit-dashboard-query-alist)
+
   (gerrit-dashboard--refresh))
 
 ;;;###autoload
