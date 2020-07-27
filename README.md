@@ -66,6 +66,33 @@ variables have to be set:
 
 ![gerrit-upload](https://user-images.githubusercontent.com/206581/88589947-356a1480-d05a-11ea-8964-e7d0b4bc8a18.png)
 
+## Dashboards
+
+`gerrit-dashboard` displays a dashboard similar to the one in the gerrit
+webinterface.  The currently supported keybindings in a dashboard buffer are
+
+<kbd>a</kbd> Assign the change under point
+<kbd>A</kbd> Assign the change under point to me
+<kbd>g</kbd> Refresh
+<kbd>o</kbd> Open change under point in browser using `browse-url`
+<kbd>RET</kbd> Download patch of change under point and display it in new buffer
+
+If you want to create multiple dashboards you can create a dashboard using
+
+```el
+(defun gerrit-dashboard-standup ()
+  (interactive)
+  (let ((gerrit-dashboard-query-alist
+         '(
+           ("Waiting for +1" . "is:open assignee:groupX label:Code-Review=0")
+           ("Waiting for +2" . "is:open assignee:groupX label:Code-Review=1")
+           )
+         )
+        (gerrit-dashboard-buffer-name "*gerrit-groupX-standup*")
+        )
+    (gerrit-dashboard)))
+```
+
 ## Similar elisp packages
 
 * [magit-gerrit](https://github.com/darcylee/magit-gerrit) Fork of
