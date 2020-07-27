@@ -421,7 +421,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
    ("Branch" 12)
    ("Topic" 15)
    ("Updated" 12)
-   ("Size" 3)
+   ("SZ" 3)
    ("CR" 2)
    ("V" 2)]
   "Column-names and column-sizes of the gerrit dashboard.")
