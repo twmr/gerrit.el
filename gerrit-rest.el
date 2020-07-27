@@ -264,7 +264,8 @@ A comment MESSAGE can be provided."
       (let ((inhibit-read-only t))
         (erase-buffer)
         (url-insert-file-contents target)
-        (base64-decode-region (point-min) (point-max)))
+        (base64-decode-region (point-min) (point-max))
+        (delete-trailing-whitespace))
       (unless buffer-read-only
         (read-only-mode t))
       (unless (bound-and-true-p diff-mode)
