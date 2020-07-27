@@ -58,6 +58,10 @@ variables have to be set:
 (setq gerrit-rest-endpoint-prefix "") ;; needed for older(?) gerrit server versions
 ```
 
+## Dashboards
+
+![gerrit-dashboard](https://user-images.githubusercontent.com/206581/88588506-f8048780-d057-11ea-9c57-ac2a58aadd58.png)
+
 ## Debugging
 
 TODO
