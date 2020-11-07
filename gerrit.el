@@ -619,6 +619,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
     (define-key map (kbd "g") 'gerrit-dashboard--refresh--and-point-restore)
     (define-key map (kbd "o") 'gerrit-dashboard-browse-change)
     (define-key map (kbd "RET") 'gerrit-dashboard-open-change)
+    ;; TODO open gerrit topic (or create a new command that open a gerrit topic)
     ;; <C-down> -> forward-paragraph
    map))
 
