@@ -250,7 +250,7 @@ A comment MESSAGE can be provided."
 (defun gerrit-rest-change-patch (changenr)
   "Download latest patch of change with CHANGENR and open it in new buffer."
   (interactive "sEnter changenr: ")
-  ;; does not return json
+  ;; does not return json, therefore we don't use `gerrit-rest-sync`
   (let ((url-request-method "GET")
         (url-request-extra-headers
          `(("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
