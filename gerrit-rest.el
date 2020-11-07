@@ -273,6 +273,18 @@ A comment MESSAGE can be provided."
 
     (switch-to-buffer gerrit-patch-buffer)))
 
+(defun gerrit-rest-download-commit-msg-hook ()
+  "Download the commit msg hook from the gerrit server."
+  (let ((url-request-method "GET")
+        (url-request-extra-headers
+         `(("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
+        (url-request-data nil)
+        (target (concat "https://" gerrit-host  "/tools/hooks/commit-msg")))
+
+    (with-temp-buffer
+      (url-insert-file-contents target)
+      (buffer-string))))
+
 (provide 'gerrit-rest)
 
 ;;; gerrit-rest.el ends here
