@@ -394,18 +394,24 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                (s-chop-prefix "#"
                               (nth 0 (oref (magit-current-section) value))))))
 
+(defun gerrit-get-remote ()
+  "Return the name of the remote."
+  ;; TODO read remote name from .gitreview file
+  ;; using sth like `git config -f .gitreview --get gerrit.defaultremote`
+  ;; ideally read the data from a cache
+  "origin")
+
 (defun gerrit-get-current-project ()
   "Return the gerrit project name, e.g., 'software/jobdeck'."
   (interactive)
-  (let ((origin-url (car
+  (let ((remote-url (car
                      (magit-config-get-from-cached-list
-                      ;; TODO read remote name from .git-review file
-                      "remote.origin.url"))))
-    (if (s-starts-with? "https://" origin-url)
-        (nth 2 (s-split-up-to "/" origin-url 3 t)) ;; return the endpoint (everything after the 3rd /)
+                      (format "remote.%s.url" (gerrit-get-remote))))))
+    (if (s-starts-with? "https://" remote-url)
+        (nth 2 (s-split-up-to "/" remote-url 3 t)) ;; return the endpoint (everything after the 3rd /)
       (s-chop-suffix
        ".git"
-       (nth 1 (s-split ":" origin-url))))))
+       (nth 1 (s-split ":" remote-url))))))
 
 
 
