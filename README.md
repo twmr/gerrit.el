@@ -13,7 +13,7 @@ tool to add support for
 
 The emacs interfaces for uploading and downloading changes require
 `git-review` (There are plans to get rid of this dependency - see
-[#10[(https://github.com/thisch/gerrit.el/issues/10)) and are implemented
+[#10](https://github.com/thisch/gerrit.el/issues/10)) and are implemented
 using the great [hydra](https://github.com/abo-abo/hydra) package. In the
 case of the `gerrit-upload` hydra it is possible to
 
