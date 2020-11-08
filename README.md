@@ -12,9 +12,10 @@ tool to add support for
 * creating a dashboard  (`gerrit-dashboard`).
 
 The emacs interfaces for uploading and downloading changes require
-`git-review` and are implemented using the great
-[hydra](https://github.com/abo-abo/hydra) package. In the case of the
-`gerrit-upload` hydra it is possible to
+`git-review` (There are plans to get rid of this dependency - see
+[#10[(https://github.com/thisch/gerrit.el/issues/10)) and are implemented
+using the great [hydra](https://github.com/abo-abo/hydra) package. In the
+case of the `gerrit-upload` hydra it is possible to
 
 * specify reviewers
 * set an assignee
