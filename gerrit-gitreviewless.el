@@ -116,17 +116,18 @@
 
     (gerrit--download-change change-metadata)))
 
-(defun gerrit-upload--new (assignee reviewers topic ready-for-review)
-  "Push the current changes/commits to the gerrit server and set metadata."
-
-  ;; check if commit-msg hook exists
+(defun gerrit--ensure-commit-msg-hook-exists ()
   (let ((hook-file  (magit-git-dir "hooks/commit-msg")))
     (unless (file-exists-p hook-file)
       (message "downloading commit-msg hook file")
       (url-copy-file
        (concat "https://" gerrit-host  "/tools/hooks/commit-msg") hook-file)
-      (set-file-modes hook-file #o755)))
+      (set-file-modes hook-file #o755))))
 
+(defun gerrit-upload--new (assignee reviewers topic ready-for-review)
+  "Push the current changes/commits to the gerrit server and set metadata."
+
+  (gerrit--ensure-commit-msg-hook-exists)
   ;; TODO check that all to-be-uploaded commits have a changeid line
   ;; TODO call magit-push
   ;;
