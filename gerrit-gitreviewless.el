@@ -47,6 +47,12 @@
 ;;                              my-alist)
 ;; 3
 
+;; for testing
+;; (let ((default-directory "/home/thomas.hisch/sandbox/pltb301/jobdeck"))
+;;   (gerrit-download-new-v3))
+;; "refs/changes/36/35436/1"
+
+
 (defun gerrit-format-change (change)
   (concat
    (propertize (number-to-string (alist-get '_number change)) 'face 'magit-hash)
@@ -69,7 +75,6 @@
          (change-branch (alist-get 'branch change-metadata))
          (change-topic (or (alist-get 'topic change-metadata)
                            (number-as-string change-nr)))
-         ;; TODO ensure that gerrit--acounts-alist is initialized
          (change-owner (alist-get (gerrit--alist-get-recursive
                                    'owner '_account_id change-metadata)
                                   gerrit--accounts-alist))
@@ -77,9 +82,13 @@
 
     ;; TODO log messages?
 
-    ;; this runs async, which is not what I want, because then I can't
-    ;; run other git commands afterwards
-    ;; (magit-fetch-refspec (gerrit-get-remote) (gerrit--get-refspec change-metadata) nil)
+    ;; this runs async, which is not what I want, because then I can't run
+    ;; other git commands afterwards (magit-fetch-refspec
+    ;; (gerrit-get-remote) (gerrit--get-refspec change-metadata) nil)
+
+    ;;TODO
+    ;; this next call doesn't work if the authorization doesn't work
+    ;; (e.g. if ssh-add was not called)
     (magit-call-git "fetch" (gerrit-get-remote) (gerrit--get-refspec change-metadata))
     ;; TODO handle errors of magit-branch-and-checkout:
     ;; check if a local branch with this name already exists
@@ -88,7 +97,6 @@
     ;;         (gerrit-get-remote)
     ;;              and `change-branch`
     (magit-branch-and-checkout local-branch "FETCH_HEAD")))
-
 
 (defun gerrit-download-new-v3 ()
   "Download change from the gerrit server."
@@ -108,10 +116,62 @@
 
     (gerrit--download-change change-metadata)))
 
+(defun gerrit-upload--new (assignee reviewers topic ready-for-review)
+  "Push the current changes/commits to the gerrit server and set metadata."
 
-;; for testing
-;; (let ((default-directory "/home/thomas.hisch/sandbox/pltb301/jobdeck"))
-;;   (gerrit-download-new-v3))
-;; "refs/changes/36/35436/1"
+  ;; check if commit-msg hook exists
+  (let ((hook-file  (magit-git-dir "hooks/commit-msg")))
+    (unless (file-exists-p hook-file)
+      (message "downloading commit-msg hook file")
+      (url-copy-file
+       (concat "https://" gerrit-host  "/tools/hooks/commit-msg") hook-file)
+      (set-file-modes hook-file #o755)))
+
+  ;; TODO check that all to-be-uploaded commits have a changeid line
+  ;; TODO call magit-push
+  ;;
+  (unless (equal "" topic)
+    (message "set topic to %s" topic))
+  (when ready-for-review
+    (message "set ready for review"))
+
+  ;; loop over reviewers
+  (cl-loop for reviewer in reviewers do
+           (message "set reviewer: %s" reviewer))
+
+  (unless (string= "" assignee)
+    ;; TODO get changenr
+    (message "Setting assignee of %s to %s" changenr assignee)
+    (gerrit-rest--set-assignee changenr assignee)))
+
+(defun gerrit-upload-run-new ()
+  (interactive)
+  (gerrit-upload--new
+   gerrit-last-assignee
+   gerrit-last-reviewers
+   gerrit-last-topic
+   gerrit-upload-ready-for-review))
+
+(defhydra hydra-gerrit-upload-new-v1 (:color amaranth ;; foreign-keys warning, blue heads exit hydra
+                                             :hint nil ;; show hint in the echo area
+                                             :columns 1
+                                             :body-pre (progn
+                                                         (gerrit-load-lists)
+                                                         (setq gerrit-last-topic "")
+                                                         (setq gerrit-last-reviewers nil)
+                                                         (setq gerrit-last-assignee "")
+                                                         (setq gerrit-upload-ready-for-review nil))
+                                             :after-exit (gerrit-save-lists))
+  "
+gerrit-upload-new:
+"
+  ("r" gerrit-upload-add-reviewer "Add reviewer")
+  ("R" gerrit-upload-remove-reviewer "Remove reviewer")
+  ("a" gerrit-upload-set-assignee "Set assignee")
+  ("t" gerrit-upload-set-topic "Set topic")
+  ("v" gerrit-upload-toggle-ready-for-review "Toggle ready-for-review")
+  ("G" gerrit-upload-run-new "Upload" :color blue))
+
+(defalias 'gerrit-upload-new #'hydra-gerrit-upload-new-v1/body)
 
 (provide 'gerrit-gitreviewless)
