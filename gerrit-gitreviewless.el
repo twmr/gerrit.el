@@ -124,11 +124,17 @@
        (concat "https://" gerrit-host  "/tools/hooks/commit-msg") hook-file)
       (set-file-modes hook-file #o755))))
 
+(defun gerrit--get-upload-refspec ()
+  (concat "refs/for/" (cadr (s-split "/" (magit-get-upstream-branch)))))
+
 (defun gerrit-upload--new (assignee reviewers topic ready-for-review)
   "Push the current changes/commits to the gerrit server and set metadata."
 
   (gerrit--ensure-commit-msg-hook-exists)
   ;; TODO check that all to-be-uploaded commits have a changeid line
+
+  (message "refspec: %s" (gerrit--get-upload-refspec))
+
   ;; TODO call magit-push
   ;;
   (unless (equal "" topic)
