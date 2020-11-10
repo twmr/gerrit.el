@@ -127,29 +127,58 @@
 (defun gerrit--get-upload-refspec ()
   (concat "refs/for/" (cadr (s-split "/" (magit-get-upstream-branch)))))
 
-(defun gerrit-upload--new (assignee reviewers topic ready-for-review)
+(defun gerrit-upload--new (assignee reviewers topic ready-for-review wip)
   "Push the current changes/commits to the gerrit server and set metadata."
 
   (gerrit--ensure-commit-msg-hook-exists)
   ;; TODO check that all to-be-uploaded commits have a changeid line
+  (message "topic:%s" topic)
 
-  (message "refspec: %s" (gerrit--get-upload-refspec))
+  (let ((remote (magit-get-upstream-remote))
+        (refspec (gerrit--get-upload-refspec)))
 
-  ;; TODO call magit-push
-  ;;
-  (unless (equal "" topic)
-    (message "set topic to %s" topic))
-  (when ready-for-review
-    (message "set ready for review"))
+    ;; there are a bunch of push options that are supported by gerrit:
+    ;; https://gerrit-review.googlesource.com/Documentation/user-upload.html#push_options
+    (let ((push-opts nil))
+      (unless (equal "" topic)
+        (push (concat "topic=" topic) push-opts))
+      (when ready-for-review
+        (push "ready" push-opts))
+      (when wip
+        (push "wip" push-opts))
 
-  ;; loop over reviewers
-  (cl-loop for reviewer in reviewers do
-           (message "set reviewer: %s" reviewer))
+      (cl-loop for reviewer in reviewers do
+               ;; TODO check that reviewers are valid (by checking that all
+               ;; reviewers don't contain a white-space)
+               (push (concat "r=" reviewer) push-opts))
 
-  (unless (string= "" assignee)
-    ;; TODO get changenr
-    (message "Setting assignee of %s to %s" changenr assignee)
-    (gerrit-rest--set-assignee changenr assignee)))
+      (when push-opts
+        (setq refspec (concat refspec "%" (s-join "," push-opts)))))
+    (message "refspec:%s" refspec)
+
+    (message "assignee:%s" assignee)
+    (if (string= "" assignee)
+        ;; TODO use an async version
+        (magit-git-command (concat "git push --no-follow-tags " remote " HEAD:" refspec))
+      ;; TODO magit-git-output doesn't write its output to the process
+      ;; buffer, because it uses a macro called
+      ;; magit--with-temp-process-buffer
+      (let ((git-push-output (magit-git-output
+                              "push"
+                              "--no-follow-tags"
+                              remote
+                              (concat "HEAD:" refspec))))
+        ;; parse the output of "git push" and extract the change ids. This
+        ;; information is used for setting the specified assignee
+        ;; Alternatively we could perform a gerrit query with owner:me and set the
+        ;; assignee for the latest change(s).
+        (message "output of git push %s" git-push-output)
+        (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+"
+                                                       git-push-output)))
+            (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
+                             (message "Setting assignee of %s to %s" changenr assignee)
+                             (gerrit-rest--set-assignee changenr assignee)))
+                    matched-changes))))))
 
 (defun gerrit-upload-run-new ()
   (interactive)
@@ -157,7 +186,8 @@
    gerrit-last-assignee
    gerrit-last-reviewers
    gerrit-last-topic
-   gerrit-upload-ready-for-review))
+   gerrit-upload-ready-for-review
+   nil))
 
 (defhydra hydra-gerrit-upload-new-v1 (:color amaranth ;; foreign-keys warning, blue heads exit hydra
                                              :hint nil ;; show hint in the echo area
