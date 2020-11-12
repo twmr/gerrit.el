@@ -74,7 +74,7 @@
   (let* ((change-nr (alist-get '_number change-metadata))
          (change-branch (alist-get 'branch change-metadata))
          (change-topic (or (alist-get 'topic change-metadata)
-                           (number-as-string change-nr)))
+                           (number-to-string change-nr)))
          (change-owner (alist-get (gerrit--alist-get-recursive
                                    'owner '_account_id change-metadata)
                                   gerrit--accounts-alist))
