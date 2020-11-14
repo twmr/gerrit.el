@@ -143,8 +143,9 @@ Write data into the file specified by `gerrit-save-file'."
 (defun gerrit--init-accounts ()
   "Intialize `gerrit--accounts-alist`."
   (unless gerrit--accounts-alist
-    (setq gerrit--accounts-alist (gerrit-rest--get-gerrit-accounts))))
-
+    (message "Fetching gerrit accounts ...")
+    (setq gerrit--accounts-alist (gerrit-rest--get-gerrit-accounts))
+    (message "Fetched gerrit accounts (len=%d)" (length gerrit--accounts-alist))))
 
 (defun gerrit-load-lists ()
   "Load a previously saved recent list.
