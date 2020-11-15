@@ -124,10 +124,13 @@
        (concat "https://" gerrit-host  "/tools/hooks/commit-msg") hook-file)
       (set-file-modes hook-file #o755))))
 
-(defun gerrit-push-and (&rest args)
+(defun gerrit-push-and-assign (assignee &rest push-args)
+  "Execute Git push with PUSH-ARGS and assign changes to ASSIGNEE.
+
+A section in the respective process buffer is created."
   (interactive)
   (progn
-    (apply #'magit-run-git-async args)
+    (apply #'magit-run-git-async "push" push-args)
     (set-process-sentinel
      magit-this-process
      (lambda (process event)
@@ -139,15 +142,31 @@
                                  (oref section content)
                                  (oref section end))))
                (if (not (zerop (process-exit-status process)))
-                   (progn
-                     (magit-process-sentinel process event)
-                     (message "non-zero-exit-code: %s" output)
-                     )
+                   ;; error
+                   (magit-process-sentinel process event)
+
+                 ;; success
                  (process-put process 'inhibit-refresh t)
-                 (magit-process-sentinel process event)
-                 (message "zero-exit-code: %s" output))))))))))
+
+                 ;; parse the output of "git push" and extract the change numbers. This
+                 ;; information is used for setting the specified assignee
+                 ;; Alternatively we could perform a gerrit query with owner:me and set the
+                 ;; assignee for the latest change(s).
+                 (message "output of git push %s" output)
+                 (unless (equal "" assignee)
+                   (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+" output)))
+                       (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
+                                        (message "Setting assignee of %s to %s" changenr assignee)
+                                        ;; TODO create a new section in the magit process buffer
+                                        (gerrit-rest--set-assignee changenr assignee)))
+                               matched-changes)))
+                 (magit-process-sentinel process event))))))))))
 
 (defun gerrit-magit-process-buffer-add-item (msg &rest args)
+  "Create a new section and write message MSG into magit process buffer.
+
+MSG needs to be a string and ARGS are the args are used for the
+section header."
   (interactive)
   (let (mpf)
     (unwind-protect
@@ -163,11 +182,9 @@
                                           )))
       (ignore-errors (delete-file mpf)))))
 
-;; (gerrit-push-and "--version")
-;; (gerrit-magit-process-buffer-add-item "this is my msg" "GET" "versions")
-
-
 (defun gerrit--get-upload-refspec ()
+  ;; FIXME magit-get-upstream branch may return nil if
+  ;; no upstream configured for branch ...
   (concat "refs/for/" (cadr (s-split "/" (magit-get-upstream-branch)))))
 
 (defun gerrit-upload--new (assignee reviewers topic ready-for-review wip)
@@ -179,7 +196,6 @@
 
   (let ((remote (magit-get-upstream-remote))
         (refspec (gerrit--get-upload-refspec)))
-
     ;; there are a bunch of push options that are supported by gerrit:
     ;; https://gerrit-review.googlesource.com/Documentation/user-upload.html#push_options
     (let ((push-opts nil))
@@ -200,28 +216,11 @@
     (message "refspec:%s" refspec)
 
     (message "assignee:%s" assignee)
-    (if (string= "" assignee)
-        ;; TODO use an async version
-        (magit-git-command (concat "git push --no-follow-tags " remote " HEAD:" refspec))
-      ;; TODO magit-git-output doesn't write its output to the process
-      ;; buffer, because it uses a macro called
-      ;; magit--with-temp-process-buffer
-      (let ((git-push-output (magit-git-output
-                              "push"
-                              "--no-follow-tags"
-                              remote
-                              (concat "HEAD:" refspec))))
-        ;; parse the output of "git push" and extract the change ids. This
-        ;; information is used for setting the specified assignee
-        ;; Alternatively we could perform a gerrit query with owner:me and set the
-        ;; assignee for the latest change(s).
-        (message "output of git push %s" git-push-output)
-        (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+"
-                                                       git-push-output)))
-            (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
-                             (message "Setting assignee of %s to %s" changenr assignee)
-                             (gerrit-rest--set-assignee changenr assignee)))
-                    matched-changes))))))
+    (gerrit-push-and-assign
+     assignee
+     "--no-follow-tags"
+     remote
+     (concat "HEAD:" refspec))))
 
 (defun gerrit-upload-run-new ()
   (interactive)
