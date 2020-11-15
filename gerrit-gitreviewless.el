@@ -124,6 +124,49 @@
        (concat "https://" gerrit-host  "/tools/hooks/commit-msg") hook-file)
       (set-file-modes hook-file #o755))))
 
+(defun gerrit-push-and (&rest args)
+  (interactive)
+  (progn
+    (apply #'magit-run-git-async args)
+    (set-process-sentinel
+     magit-this-process
+     (lambda (process event)
+       (when (memq (process-status process) '(exit signal))
+         (when (buffer-live-p (process-buffer process))
+           (with-current-buffer (process-buffer process)
+             (when-let ((section (get-text-property (point) 'magit-section))
+                        (output (buffer-substring-no-properties
+                                 (oref section content)
+                                 (oref section end))))
+               (if (not (zerop (process-exit-status process)))
+                   (progn
+                     (magit-process-sentinel process event)
+                     (message "non-zero-exit-code: %s" output)
+                     )
+                 (process-put process 'inhibit-refresh t)
+                 (magit-process-sentinel process event)
+                 (message "zero-exit-code: %s" output))))))))))
+
+(defun gerrit-magit-process-buffer-add-item (msg &rest args)
+  (interactive)
+  (let (mpf)
+    (unwind-protect
+        (progn
+          (setq mpf (make-temp-file "gerrit-magit-process-file"))
+          (delete-file mpf)
+          (write-region msg nil mpf)
+          (with-current-buffer (magit-process-buffer t)
+            (magit-process-insert-section default-directory
+                                          "REST"
+                                          args 0
+                                          mpf
+                                          )))
+      (ignore-errors (delete-file mpf)))))
+
+;; (gerrit-push-and "--version")
+;; (gerrit-magit-process-buffer-add-item "this is my msg" "GET" "versions")
+
+
 (defun gerrit--get-upload-refspec ()
   (concat "refs/for/" (cadr (s-split "/" (magit-get-upstream-branch)))))
 
