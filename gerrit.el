@@ -401,6 +401,13 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   ;; ideally read the data from a cache
   "origin")
 
+(defun gerrit-get-upstream-branch ()
+  "Return the name of the upstream branch."
+  ;; TODO read remote name from .gitreview file
+  ;; using sth like `git config -f .gitreview --get gerrit.defaultremote`
+  ;; ideally read the data from a cache
+  (or "master"))
+
 (defun gerrit-get-current-project ()
   "Return the gerrit project name, e.g., 'software/jobdeck'."
   (interactive)
