@@ -78,7 +78,7 @@
          (change-owner (alist-get (gerrit--alist-get-recursive
                                    'owner '_account_id change-metadata)
                                   gerrit--accounts-alist))
-         (local-branch (format "reviews/%s/%s" change-owner change-topic)))
+         (local-branch (format "review/%s/%s" change-owner change-topic)))
 
     ;; TODO log messages?
 
