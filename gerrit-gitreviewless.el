@@ -78,6 +78,9 @@
          (change-owner (alist-get (gerrit--alist-get-recursive
                                    'owner '_account_id change-metadata)
                                   gerrit--accounts-alist))
+         ;; TODO change-owner is escaped by git-review (_ instead of . is used)
+         ;; git-review uses re.sub(r'\W+', "_", ownername), which was introduced
+         ;; more than 8 years ago.
          (local-branch (format "review/%s/%s" change-owner change-topic)))
 
     ;; TODO log messages?
