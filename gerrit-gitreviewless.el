@@ -93,12 +93,23 @@
     ;; this next call doesn't work if the authorization doesn't work
     ;; (e.g. if ssh-add was not called)
     (magit-call-git "fetch" (gerrit-get-remote) (gerrit--get-refspec change-metadata))
+
+    (let ((local-ref (concat "refs/heads/" local-branch)))
+      (when (magit-git-success "show-ref" "--verify" "--quiet" local-ref)
+        ;; branch `local-branch` already exists
+        ;; TODO determine the remote and remote-branch of this local-branch
+        ;;         and reuse it only if they are equal with the current-remote
+        ;;         (gerrit-get-remote)
+        ;;              and `change-branch`
+        (when (s-starts-with? "refs/remotes"
+                              (magit-git-string "git", "for-each-ref",
+                                                "--format=%(upstream)", local-ref))
+          ;; TODO
+          (message "remote branch starts with refs/remotes")
+          )))
+
+
     ;; TODO handle errors of magit-branch-and-checkout:
-    ;; check if a local branch with this name already exists
-    ;; if yes, determine the remote and remote-branch of this local-branch
-    ;;         and reuse it only if they are equal with the current-remote
-    ;;         (gerrit-get-remote)
-    ;;              and `change-branch`
     (magit-branch-and-checkout local-branch "FETCH_HEAD")))
 
 (defun gerrit-download-new-v3 ()
