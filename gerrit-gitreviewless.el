@@ -71,6 +71,8 @@
     (gerrit--alist-get-recursive (intern revision) 'ref revisions)))
 
 (defun gerrit--download-change (change-metadata)
+  ;; to see what git-review does under the hood - see:
+  ;; strace -z -f -e execve git-review -d 3591
   (let* ((change-nr (alist-get '_number change-metadata))
          (change-branch (alist-get 'branch change-metadata))
          (change-topic (or (alist-get 'topic change-metadata)
