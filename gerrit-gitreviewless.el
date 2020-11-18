@@ -98,23 +98,23 @@
     ;; (e.g. if ssh-add was not called)
     (magit-call-git "fetch" (gerrit-get-remote) (gerrit--get-refspec change-metadata))
 
-    (let ((local-ref (concat "refs/heads/" local-branch)))
-      (when (magit-git-success "show-ref" "--verify" "--quiet" local-ref)
-        ;; branch `local-branch` already exists
-        ;; TODO determine the remote and remote-branch of this local-branch
-        ;;         and reuse it only if they are equal with the current-remote
-        ;;         (gerrit-get-remote)
-        ;;              and `change-branch`
-        (when (s-starts-with? "refs/remotes"
-                              (magit-git-string "git", "for-each-ref",
-                                                "--format=%(upstream)", local-ref))
-          ;; TODO
-          (message "remote branch starts with refs/remotes")
-          )))
-
-
-    ;; TODO handle errors of magit-branch-and-checkout:
-    (magit-branch-and-checkout local-branch "FETCH_HEAD")))
+    (let* ((local-ref (concat "refs/heads/" local-branch))
+           (branch-exists (magit-git-success "show-ref" "--verify" "--quiet" local-ref))
+           (local-branch-has-remote (s-starts-with? "refs/remotes" ; TODO add change-branch here?
+                                                    (magit-git-string
+                                                     "for-each-ref"
+                                                     "--format=%(upstream)" local-ref))))
+      (when (or (not branch-exists)
+                local-branch-has-remote)
+             ;; TODO handle errors of magit-branch-and-checkout:
+        (magit-branch-and-checkout local-branch "FETCH_HEAD")
+        (unless local-branch-has-remote
+          ;; set upstream here (see checkout_review function in cmd.py)
+          ;; this upstream branch is needed for rebasing
+          ;; TODO check return code
+          (magit-git-success "branch"
+                             "--set-upstream-to" (format "%s/%s" (gerrit-get-remote) change-branch)
+                             local-branch))))))
 
 (defun gerrit-download-new-v3 ()
   "Download change from the gerrit server."
