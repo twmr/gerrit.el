@@ -150,7 +150,7 @@
     (gerrit--download-change change-metadata)))
 
 (defun gerrit--ensure-commit-msg-hook-exists ()
-  (let ((hook-file  (magit-git-dir "hooks/commit-msg")))
+  (let ((hook-file (magit-git-dir "hooks/commit-msg")))
     (unless (file-exists-p hook-file)
       (message "downloading commit-msg hook file")
       (url-copy-file
