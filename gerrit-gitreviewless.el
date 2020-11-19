@@ -112,25 +112,24 @@
     ;; (e.g. if ssh-add was not called)
     (magit-call-git "fetch" (gerrit-get-remote) (gerrit--get-refspec change-metadata))
 
-    (let* ((local-ref (concat "refs/heads/" local-branch))
-           (branch-exists (magit-git-success "show-ref" "--verify" "--quiet" local-ref)))
-      (if branch-exists
-          (progn
-            ;; can it happen here that get-tracked returns nil?
-            (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked local-ref)
-              (unless (and (equal tracked-remote (gerrit-get-remote))
-                           (equal tracked-branch change-branch))
-                ;; todo extend error message
-                (error "Branch tracking imcompatibility")))
-            (magit-run-git "checkout" local-branch)
-            (magit-run-git "reset" "--hard" "FETCH_HEAD"))
-        ;;
-        (magit-branch-and-checkout local-branch "FETCH_HEAD")
-        ;; set upstream here (see checkout_review function in cmd.py)
-        ;; this upstream branch is needed for rebasing
-        (magit-run-git "branch"
-                       "--set-upstream-to" (format "%s/%s" (gerrit-get-remote) change-branch)
-                       local-branch)))))
+    (if-let* ((local-ref (concat "refs/heads/" local-branch))
+              (branch-exists (magit-git-success "show-ref" "--verify" "--quiet" local-ref)))
+        (progn
+          ;; can it happen here that get-tracked returns nil?
+          (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked local-ref)
+            (unless (and (equal tracked-remote (gerrit-get-remote))
+                         (equal tracked-branch change-branch))
+              ;; todo extend error message
+              (error "Branch tracking imcompatibility")))
+          (magit-run-git "checkout" local-branch)
+          (magit-run-git "reset" "--hard" "FETCH_HEAD"))
+      ;;
+      (magit-branch-and-checkout local-branch "FETCH_HEAD")
+      ;; set upstream here (see checkout_review function in cmd.py)
+      ;; this upstream branch is needed for rebasing
+      (magit-run-git "branch"
+                     "--set-upstream-to" (format "%s/%s" (gerrit-get-remote) change-branch)
+                     local-branch)))))
 
 (defun gerrit-download-new-v3 ()
   "Download change from the gerrit server."
