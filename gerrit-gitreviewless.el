@@ -119,8 +119,9 @@
           (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked local-ref)
             (unless (and (equal tracked-remote (gerrit-get-remote))
                          (equal tracked-branch change-branch))
-              ;; todo extend error message
-              (error "Branch tracking imcompatibility")))
+              (error "Branch tracking incompatibility: Tracking %s/%s instead of %s/%s"
+                     tracked-remote tracked-branch
+                     (gerrit-get-remote) change-branch)
           (magit-run-git "checkout" local-branch)
           (magit-run-git "reset" "--hard" "FETCH_HEAD"))
       ;;
