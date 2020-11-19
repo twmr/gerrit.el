@@ -219,6 +219,8 @@ section header."
 (defun gerrit--get-upload-refspec ()
   ;; FIXME magit-get-upstream branch may return nil if
   ;; no upstream configured for branch ...
+  (unless (magit-get-upstream-branch)
+    (error "no upstream configured for current branch"))
   (concat "refs/for/" (cadr (s-split "/" (magit-get-upstream-branch)))))
 
 (defun gerrit-upload--new (assignee reviewers topic ready-for-review wip)
