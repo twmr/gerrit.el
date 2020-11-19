@@ -23,6 +23,25 @@
                  nil))
   (should (equal (gerrit--alist-get-recursive 'A '((A . ((B . 3)))))
                  '((B . 3))))
+
+  ;; tests where the keyname is a string of an alist is a string
+  (let ((my-alist (gerrit-rest--read-json
+                   "{\"key\": \"boo\", \"main\":{\"foo\": 4, \"boo\": 3}}")))
+
+    ;; the value of alist-get 'key is a string, which is used as a key for
+    ;; the sub-alist main.
+    (should (equal my-alist '((key . "boo") (main (foo . 4) (boo . 3)))))
+
+    ;; (gerrit--alist-get-recursive 'main "boo" my-alist) doesn't work
+
+    (should (equal (gerrit--alist-get-recursive 'main 'boo my-alist) 3))
+
+    (should (equal (gerrit--alist-get-recursive 'main
+                             (intern (alist-get 'key my-alist))
+                             my-alist) 3)))
   )
+
+
+
 
 ;;; gerrit.el-test.el ends here

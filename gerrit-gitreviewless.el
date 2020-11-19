@@ -31,28 +31,6 @@
 ;;; Code:
 
 
-;; TODO how do I access the value of "boo" here if I have the keyname as a
-;; string?
-;; (setq my-alist (gerrit-rest--read-json
-;;                 "{\"key\": \"boo\", \"main\":{\"foo\": 4, \"boo\": 3}}"))
-;; ((key . "boo") (main (foo . 4) (boo . 3)))
-
-;; (gerrit--alist-get-recursive 'main "boo" my-alist) doesn't work
-
-;; (gerrit--alist-get-recursive 'main 'boo my-alist)
-;; 3
-
-;; (gerrit--alist-get-recursive 'main
-;;                              (intern (alist-get 'key my-alist))
-;;                              my-alist)
-;; 3
-
-;; for testing
-;; (let ((default-directory "/home/thomas.hisch/sandbox/pltb301/jobdeck"))
-;;   (gerrit-download-new-v3))
-;; "refs/changes/36/35436/1"
-
-
 (defun gerrit-format-change (change)
   (concat
    (propertize (number-to-string (alist-get '_number change)) 'face 'magit-hash)
