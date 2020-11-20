@@ -122,7 +122,7 @@ The provided REF needs to be a string starting with 'refs/head'."
       ;; this upstream branch is needed for rebasing
       (magit-run-git "branch"
                      "--set-upstream-to" (format "%s/%s" (gerrit-get-remote) change-branch)
-                     local-branch)))))
+                     local-branch))))))
 
 (defun gerrit-download-new-v3 ()
   "Download change from the gerrit server."
