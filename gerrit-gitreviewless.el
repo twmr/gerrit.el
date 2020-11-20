@@ -30,7 +30,6 @@
 
 ;;; Code:
 
-
 (defun gerrit-format-change (change)
   (concat
    (propertize (number-to-string (alist-get '_number change)) 'face 'magit-hash)
@@ -48,7 +47,18 @@
          (revision (alist-get 'current_revision change-metadata)))
     (gerrit--alist-get-recursive (intern revision) 'ref revisions)))
 
+(defun gerrit--get-tracked-new (ref)
+  "Get upstream-remote and upstream-branch of a REF.
+
+The provided REF needs to be a string starting with 'refs/head'."
+  (let ((tracked (magit-get-upstream-branch ref)))
+    (s-split-up-to "/" tracked 1 t)))
+
 (defun gerrit--get-tracked (ref)
+  "Get upstream-remote and upstream-branch of a REF.
+
+The provided REF needs to be a string starting with 'refs/head'."
+  ;; TODO remove this function in favor of gerrit-get-tracked-new
   (let ((tracked (magit-git-string
                   "for-each-ref"
                   "--format=%(upstream)" ref)))
@@ -58,7 +68,7 @@
       ;; strings: tracked-remote and tracked-branch
       (s-split-up-to "/"
                      (string-remove-prefix "refs/remotes/" tracked)
-                     1 t)))
+                     1 t))))
 
 (defun gerrit--download-change (change-metadata)
   ;; to see what git-review does under the hood - see:
@@ -94,7 +104,7 @@
               (branch-exists (magit-git-success "show-ref" "--verify" "--quiet" local-ref)))
         (progn
           ;; can it happen here that get-tracked returns nil?
-          (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked local-ref)
+          (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked-new local-branch)
             (unless (and (equal tracked-remote (gerrit-get-remote))
                          (equal tracked-branch change-branch))
               (error "Branch tracking incompatibility: Tracking %s/%s instead of %s/%s"
@@ -129,6 +139,7 @@
     (gerrit--download-change change-metadata)))
 
 (defun gerrit--ensure-commit-msg-hook-exists ()
+  "Create a commit-msg hook, if it doesn't exist."
   (let ((hook-file (magit-git-dir "hooks/commit-msg")))
     (unless (file-exists-p hook-file)
       (message "downloading commit-msg hook file")
