@@ -113,7 +113,7 @@ The provided REF needs to be a string starting with 'refs/head'."
                          (equal tracked-branch change-branch))
               (error "Branch tracking incompatibility: Tracking %s/%s instead of %s/%s"
                      tracked-remote tracked-branch
-                     (gerrit-get-remote) change-branch)
+                     (gerrit-get-remote) change-branch)))
           (magit-run-git "checkout" local-branch)
           (magit-run-git "reset" "--hard" "FETCH_HEAD"))
       ;;
@@ -122,7 +122,7 @@ The provided REF needs to be a string starting with 'refs/head'."
       ;; this upstream branch is needed for rebasing
       (magit-run-git "branch"
                      "--set-upstream-to" (format "%s/%s" (gerrit-get-remote) change-branch)
-                     local-branch))))))
+                     local-branch))))
 
 (defun gerrit-download-new-v3 ()
   "Download change from the gerrit server."
