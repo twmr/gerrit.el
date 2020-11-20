@@ -40,6 +40,10 @@
    ))
 
 (defun gerrit--get-refspec (change-metadata)
+  "Return the refspec of a gerrit change from CHANGE-METADATA.
+
+This refspec is a string of the form 'refs/changes/xx/xx/x'.
+"
   ;; this is important for determining the refspec needed for
   ;; git-fetch
   ;; change-ref is e.g. "refs/changes/16/35216/2"
