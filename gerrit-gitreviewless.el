@@ -106,15 +106,9 @@ The provided REF needs to be a string starting with 'refs/head'."
                                ;; instead of . is used). git-review uses
                                ;; re.sub(r'\W+', "_", ownername), which was
                                ;; introduced 2011 (commit 08bd9c). I don't
-                               ;; know why the did it.
+                               ;; know why they did it.
                                (replace-regexp-in-string "\\W+" "_" change-owner)
                                change-topic)))
-
-    ;; TODO log messages?
-
-    ;; this runs async, which is not what I want, because then I can't run
-    ;; other git commands afterwards (magit-fetch-refspec
-    ;; (gerrit-get-remote) (gerrit--get-refspec change-metadata) nil)
 
     ;;TODO
     ;; this next call doesn't work if the authorization doesn't work
