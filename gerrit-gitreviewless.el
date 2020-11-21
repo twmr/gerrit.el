@@ -213,6 +213,10 @@ section header."
   ;; FIXME magit-get-upstream branch may return nil if
   ;; no upstream configured for branch ...
   (unless (magit-get-upstream-branch)
+    ;; ask the user using sth like (magit-read-string)?
+    ;; this may be annoying for users that often create local feature branches
+    ;; -> TODO switch to gerrit-get-upstream-branch and mention why
+    ;; magit-get-upstream-branch can't be used here
     (error "no upstream configured for current branch"))
   (concat "refs/for/" (cadr (s-split "/" (magit-get-upstream-branch)))))
 
