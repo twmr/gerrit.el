@@ -45,6 +45,10 @@
 ;;       setting the assignee:
 ;;            section name: changenr and assignee
 ;;            section body: maybe rest output? especially useful if there is an error
+;; TODO download gerrit change on top of current branch (like cherry-pick)
+;; TODO download command that lists only the changes in the current branch
+;; TODO check (in advance) that the uploaded commits contain a Change-Id
+;;       see (magit-insert-log "@{upstream}.." args)
 
 ;;; Code:
 
