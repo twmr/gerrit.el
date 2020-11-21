@@ -27,6 +27,24 @@
 ;;; Commentary:
 
 ;; helper functions using the REST API of gerrit
+;;
+;; TODO finalize API (think about a consistent naming scheme (when to use -- and when not)
+;; TODO copy the gitreviewless code into gerrit.el file
+;; TODO provide a C-u version for gerrit-download-new, which also asks for the PS number
+;; TODO defvar for turning off .gitreview parsing. I would rather not parse it.
+;;         use "origin" as the remote if this parsing is turned off
+;; TODO if git-review parsing is turned off - how do we determine the upstream branch then?
+;;         if the local branch has an upstream configured -> use it
+;;         if it doesn't -> ask the user (magit-read-string)
+;;         Note:
+;;         git checkout -b fb -t origin/version0.2  # this can be used for creating
+;;         a local branch fb that is based on origin/version0.2 and which tracks
+;;         origin/version0.2 (=upstream)
+;; TODO write some unit tests that create git repos and test elisp functions
+;; TODO use gerrit-magit-process-buffer-add-item for:
+;;       setting the assignee:
+;;            section name: changenr and assignee
+;;            section body: maybe rest output? especially useful if there is an error
 
 ;;; Code:
 
