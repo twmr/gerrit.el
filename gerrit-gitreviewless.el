@@ -118,7 +118,7 @@ The provided REF needs to be a string starting with 'refs/head'."
     (if-let* ((local-ref (concat "refs/heads/" local-branch))
               (branch-exists (magit-git-success "show-ref" "--verify" "--quiet" local-ref)))
         (progn
-          ;; can it happen here that get-tracked returns nil?
+          ;; since local-branch exists, gerrit--get-tracked-new never returns nil
           (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked-new local-branch)
             (unless (and (equal tracked-remote (gerrit-get-remote))
                          (equal tracked-branch change-branch))
