@@ -396,17 +396,17 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 
 (defun gerrit-get-remote ()
   "Return the name of the remote."
-  ;; TODO read remote name from .gitreview file
-  ;; using sth like `git config -f .gitreview --get gerrit.defaultremote`
-  ;; ideally read the data from a cache
-  "origin")
+  ;; TODO read the data from a cache
+  (or (magit-git-lines "config" "-f" (expand-file-name ".gitreview" (magit-toplevel))
+                       "--get" "gerrit.defaultremote")
+      "origin"))
 
 (defun gerrit-get-upstream-branch ()
   "Return the name of the upstream branch."
-  ;; TODO read remote name from .gitreview file
-  ;; using sth like `git config -f .gitreview --get gerrit.defaultremote`
-  ;; ideally read the data from a cache
-  (or "master"))
+  ;; TODO read the data from a cache
+  (or (magit-git-lines "config" "-f" (expand-file-name ".gitreview" (magit-toplevel))
+                       "--get" "gerrit.defaultbranch")
+      "master"))
 
 (defun gerrit-get-current-project ()
   "Return the gerrit project name, e.g., 'software/jobdeck'."
