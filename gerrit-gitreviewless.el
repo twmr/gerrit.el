@@ -69,11 +69,10 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
          (revision (alist-get 'current_revision change-metadata)))
     (gerrit--alist-get-recursive (intern revision) 'ref revisions)))
 
-(defun gerrit--get-tracked-new (ref)
-  "Get upstream-remote and upstream-branch of a REF.
-
-The provided REF needs to be a string starting with 'refs/head'."
-  (let ((tracked (magit-get-upstream-branch ref)))
+(defun gerrit--get-tracked-new (branch)
+  "Get upstream-remote and upstream-branch of a local BRANCH."
+  ;; Note that magit-get-upstream-branch returns a propertized string
+  (let ((tracked (magit-get-upstream-branch branch)))
     (s-split-up-to "/" tracked 1 t)))
 
 (defun gerrit--get-tracked (ref)
