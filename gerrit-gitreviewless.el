@@ -223,7 +223,7 @@ section header."
   ;; TODO check that all to-be-uploaded commits have a changeid line
   (message "topic:%s" topic)
 
-  (let ((remote (magit-get-upstream-remote))
+  (let ((remote (gerrit-get-remote))
         (refspec (gerrit--get-upload-refspec)))
     ;; there are a bunch of push options that are supported by gerrit:
     ;; https://gerrit-review.googlesource.com/Documentation/user-upload.html#push_options
