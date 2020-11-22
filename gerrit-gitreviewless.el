@@ -199,8 +199,11 @@ A section in the respective process buffer is created."
                    (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+" output)))
                        (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
                                         (message "Setting assignee of %s to %s" changenr assignee)
-                                        ;; TODO create a new section in the magit process buffer
-                                        (gerrit-rest--set-assignee changenr assignee)))
+                                        (gerrit-rest--set-assignee changenr assignee)
+                                        (gerrit-magit-process-buffer-add-item
+                                         (format "Assignee of change %s was set to %s" changenr assignee)
+                                         "set-assignee" changenr)
+                                        ))
                                matched-changes)))
                  (magit-process-sentinel process event))))))))))
 
