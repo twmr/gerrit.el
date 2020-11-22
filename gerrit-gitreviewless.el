@@ -52,7 +52,7 @@
 
 ;;; Code:
 
-(defun gerrit-format-change (change)
+(defun gerrit-download-format-change (change)
   (concat
    (propertize (number-to-string (alist-get '_number change)) 'face 'magit-hash)
    " "
@@ -61,7 +61,7 @@
    (propertize (alist-get 'subject change) 'face 'magit-section-highlight)
    ))
 
-(defun gerrit--get-refspec (change-metadata)
+(defun gerrit-download--get-refspec (change-metadata)
   "Return the refspec of a gerrit change from CHANGE-METADATA.
 
 This refspec is a string of the form 'refs/changes/xx/xx/x'.
@@ -117,7 +117,7 @@ The provided REF needs to be a string starting with 'refs/head'."
     ;;TODO
     ;; this next call doesn't work if the authorization doesn't work
     ;; (e.g. if ssh-add was not called)
-    (magit-call-git "fetch" (gerrit-get-remote) (gerrit--get-refspec change-metadata))
+    (magit-call-git "fetch" (gerrit-get-remote) (gerrit-download--get-refspec change-metadata))
 
     (if-let* ((local-ref (concat "refs/heads/" local-branch))
               (branch-exists (magit-git-success "show-ref" "--verify" "--quiet" local-ref)))
@@ -144,9 +144,9 @@ The provided REF needs to be a string starting with 'refs/head'."
   (interactive)
   (gerrit--init-accounts)
   (let* ((open-changes
-          (seq-map #'gerrit-format-change (gerrit-rest-change-query
-                                           (concat "status:open project:"
-                                                   (gerrit-get-current-project)))))
+          (seq-map #'gerrit-download-format-change (gerrit-rest-change-query
+                                                    (concat "status:open project:"
+                                                            (gerrit-get-current-project)))))
          (selected-line (completing-read
                          "Download Change: " open-changes nil nil))
          (changenr (car (s-split " " (s-trim selected-line))))
@@ -204,27 +204,7 @@ A section in the respective process buffer is created."
                                matched-changes)))
                  (magit-process-sentinel process event))))))))))
 
-(defun gerrit-magit-process-buffer-add-item (msg &rest args)
-  "Create a new section and write message MSG into magit process buffer.
-
-MSG needs to be a string and ARGS are the args are used for the
-section header."
-  (interactive)
-  (let (mpf)
-    (unwind-protect
-        (progn
-          (setq mpf (make-temp-file "gerrit-magit-process-file"))
-          (delete-file mpf)
-          (write-region msg nil mpf)
-          (with-current-buffer (magit-process-buffer t)
-            (magit-process-insert-section default-directory
-                                          "REST"
-                                          args 0
-                                          mpf
-                                          )))
-      (ignore-errors (delete-file mpf)))))
-
-(defun gerrit--get-upload-refspec ()
+(defun gerrit-upload--get-refspec ()
   ;; FIXME magit-get-upstream branch may return nil if
   ;; no upstream configured for branch ...
   (unless (magit-get-upstream-branch)
@@ -240,10 +220,9 @@ section header."
 
   (gerrit--ensure-commit-msg-hook-exists)
   ;; TODO check that all to-be-uploaded commits have a changeid line
-  (message "topic:%s" topic)
 
   (let ((remote (gerrit-get-remote))
-        (refspec (gerrit--get-upload-refspec)))
+        (refspec (gerrit-upload--get-refspec)))
     ;; there are a bunch of push options that are supported by gerrit:
     ;; https://gerrit-review.googlesource.com/Documentation/user-upload.html#push_options
     (let ((push-opts nil))
@@ -261,23 +240,12 @@ section header."
 
       (when push-opts
         (setq refspec (concat refspec "%" (s-join "," push-opts)))))
-    (message "refspec:%s" refspec)
 
-    (message "assignee:%s" assignee)
     (gerrit-push-and-assign
      assignee
      "--no-follow-tags"
      remote
      (concat "HEAD:" refspec))))
-
-(defun gerrit-upload-run-new ()
-  (interactive)
-  (gerrit-upload--new
-   gerrit-last-assignee
-   gerrit-last-reviewers
-   gerrit-last-topic
-   gerrit-upload-ready-for-review
-   nil))
 
 (defhydra hydra-gerrit-upload-new-v1 (:color amaranth ;; foreign-keys warning, blue heads exit hydra
                                              :hint nil ;; show hint in the echo area
@@ -297,7 +265,12 @@ gerrit-upload-new:
   ("a" gerrit-upload-set-assignee "Set assignee")
   ("t" gerrit-upload-set-topic "Set topic")
   ("v" gerrit-upload-toggle-ready-for-review "Toggle ready-for-review")
-  ("G" gerrit-upload-run-new "Upload" :color blue))
+  ("G" (lambda () (interactive) (gerrit-upload--new
+                            gerrit-last-assignee
+                            gerrit-last-reviewers
+                            gerrit-last-topic
+                            gerrit-upload-ready-for-review
+                            nil))  "Upload" :color blue))
 
 (defalias 'gerrit-upload-new #'hydra-gerrit-upload-new-v1/body)
 

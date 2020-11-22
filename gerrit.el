@@ -334,6 +334,26 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 
 
 
+(defun gerrit-magit-process-buffer-add-item (msg &rest args)
+  "Create a new section and write message MSG into magit process buffer.
+
+MSG needs to be a string and ARGS are the args are used for the
+section header."
+  (interactive)
+  (let (mpf)
+    (unwind-protect
+        (progn
+          (setq mpf (make-temp-file "gerrit-magit-process-file"))
+          (delete-file mpf)
+          (write-region msg nil mpf)
+          (with-current-buffer (magit-process-buffer t)
+            (magit-process-insert-section default-directory
+                                          "REST"
+                                          args 0
+                                          mpf
+                                          )))
+      (ignore-errors (delete-file mpf)))))
+
 (defun gerrit-magit-insert-status ()
   "Show all open gerrit reviews when called in the magit-status-section via `magit-status-section-hook'."
 
