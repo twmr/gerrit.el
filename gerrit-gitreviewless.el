@@ -49,6 +49,8 @@
 ;; TODO download command that lists only the changes in the current branch
 ;; TODO check (in advance) that the uploaded commits contain a Change-Id
 ;;       see (magit-insert-log "@{upstream}.." args)
+;; TODO upload: before uploading a change check the sha1 of the latest commit and check
+;;              if it is alredy a change on gerrit with this sha1
 
 ;;; Code:
 
