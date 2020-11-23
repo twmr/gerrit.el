@@ -417,14 +417,14 @@ section header."
 (defun gerrit-get-remote ()
   "Return the name of the remote."
   ;; TODO read the data from a cache
-  (or (magit-git-lines "config" "-f" (expand-file-name ".gitreview" (magit-toplevel))
+  (or (magit-git-string "config" "-f" (expand-file-name ".gitreview" (magit-toplevel))
                        "--get" "gerrit.defaultremote")
       "origin"))
 
 (defun gerrit-get-upstream-branch ()
   "Return the name of the upstream branch."
   ;; TODO read the data from a cache
-  (or (magit-git-lines "config" "-f" (expand-file-name ".gitreview" (magit-toplevel))
+  (or (magit-git-string "config" "-f" (expand-file-name ".gitreview" (magit-toplevel))
                        "--get" "gerrit.defaultbranch")
       "master"))
 
