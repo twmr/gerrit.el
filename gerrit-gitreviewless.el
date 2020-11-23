@@ -74,27 +74,11 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
          (revision (alist-get 'current_revision change-metadata)))
     (gerrit--alist-get-recursive (intern revision) 'ref revisions)))
 
-(defun gerrit--get-tracked-new (branch)
+(defun gerrit--get-tracked (branch)
   "Get upstream-remote and upstream-branch of a local BRANCH."
   ;; Note that magit-get-upstream-branch returns a propertized string
   (let ((tracked (magit-get-upstream-branch branch)))
     (s-split-up-to "/" tracked 1 t)))
-
-(defun gerrit--get-tracked (ref)
-  "Get upstream-remote and upstream-branch of a REF.
-
-The provided REF needs to be a string starting with 'refs/head'."
-  ;; TODO remove this function in favor of gerrit-get-tracked-new
-  (let ((tracked (magit-git-string
-                  "for-each-ref"
-                  "--format=%(upstream)" ref)))
-    (when (s-starts-with? "refs/remotes" tracked)
-      ;; equivalent of tracked[13:].partition("/")[::2]
-      ;; TODO make this more readable: highlight that it returns two
-      ;; strings: tracked-remote and tracked-branch
-      (s-split-up-to "/"
-                     (string-remove-prefix "refs/remotes/" tracked)
-                     1 t))))
 
 (defun gerrit--download-change (change-metadata)
   ;; to see what git-review does under the hood - see:
@@ -123,8 +107,8 @@ The provided REF needs to be a string starting with 'refs/head'."
     (if-let* ((local-ref (concat "refs/heads/" local-branch))
               (branch-exists (magit-git-success "show-ref" "--verify" "--quiet" local-ref)))
         (progn
-          ;; since local-branch exists, gerrit--get-tracked-new never returns nil
-          (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked-new local-branch)
+          ;; since local-branch exists, gerrit--get-tracked never returns nil
+          (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked local-branch)
             (unless (and (equal tracked-remote (gerrit-get-remote))
                          (equal tracked-branch change-branch))
               (error "Branch tracking incompatibility: Tracking %s/%s instead of %s/%s"
