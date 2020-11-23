@@ -1,4 +1,4 @@
-;;; gerrit-gitreviewless.el --- git-review components implement in elisp -*- lexical-binding: t; -*-
+;;; gerrit-gitreviewless.el --- Upload/Download tools w/o git-review -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020 Thomas Hisch <t.hisch@gmail.com>
 ;;
@@ -58,8 +58,7 @@
    " "
    (propertize (alist-get 'branch change) 'face 'magit-branch-remote)
    " "
-   (propertize (alist-get 'subject change) 'face 'magit-section-highlight)
-   ))
+   (propertize (alist-get 'subject change) 'face 'magit-section-highlight)))
 
 (defun gerrit-download--get-refspec (change-metadata)
   "Return the refspec of a gerrit change from CHANGE-METADATA.
@@ -202,8 +201,7 @@ A section in the respective process buffer is created."
                                         (gerrit-rest--set-assignee changenr assignee)
                                         (gerrit-magit-process-buffer-add-item
                                          (format "Assignee of change %s was set to %s" changenr assignee)
-                                         "set-assignee" changenr)
-                                        ))
+                                         "set-assignee" changenr)))
                                matched-changes)))
                  (magit-process-sentinel process event))))))))))
 
@@ -278,3 +276,4 @@ gerrit-upload-new:
 (defalias 'gerrit-upload-new #'hydra-gerrit-upload-new-v1/body)
 
 (provide 'gerrit-gitreviewless)
+;;; gerrit-gitreviewless.el ends here
