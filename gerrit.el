@@ -349,7 +349,7 @@ section header."
           (with-current-buffer (magit-process-buffer t)
             (magit-process-insert-section default-directory
                                           "REST"
-                                          args 0
+                                          args nil
                                           mpf
                                           )))
       (ignore-errors (delete-file mpf)))))
