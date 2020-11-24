@@ -49,8 +49,16 @@
 ;; TODO download command that lists only the changes in the current branch
 ;; TODO check (in advance) that the uploaded commits contain a Change-Id
 ;;       see (magit-insert-log "@{upstream}.." args)
+;;       for commit in $(git rev-list 15044377058d2481e1d9a1334c71037598f9a006..HEAD); do
+;;           git log --format=%B -r $commit -n1; done
+;;       or check if 'Change-Id string is in the output of
+;;           git log --format=%B -r start-sha1..end-sha1
+;;       how do I determine the start-sha1?
+;;           -> use  branchname@{u}
 ;; TODO upload: before uploading a change check the sha1 of the latest commit and check
 ;;              if it is alredy a change on gerrit with this sha1
+;; TODO upload: always-rebase by default? git-review always rebases by default
+;;              but for merge commits it must not rebase automatically
 
 ;;; Code:
 
