@@ -59,6 +59,23 @@
 ;;              if it is alredy a change on gerrit with this sha1
 ;; TODO upload: always-rebase by default? git-review always rebases by default
 ;;              but for merge commits it must not rebase automatically
+;; TODO use transient for upload form
+;; (defun test-function (&optional args)
+;;   (interactive
+;;    (list (transient-args 'test-transient)))
+;;   (message "args: %s" args))
+
+;; (define-transient-command test-transient ()
+;;   "Test Transient Title"
+;;   ["Arguments"
+;;    ("s" "Switch" "--switch")
+;;    ("a" "Another param" "--another=")]
+;;   ["Actions"
+;;    ("d" "Action d" test-function)])
+
+;; (test-transient)
+;; -> The test-transient allows one to cycle over all settings C-M-p / C-M-n
+;; and also over all the infix history
 
 ;;; Code:
 
