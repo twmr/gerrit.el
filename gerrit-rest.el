@@ -210,6 +210,14 @@ A comment MESSAGE can be provided."
 
 ;;  topic commands
 
+(defun gerrit-rest-topic-set-assignee (topic assignee)
+  "Set the ASSIGNEE of all changes of a TOPIC."
+ (interactive "sEnter a topic: \nsEnter assignee: ")
+ (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
+          (let ((changenr (cdr (assoc 'change_id (cdr change-info)))))
+            (message "Setting assignee %s for %s" vote changenr)
+            (gerrit-rest---set-assignee changenr assignee))))
+
 (defun gerrit-rest-topic-set-vote (topic vote message)
   "Set a Code-Review vote VOTE for all changes of a topic TOPIC.
 A comment MESSAGE can be provided."
