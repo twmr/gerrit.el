@@ -240,7 +240,7 @@ A comment MESSAGE can be provided."
  (interactive "sEnter a topic: \nsEnter assignee: ")
  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
           (let ((changenr (cdr (assoc 'change_id (cdr change-info)))))
-            (message "Setting assignee %s for %s" vote changenr)
+            (message "Setting assignee %s for %s" assignee changenr)
             (gerrit-rest---set-assignee changenr assignee))))
 
 (defun gerrit-rest-topic-set-vote (topic vote message)
