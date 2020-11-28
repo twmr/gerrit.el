@@ -253,6 +253,12 @@ A comment MESSAGE can be provided."
             (gerrit-rest-change-set-vote changenr vote message)
             )))
 
+(defun gerrit-rest-topic-formatted-comments (topic)
+  ;; WIP
+  (interactive "sEnter a topic: ")
+  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) collect
+           (gerrit-rest-formatted-comments (alist-get 'change_id change-info))))
+
 (defun gerrit-rest-topic-verify (topic vote message)
   "Verify a topic TOPIC by voting with VOTE.
 A comment MESSAGE can be provided."
