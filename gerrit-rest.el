@@ -241,7 +241,7 @@ A comment MESSAGE can be provided."
  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
           (let ((changenr (alist-get 'change_id change-info)))
             (message "Setting assignee %s for %s" assignee changenr)
-            (gerrit-rest---set-assignee changenr assignee))))
+            (gerrit-rest--set-assignee changenr assignee))))
 
 (defun gerrit-rest-topic-set-vote (topic vote message)
   "Set a Code-Review vote VOTE for all changes of a topic TOPIC.
