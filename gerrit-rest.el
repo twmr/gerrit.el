@@ -239,7 +239,7 @@ A comment MESSAGE can be provided."
   "Set the ASSIGNEE of all changes of a TOPIC."
  (interactive "sEnter a topic: \nsEnter assignee: ")
  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
-          (let ((changenr (cdr (assoc 'change_id (cdr change-info)))))
+          (let ((changenr (alist-get 'change_id change-info)))
             (message "Setting assignee %s for %s" assignee changenr)
             (gerrit-rest---set-assignee changenr assignee))))
 
@@ -248,7 +248,7 @@ A comment MESSAGE can be provided."
 A comment MESSAGE can be provided."
  (interactive "sEnter a topic: \nsEnter vote [-2, -1, 0, +1, +2]: \nsEnter message: ")
  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
-          (let ((changenr (cdr (assoc 'change_id (cdr change-info)))))
+          (let ((changenr (alist-get 'change_id change-info)))
             (message "Setting vote %s for %s" vote changenr)
             (gerrit-rest-change-set-vote changenr vote message)
             )))
@@ -264,7 +264,7 @@ A comment MESSAGE can be provided."
 A comment MESSAGE can be provided."
  (interactive "sEnter a topic: \nsEnter vote [-1, 0, +1]: \nsEnter message: ")
  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
-          (let ((changenr (cdr (assoc 'change_id (cdr change-info)))))
+          (let ((changenr (alist-get 'change_id change-info)))
             (message "Setting Verify-vote %s for %s" vote changenr)
             (gerrit-rest-change-verify changenr vote message))))
 
