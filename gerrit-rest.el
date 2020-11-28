@@ -147,6 +147,31 @@ down the URL structure to send the request."
                                            `((assignee . ,assignee))) 'utf-8)
                     (format "/changes/%s/assignee"  changenr)))
 
+(defun gerrit-rest--get-comments (changenr)
+  ;; note that filenames are returned as symbols
+  (gerrit-rest-sync "GET" nil (format "/changes/%s/comments" changenr)))
+
+(defun gerrit-rest-formatted-comments (changenr)
+  "WIP."
+  (interactive "sEnter a changenr: ")
+  (s-join "\n"
+  (cl-loop for (filename . filecomments) in
+           (gerrit-rest--get-comments
+            changenr)
+            ;; "Idb547399d889b4f679728f874414798a8444c77f")
+           collect
+           (concat (format "fname: %s\n------------\n"
+                           filename)
+           (s-join "\n" (cl-loop for comment in filecomments
+                    collect
+                    (let* ((author (gerrit--alist-get-recursive 'author 'name comment))
+                           (msg (alist-get 'message comment)))
+                      (format "%s: %s"
+                              author
+                              msg
+                              ))))))))
+
+
 (defun gerrit-rest-open-reviews-for-project (project)
   "Return list of open reviews returned for the project PROJECT."
   (interactive "sEnter gerrit project: ")

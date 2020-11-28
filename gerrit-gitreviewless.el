@@ -77,6 +77,17 @@
 ;; -> The test-transient allows one to cycle over all settings C-M-p / C-M-n
 ;; and also over all the infix history
 
+;; TODO gerrit-display-recent-topic-comments
+;; user enters a topicname
+;; user sees a list of comments with the following format
+;;  header: project
+;;  date (relative to current time): commenter
+;;    comment
+;; allow the user to specify a filter function
+;;   filter out robot comment, filter our comments older than X days,..
+
+
+
 ;;; Code:
 
 (defun gerrit-download-format-change (change)
