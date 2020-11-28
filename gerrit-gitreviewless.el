@@ -90,6 +90,15 @@
 
 ;;; Code:
 
+(require 's)
+(require 'seq)
+(require 'cl-lib)
+(require 'hydra)
+(require 'magit)
+
+(require 'gerrit)
+(require 'gerrit-rest)
+
 (defun gerrit-download-format-change (change)
   (concat
    (propertize (number-to-string (alist-get '_number change)) 'face 'magit-hash)
