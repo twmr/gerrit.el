@@ -290,7 +290,7 @@ HISTORY."
                 ;; TODO confirmation?
                 (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
                                  (message "Setting assignee of %s to %s" changenr gerrit-last-assignee)
-                                 (gerrit-rest--set-assignee changenr gerrit-last-assignee)))
+                                 (gerrit-rest-change-set-assignee changenr gerrit-last-assignee)))
                         matched-changes)))))))
 
 
@@ -598,14 +598,14 @@ section header."
   (let ((change-number (gerrit-dashboard--entry-number))
         (assignee (gerrit--read-assignee)))
     (message "setting assignee of change %s to %s" change-number assignee)
-    (gerrit-rest--set-assignee change-number assignee)
+    (gerrit-rest-change-set-assignee change-number assignee)
     ;; refresh dashboard
     (gerrit-dashboard--refresh--and-point-restore)))
 
 (defun gerrit-dashboard-assign-change-to-me ()
   "Set assignee of the change under point."
    (interactive)
-  (gerrit-rest--set-assignee (gerrit-dashboard--entry-number) "self")
+  (gerrit-rest-change-set-assignee (gerrit-dashboard--entry-number) "self")
   ;; refresh dashboard
   (gerrit-dashboard--refresh--and-point-restore))
 
