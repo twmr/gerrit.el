@@ -156,9 +156,7 @@ down the URL structure to send the request."
   (interactive "sEnter a changenr: ")
   (s-join "\n"
   (cl-loop for (filename . filecomments) in
-           (gerrit-rest--get-comments
-            changenr)
-            ;; "Idb547399d889b4f679728f874414798a8444c77f")
+           (gerrit-rest--get-comments changenr)
            collect
            (concat (format "fname: %s\n------------\n"
                            filename)
