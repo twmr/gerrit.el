@@ -422,11 +422,18 @@ section header."
       "origin"))
 
 (defun gerrit-get-upstream-branch ()
-  "Return the name of the upstream branch."
+  "Return the name of the upstream branch. The returned string is not prefixed with the remote."
   ;; TODO read the data from a cache
-  (or (magit-git-string "config" "-f" (expand-file-name ".gitreview" (magit-toplevel))
-                       "--get" "gerrit.defaultbranch")
-      "master"))
+  (or (when-let ((upstream-branch (magit-get-upstream-branch)))
+        (cadr (s-split "/" upstream-branch)))
+      (magit-git-string "config" "-f" (expand-file-name ".gitreview" (magit-toplevel))
+                        "--get" "gerrit.defaultbranch")
+      (when-let ((upstream-branch (magit-read-upstream-branch
+                                   nil
+                                   (concat "No upstream branch is configured, please specify one "
+                                           "(starting with the remote)"))))
+        (magit-set-upstream-branch (magit-get-current-branch) upstream-branch)
+        (cadr (s-split "/" upstream-branch)))))
 
 (defun gerrit-get-current-project ()
   "Return the gerrit project name, e.g., 'software/jobdeck'."
