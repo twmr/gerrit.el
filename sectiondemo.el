@@ -1,7 +1,10 @@
 (defun gerrit-section-insert-comments ()
   (magit-insert-section (toplevel) ; without this, I can't toggle the repo
-                                   ; sections for some reason.
-    (cl-loop for sectionname in '("sec1" "sec2" "sec3") do
+                                        ; sections for some reason.
+
+    (insert "This is some text that describes what this change is about\n")
+
+    (cl-loop for sectionname in '("authorname1" "authorname2" "a3") do
              (magit-insert-section (gerrit-comments)
                ;; (magit-insert-heading (concat sectionname ":"))
                (magit-insert-heading sectionname)
@@ -9,9 +12,15 @@
                ;; copied from magit-insert-child-count
                (save-excursion
                  (goto-char (1- (point)))
+                 ;; (goto-char (- (point) (length sectionname)))
+                 ;; (goto-char (- (point) (length sectionname)))
+                 ;; (beginning-of-line)
                  ;; first line
+                 ;; TODO align the first lines
                  (insert " PS1\n")
-                 (delete-char 1))
+                 (delete-char 1)
+                 ;; (delete-char (length sectionname))
+                 )
 
                ;; (insert "sec details")
                (magit-insert-section (gerrit-comment (concat "file:" sectionname))
