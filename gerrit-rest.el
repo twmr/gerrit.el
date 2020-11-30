@@ -166,6 +166,10 @@ down the URL structure to send the request."
                                            `((assignee . ,assignee))) 'utf-8)
                     (format "/changes/%s/assignee"  changenr)))
 
+(defun gerrit-rest-change-get-messages (changenr)
+  ;; note that filenames are returned as symbols
+  (gerrit-rest-sync "GET" nil (format "/changes/%s/messages" changenr)))
+
 (defun gerrit-rest-change-get-comments (changenr)
   ;; note that filenames are returned as symbols
   (gerrit-rest-sync "GET" nil (format "/changes/%s/comments" changenr)))
