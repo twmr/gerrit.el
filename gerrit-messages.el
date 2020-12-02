@@ -15,32 +15,55 @@
     (cl-loop for change-info in (gerrit-rest-get-topic-info topicname) do
              (let ((changenr (alist-get '_number change-info))
                    (project (alist-get 'project change-info)))
-            (magit-insert-section (change1 changenr)
-              (magit-insert-heading (format "Comments %s @ %s:" changenr project))
-              (cl-loop for message-info in (cl-remove-if #'gerrit-section--filter
-                                                         (gerrit-rest-change-get-messages
-                                                          changenr))
-                       do
-                       (let* ((name (alist-get 'name (alist-get 'author message-info)))
-                              (date (gerrit--format-abbrev-date (alist-get 'date message-info)))
-                              (msg (s-lines (alist-get 'message message-info)))
-                              (firstline (car msg))
-                              (restlines (s-join "\n" (cdr msg)))
-                              (available-width (- (window-width) (length name) 2))
-                              (section-suffix-fmt (format " %%-%ds %%10s\n" (- available-width 10))))
-                         (magit-insert-section (gerrit-comments)
-                           (magit-insert-heading name)
+               (magit-insert-section (change1 changenr)
+                 ;; projectname: First line of commit msg, maybe owner
+                 (magit-insert-heading (format "%s: %s:" project changenr))
+                 (cl-loop for message-info in (cl-remove-if #'gerrit-section--filter
+                                                            (gerrit-rest-change-get-messages
+                                                             changenr))
+                          do
+                          (let* ((name (alist-get 'name (alist-get 'author message-info)))
+                                 (date (gerrit--format-abbrev-date (alist-get 'date message-info)))
+                                 (msg (s-lines (alist-get 'message message-info)))
+                                 ;; I'm sure firstline and restlines can be determined in a better way
+                                 (firstline (car msg))
+                                 (restlines (s-join "\n" (cdr msg)))
+                                 ;; (available-width (- (window-width) (length name) 2))
+                                 (available-width 80)
+                                 ;; (section-suffix-fmt (format " %%-%ds %%10s\n" (- available-width 10)))
+                                 )
+                            (magit-insert-section (gerrit-comments)
 
-                           ;; copied from magit-insert-child-count
-                           (save-excursion
-                             (goto-char (1- (point)))
-                             (insert (format section-suffix-fmt firstline date))
-                             (delete-char 1)
-                             )
+                              (magit-insert-heading
+                                (format "%-17s %-40s %10s" ;; authorname, first line of messsage, date
+                                        (propertize name 'font-lock-face
+                                                    'magit-section-secondary-heading)
+                                        ;; replace some strings in firstline: e.g.
+                                        ;; DONE Patch Set \d+ -> PS\d+
+                                        ;; DONE Code-Review:+2 -> (propertize "✔" 'face 'gerrit-success)
+                                        ;; (if (stringp firstline)
+                                        ;;     (s-replace-all
+                                        ;;      '(
+                                        ;;        ;; ("Patch Set " . "PS")
+                                        ;;        ;; ("Code-Review+2" . (propertize "✔" 'face 'gerrit-success))
+                                        ;;        ;; ("Code-Review+1" . (propertize "+1" 'face 'gerrit-success))
+                                        ;;        ;; ("Code-Review-1" . (propertize "-1" 'face 'gerrit-fail))
+                                        ;;        ;; ("Code-Review-2" . (propertize "-2" 'face 'gerrit-fail)))
+                                        ;;        )
+                                        ;;      ;;  '(("Patch Set " . "PS"))
+                                        ;;      ;; (propertize firstline 'face 'gerrit-fail))
+                                        ;;      firstline
+                                        ;;      )
+                                        ;;   "")
+                                        (propertize firstline 'face 'gerrit-fail)
 
-                           (unless (s-blank? restlines)
-                             (insert (concat restlines "\n")))
-                           ))))))
+                                        (propertize date 'face 'magit-log-date)
+                                        ))
+
+                              ;; only show the rest of the message if the message is multiline
+                              (unless (s-blank? restlines)
+                                (insert (concat restlines "\n")))
+                              ))))))
     (insert ?\n)))
 
 (defun gerrit-sec-fmt ()
