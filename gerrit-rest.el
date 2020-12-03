@@ -113,6 +113,18 @@ down the URL structure to send the request."
   (interactive)
   (gerrit-rest-sync "GET" nil "/config/server/info"))
 
+(defun gerrit-rest-get-change-info (changenr)
+  "Return information about an open change with CHANGENR."
+  (interactive "sEnter a changenr name: ")
+  (let* ((req (concat "/changes/"
+                      changenr
+                      "?o=DOWNLOAD_COMMANDS&"
+                      "o=CURRENT_REVISION&"
+                      "o=CURRENT_COMMIT&"
+                      "o=DETAILED_LABELS&"
+                      "o=DETAILED_ACCOUNTS")))
+         (gerrit-rest-sync "GET" nil req)))
+
 (defun gerrit-rest-get-topic-info (topicname)
   "Return information about an open topic with TOPICNAME."
   ;; TODO create new buffer and insert stuff there
