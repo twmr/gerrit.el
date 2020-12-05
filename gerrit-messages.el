@@ -62,21 +62,29 @@
                              ;; replace some strings in firstline: e.g.
                              ;; DONE Patch Set \d+ -> PS\d+
                              ;; DONE Code-Review:+2 -> (propertize "✔" 'face 'gerrit-success)
-                             ;; (if (stringp firstline)
-                             ;;     (s-replace-all
-                             ;;      '(
-                             ;;        ;; ("Patch Set " . "PS")
-                             ;;        ;; ("Code-Review+2" . (propertize "✔" 'face 'gerrit-success))
-                             ;;        ;; ("Code-Review+1" . (propertize "+1" 'face 'gerrit-success))
-                             ;;        ;; ("Code-Review-1" . (propertize "-1" 'face 'gerrit-fail))
-                             ;;        ;; ("Code-Review-2" . (propertize "-2" 'face 'gerrit-fail)))
-                             ;;        )
-                             ;;      ;;  '(("Patch Set " . "PS"))
-                             ;;      ;; (propertize firstline 'face 'gerrit-fail))
-                             ;;      firstline
-                             ;;      )
-                             ;;   "")
-                             (propertize firstline 'face 'gerrit-fail)
+
+                             ;;
+
+                             ;; replace-match((propertize "+1" 'face 'gerrit-success) t t #("Code-Review+1" 0 13 (face gerrit-fail)) nil)
+                             ;; replace-regexp-in-string("\\(?:Code-Review\\(?:\\+[12]\\|-[12]\\)\\|\\(?:Patch S\\|patch s\\)et \\)" #f(compiled-function (it) #<bytecode 0x1e0332ac5e2b>) #("Patch Set 1: Code-Review+1" 0 26 (face gerrit-fail)) t t)
+
+                             ;; (s-replace-all
+                             ;;  '(
+                             ;;    ("patch set " . "PS")
+                             ;;    ("Patch Set " . "PS")
+                             ;;    ("Code-Review+2" . (propertize "✔" 'face 'gerrit-success))
+                             ;;    ("Code-Review-1" . (propertize "-1" 'face 'gerrit-fail))
+                             ;;    ("Code-Review+1" . (propertize "+1" 'face 'gerrit-success))
+                             ;;    ("Code-Review-2" . (propertize "-2" 'face 'gerrit-fail))
+                             ;;    )
+                             ;;  (propertize firstline 'face 'gerrit-fail))
+                             ;; TODO use the above version (once the bug in s.el is fixed)
+                             (s-replace "Verified-1" (propertize "VR-1" 'face 'gerrit-fail)
+                                        (s-replace "Verified+1" (propertize "VR+1" 'face 'gerrit-success)
+                                                   (s-replace "Code-Review+1" (propertize "CR+1" 'face 'gerrit-success)
+                                                              (s-replace
+                                                               "Code-Review+2" (propertize "CR✔" 'face 'gerrit-success)
+                                                               (s-replace "Patch Set " "PS" firstline)))))
 
                              (propertize date 'face 'magit-log-date)
                              ))
