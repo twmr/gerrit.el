@@ -16,6 +16,7 @@
 ;;                file C:
 ;;                file D:
 ;;             comments:
+(require 'gerrit-rest)
 
 (defun gerrit-section--filter (message-info)
   (or (s-starts-with? "jenkins" (alist-get 'name (alist-get 'author message-info)))
@@ -113,3 +114,6 @@
 (defun gerrit-section-change-demo (changenr)
   (interactive "sEnter changenr: ")
   (gerrit-section--demo nil changenr))
+
+(provide 'gerrit-messages)
+;;; gerrit-messages.el ends here
