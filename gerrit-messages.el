@@ -25,14 +25,19 @@
   (let ((changenr (alist-get '_number change-info))
         (project (alist-get 'project change-info))
         (subject (alist-get 'subject change-info))
-        (comment-fmt (format "%%-17s %%-%ds %%10s" (- (window-width) 17 10 2)))
-        )
+        (latest-commit-message
+         (let* ((revisions (alist-get 'revisions change-info))
+                (revision (alist-get 'current_revision change-info)))
+           (gerrit--alist-get-recursive (intern revision) 'commit 'message revisions)))
+        (comment-fmt (format "%%-17s %%-%ds %%10s" (- (window-width) 17 10 2))))
     (magit-insert-section (gerrit-change changenr)
       ;; projectname: First line of commit msg, maybe owner
       (magit-insert-heading
         (propertize (format "[%s] " changenr) 'face 'magit-hash)
         (concat project " ")
         (propertize subject 'face 'magit-section-heading))
+
+      (insert latest-commit-message)
       (cl-loop for message-info in (cl-remove-if #'gerrit-section--filter
                                                  (gerrit-rest-change-get-messages
                                                   changenr))
