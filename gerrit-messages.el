@@ -37,7 +37,11 @@
         (concat project " ")
         (propertize subject 'face 'magit-section-heading))
 
-      (insert latest-commit-message)
+      ;; maybe when-let can be removed, since all commit
+      ;; messages are multiline (they include a Change-Id line)
+      (when-let (commit-restlines (cdr (s-split-up-to "\n" latest-commit-message 1)))
+        (insert (s-trim-left (s-join "\n" commit-restlines))))
+
       (cl-loop for message-info in (cl-remove-if #'gerrit-section--filter
                                                  (gerrit-rest-change-get-messages
                                                   changenr))
