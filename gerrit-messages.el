@@ -23,10 +23,16 @@
 
 (defun gerrit-section--insert-change-comments (change-info)
   (let ((changenr (alist-get '_number change-info))
-        (project (alist-get 'project change-info)))
-    (magit-insert-section (change1 changenr)
+        (project (alist-get 'project change-info))
+        (subject (alist-get 'subject change-info))
+        (comment-fmt (format "%%-17s %%-%ds %%10s" (- (window-width) 17 10 2)))
+        )
+    (magit-insert-section (gerrit-change changenr)
       ;; projectname: First line of commit msg, maybe owner
-      (magit-insert-heading (format "%s: %s:" project changenr))
+      (magit-insert-heading
+        (propertize (format "[%s] " changenr) 'face 'magit-hash)
+        (concat project " ")
+        (propertize subject 'face 'magit-section-heading))
       (cl-loop for message-info in (cl-remove-if #'gerrit-section--filter
                                                  (gerrit-rest-change-get-messages
                                                   changenr))
@@ -36,15 +42,11 @@
                       (msg (s-lines (alist-get 'message message-info)))
                       ;; I'm sure firstline and restlines can be determined in a better way
                       (firstline (car msg))
-                      (restlines (s-join "\n" (cdr msg)))
-                      ;; (available-width (- (window-width) (length name) 2))
-                      (available-width 80)
-                      ;; (section-suffix-fmt (format " %%-%ds %%10s\n" (- available-width 10)))
-                      )
+                      (restlines (s-join "\n" (cdr msg))))
                  (magit-insert-section (gerrit-comments)
 
                    (magit-insert-heading
-                     (format "%-17s %-40s %10s" ;; authorname, first line of messsage, date
+                     (format comment-fmt ;; authorname, first line of messsage, date
                              (propertize name 'font-lock-face
                                          'magit-section-secondary-heading)
                              ;; replace some strings in firstline: e.g.
