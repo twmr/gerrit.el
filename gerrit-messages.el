@@ -97,25 +97,17 @@ shown in the section buffer."
                              (propertize date 'face 'magit-log-date)
                              ))
 
-                   ;; only show the rest of the message if the message is multiline
+                   ;; only show the rest of the message if the message is multi-line
                    (unless (s-blank? restlines)
-                     (insert (concat restlines "\n")))
-                   ))))))
-
-(defun gerrit-sec-fmt ()
-  (interactive)
-  (let* ((left "firstname.surname")
-         (available-width (- (window-width) (length left) 2)))
-    (format (format " %%s %%%ds " available-width) left "10days ago")))
+                     (insert (concat restlines "\n")))))))))
 
 (defun gerrit-section--info (topicname changenr)
   (with-current-buffer (get-buffer-create "*gerrit-section*")
     (let ((inhibit-read-only t))
       (erase-buffer)
       (magit-section-mode)
-
-    ; without this toplevel section, I can't toggle the repo sections for some reason.
-    (magit-insert-section (toplevel)
+      ;; without this top-level section, I can't toggle the repo sections for some reason.
+      (magit-insert-section (toplevel)
         (when changenr
           (gerrit-section--insert-change-comments (gerrit-rest-get-change-info changenr)))
         (when topicname
