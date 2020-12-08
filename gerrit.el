@@ -467,12 +467,12 @@ section header."
   "Column-names and column-sizes of the gerrit dashboard.")
 
 (defface gerrit-fail
-  '((t (:foreground "red4")))
+  `((t (:foreground ,(face-foreground 'magit-diff-removed-highlight))))
   "Used for negative votes."
   :group 'faces)
 
 (defface gerrit-success
-  '((t (:foreground "green4")))
+  `((t (:foreground ,(face-foreground 'magit-diff-added-highlight))))
   "Used for positive votes."
   :group 'faces)
 
