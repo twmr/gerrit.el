@@ -101,19 +101,23 @@
     (format (format " %%s %%%ds " available-width) left "10days ago")))
 
 (defun gerrit-section--demo (topicname changenr)
-  (let ((buffer (get-buffer-create "*gerrit-section*")))
-    (with-current-buffer buffer
-      (let ((inhibit-read-only t))
-        (erase-buffer)
-        (magit-section-mode)
-        (magit-insert-section (toplevel) ; without this, I can't toggle the repo
-                                        ; sections for some reason.
-          (when changenr
-            (gerrit-section--insert-change-comments (gerrit-rest-get-change-info changenr)))
-          (when topicname
-            (cl-loop for change-info in (gerrit-rest-get-topic-info topicname) do
-                     (gerrit-section--insert-change-comments change-info)))
-          (insert ?\n))))))
+  (with-current-buffer (get-buffer-create "*gerrit-section*")
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (magit-section-mode)
+
+    ; without this toplevel section, I can't toggle the repo sections for some reason.
+    (magit-insert-section (toplevel)
+        (when changenr
+          (gerrit-section--insert-change-comments (gerrit-rest-get-change-info changenr)))
+        (when topicname
+          ;; TODO check if there are no open topics with the name
+          ;; topicname. If this is the case, check if there are non-open
+          ;; topics with this name and offer to open it.
+          (cl-loop for change-info in (gerrit-rest-get-topic-info topicname) do
+                   (gerrit-section--insert-change-comments change-info)))
+        (insert ?\n)))
+    (switch-to-buffer-other-window (current-buffer))))
 
 (defun gerrit-section-topic-demo (topicname)
   (interactive "sEnter topicname: ")
