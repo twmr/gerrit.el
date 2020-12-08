@@ -100,7 +100,7 @@
          (available-width (- (window-width) (length left) 2)))
     (format (format " %%s %%%ds " available-width) left "10days ago")))
 
-(defun gerrit-section--demo (topicname changenr)
+(defun gerrit-section--info (topicname changenr)
   (with-current-buffer (get-buffer-create "*gerrit-section*")
     (let ((inhibit-read-only t))
       (erase-buffer)
@@ -119,13 +119,13 @@
         (insert ?\n)))
     (switch-to-buffer-other-window (current-buffer))))
 
-(defun gerrit-section-topic-demo (topicname)
+(defun gerrit-section-topic-info (topicname)
   (interactive "sEnter topicname: ")
-  (gerrit-section--demo topicname nil))
+  (gerrit-section--info topicname nil))
 
-(defun gerrit-section-change-demo (changenr)
+(defun gerrit-section-change-info (changenr)
   (interactive "sEnter changenr: ")
-  (gerrit-section--demo nil changenr))
+  (gerrit-section--info nil changenr))
 
 (provide 'gerrit-messages)
 ;;; gerrit-messages.el ends here
