@@ -48,8 +48,8 @@ shown in the section buffer."
 
       ;; maybe when-let can be removed, since all commit
       ;; messages are multiline (they include a Change-Id line)
-      (when-let (commit-restlines (cdr (s-split-up-to "\n" latest-commit-message 1)))
-        (insert (s-trim-left (s-join "\n" commit-restlines))))
+      (when-let (commit-msg-body (cdr (s-split-up-to "\n" latest-commit-message 1)))
+        (insert (s-trim-left (s-join "\n" commit-msg-body))))
 
       (cl-loop for message-info in (cl-remove-if-not #'gerrit-section-filter
                                                      (gerrit-rest-change-get-messages
