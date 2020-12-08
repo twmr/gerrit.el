@@ -35,10 +35,16 @@ shown in the section buffer."
         (project (alist-get 'project change-info))
         (subject (alist-get 'subject change-info))
         (latest-commit-message
-         (let* ((revisions (alist-get 'revisions change-info))
+         (let ((revisions (alist-get 'revisions change-info))
                 (revision (alist-get 'current_revision change-info)))
            (gerrit--alist-get-recursive (intern revision) 'commit 'message revisions)))
-        (comment-fmt (format "%%-17s %%-%ds %%10s" (- (window-width) 17 10 2))))
+        (comment-fmt (let ((max-author-width 17)
+                           (max-date-width 10))
+                         (format "%%-%ds %%-%ds %%%ds"
+                             max-author-width
+                             (- (window-width) max-author-width max-date-width 2)
+                             max-date-width
+                             ))))
     (magit-insert-section (gerrit-change changenr)
       ;; projectname: First line of commit msg, maybe owner
       (magit-insert-heading
