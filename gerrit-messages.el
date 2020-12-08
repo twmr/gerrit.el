@@ -18,9 +18,17 @@
 ;;             comments:
 (require 'gerrit-rest)
 
-(defun gerrit-section--filter (message-info)
-  (or (s-starts-with? "jenkins" (alist-get 'name (alist-get 'author message-info)))
-      (s-ends-with? "/verify" (alist-get 'message message-info))))
+(defun gerrit-section-filter (message-info)
+  "Filter function run for every gerrit comment.
+
+This function is called for every comment MESSAGE-INFO
+of a gerrit change.  If the function returns t, the comment is
+shown in the section buffer."
+  ;; If you don't want to see messages from jenkins or comments that start
+  ;; with /verify use this code:
+  ;; (not (or (s-starts-with? "jenkins" (alist-get 'name (alist-get 'author message-info)))
+  ;;     (s-ends-with? "/verify" (alist-get 'message message-info)))))
+  t)
 
 (defun gerrit-section--insert-change-comments (change-info)
   (let ((changenr (alist-get '_number change-info))
@@ -43,9 +51,9 @@
       (when-let (commit-restlines (cdr (s-split-up-to "\n" latest-commit-message 1)))
         (insert (s-trim-left (s-join "\n" commit-restlines))))
 
-      (cl-loop for message-info in (cl-remove-if #'gerrit-section--filter
-                                                 (gerrit-rest-change-get-messages
-                                                  changenr))
+      (cl-loop for message-info in (cl-remove-if-not #'gerrit-section-filter
+                                                     (gerrit-rest-change-get-messages
+                                                      changenr))
                do
                (let* ((name (alist-get 'name (alist-get 'author message-info)))
                       (date (gerrit--format-abbrev-date (alist-get 'date message-info)))
