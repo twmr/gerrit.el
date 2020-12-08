@@ -48,9 +48,9 @@ shown in the section buffer."
     (magit-insert-section (gerrit-change changenr)
       ;; projectname: First line of commit msg, maybe owner
       (magit-insert-heading
-        (propertize (format "[%s] " changenr) 'face 'magit-hash)
+        (propertize (format "[%s] " changenr) 'font-lock-face 'magit-hash)
         (concat project " ")
-        (propertize subject 'face 'magit-section-heading))
+        (propertize subject 'font-lock-face 'magit-section-heading))
 
       ;; maybe when-let can be removed, since all commit
       ;; messages are multiline (they include a Change-Id line)
@@ -66,46 +66,36 @@ shown in the section buffer."
                       (msg (s-lines (alist-get 'message message-info)))
                       ;; I'm sure firstline and restlines can be determined in a better way
                       (firstline (car msg))
-                      (restlines (s-join "\n" (cdr msg))))
+                      (restlines (s-join "\n" (cdr msg)))
+                      (heading (format comment-fmt ;; authorname, first line of message, date
+                                       (propertize name 'font-lock-face
+                                                   'magit-section-secondary-heading)
+                                       (s-replace  "Patch Set " "PS" firstline)
+                                       (propertize date 'font-lock-face 'magit-log-date))))
+
                  (magit-insert-section (gerrit-comments)
+                     (let ((boundary 0))
+                       (when (string-match "Code-Review\[+-\]\[12\]" heading boundary)
+                         (setq boundary (match-end 0))
+                         (magit--put-face (match-beginning 0) boundary
+                                          (if (s-match ".*\\+\[12\]$" (match-string-no-properties 0 heading))
+                                              'magit-diff-added-highlight
+                                            'magit-diff-removed-highlight)
+                                          heading))
+                       (setq boundary 0)
+                       (when (string-match "Verified\[+-\]\[12\]" heading boundary)
+                         (setq boundary (match-end 0))
+                         (magit--put-face (match-beginning 0) boundary
+                                          (if (s-match ".*\\+\[1\]$" (match-string-no-properties 0 heading))
+                                              'magit-diff-added-highlight
+                                            'magit-diff-removed-highlight)
+                                          heading)))
 
-                   (magit-insert-heading
-                     (format comment-fmt ;; authorname, first line of messsage, date
-                             (propertize name 'font-lock-face
-                                         'magit-section-secondary-heading)
-                             ;; replace some strings in firstline: e.g.
-                             ;; DONE Patch Set \d+ -> PS\d+
-                             ;; DONE Code-Review:+2 -> (propertize "✔" 'face 'gerrit-success)
+                     (magit-insert-heading heading)
 
-                             ;;
-
-                             ;; replace-match((propertize "+1" 'face 'gerrit-success) t t #("Code-Review+1" 0 13 (face gerrit-fail)) nil)
-                             ;; replace-regexp-in-string("\\(?:Code-Review\\(?:\\+[12]\\|-[12]\\)\\|\\(?:Patch S\\|patch s\\)et \\)" #f(compiled-function (it) #<bytecode 0x1e0332ac5e2b>) #("Patch Set 1: Code-Review+1" 0 26 (face gerrit-fail)) t t)
-
-                             ;; (s-replace-all
-                             ;;  '(
-                             ;;    ("patch set " . "PS")
-                             ;;    ("Patch Set " . "PS")
-                             ;;    ("Code-Review+2" . (propertize "✔" 'face 'gerrit-success))
-                             ;;    ("Code-Review-1" . (propertize "-1" 'face 'gerrit-fail))
-                             ;;    ("Code-Review+1" . (propertize "+1" 'face 'gerrit-success))
-                             ;;    ("Code-Review-2" . (propertize "-2" 'face 'gerrit-fail))
-                             ;;    )
-                             ;;  (propertize firstline 'face 'gerrit-fail))
-                             ;; TODO use the above version (once the bug in s.el is fixed)
-                             (s-replace "Verified-1" (propertize "VR-1" 'face 'gerrit-fail)
-                                        (s-replace "Verified+1" (propertize "VR+1" 'face 'gerrit-success)
-                                                   (s-replace "Code-Review+1" (propertize "CR+1" 'face 'gerrit-success)
-                                                              (s-replace
-                                                               "Code-Review+2" (propertize "CR✔" 'face 'gerrit-success)
-                                                               (s-replace "Patch Set " "PS" firstline)))))
-
-                             (propertize date 'face 'magit-log-date)
-                             ))
-
-                   ;; only show the rest of the message if the message is multi-line
-                   (unless (s-blank? restlines)
-                     (insert (concat restlines "\n")))))))))
+                     ;; only show the rest of the message if the message is multi-line
+                     (unless (s-blank? restlines)
+                       (insert (concat restlines "\n")))))))))
 
 (defun gerrit-section--info (topicname changenr)
   (with-current-buffer (get-buffer-create "*gerrit-section*")
