@@ -74,6 +74,7 @@ shown in the section buffer."
                                        (propertize date 'font-lock-face 'magit-log-date))))
 
                  (magit-insert-section (gerrit-comments)
+                   (save-match-data
                      (let ((boundary 0))
                        (when (string-match "Code-Review\[+-\]\[12\]" heading boundary)
                          (setq boundary (match-end 0))
@@ -89,13 +90,13 @@ shown in the section buffer."
                                           (if (s-match ".*\\+\[1\]$" (match-string-no-properties 0 heading))
                                               'magit-diff-added-highlight
                                             'magit-diff-removed-highlight)
-                                          heading)))
+                                          heading))))
 
-                     (magit-insert-heading heading)
+                   (magit-insert-heading heading)
 
-                     ;; only show the rest of the message if the message is multi-line
-                     (unless (s-blank? restlines)
-                       (insert (concat restlines "\n")))))))))
+                   ;; only show the rest of the message if the message is multi-line
+                   (unless (s-blank? restlines)
+                     (insert (concat restlines "\n")))))))))
 
 (defun gerrit-section--info (topicname changenr)
   (with-current-buffer (get-buffer-create "*gerrit-section*")
