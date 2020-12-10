@@ -559,8 +559,10 @@ section header."
              ("ABANDONED" "Abandoned")
              (_ "")))))
 
-    ,(or (alist-get (alist-get 'owner change-metadata) gerrit--accounts-alist) "")
-    ,(or (alist-get (alist-get 'assignee change-metadata) gerrit--accounts-alist) "")
+    ,(propertize (or (alist-get (alist-get 'owner change-metadata) gerrit--accounts-alist) "")
+                 'face 'magit-log-author)
+    ,(propertize (or (alist-get (alist-get 'assignee change-metadata) gerrit--accounts-alist) "")
+                 'face 'magit-log-author)
     ,(alist-get 'repo change-metadata)
     ,(propertize (alist-get 'branch change-metadata)
                  'face 'magit-branch-remote)
