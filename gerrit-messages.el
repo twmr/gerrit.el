@@ -69,7 +69,7 @@ shown in the section buffer."
                       (restlines (s-join "\n" (cdr msg)))
                       (heading (format comment-fmt ;; authorname, first line of message, date
                                        (propertize name 'font-lock-face
-                                                   'magit-section-secondary-heading)
+                                                   'magit-log-author)
                                        (s-replace  "Patch Set " "PS" firstline)
                                        (propertize date 'font-lock-face 'magit-log-date))))
 
