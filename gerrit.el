@@ -447,6 +447,24 @@ section header."
        ".git"
        (nth 1 (s-split ":" remote-url))))))
 
+(defun gerrit-get-changeid-from-current-commit ()
+  "Determine the changeid in from the current commit.
+
+A string like the following is returned:
+myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
+  (interactive)
+  (let ((branch (substring-no-properties (gerrit-get-upstream-branch)))
+        (project (substring-no-properties (gerrit-get-current-project)))
+        (commit-message-lines (magit-git-lines "log" "-1" "--pretty=%B")))
+    (unless
+        (s-starts-with? "Change-Id: " (car (last commit-message-lines)))
+      (error "Commit message doesn't end with a change-id"))
+    (concat (gerrit-rest--escape-project project)
+            "~"
+            branch
+            "~"
+            (s-chop-prefix "Change-Id: " (car (last commit-message-lines))))))
+
 
 
 ;; dashboard
