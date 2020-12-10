@@ -242,6 +242,14 @@ A comment MESSAGE can be provided."
                                            `((message . ,"Set using gerrit.el"))) 'utf-8)
                     (format "/changes/%s/ready" changenr)))
 
+(defun gerrit-rest-change-add-comment (changenr comment)
+  "Add a comment message COMMENT to latest version of change CHANGENR."
+  (interactive "sEnter changenr: \nsEnter comment: ")
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode-list
+                                           `((message . ,comment))) 'utf-8)
+                    (format "/changes/%s/revisions/current/review" changenr)))
+
 (defun gerrit-rest-change-get-labels (changenr)
   "Return the current labels dictionary of a change CHANGENR."
   (interactive "sEnter changenr: ")
