@@ -605,9 +605,14 @@ myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
            (gerrit-rest-change-query expression)))
 
 (defun gerrit-dashboard--entry-number ()
-  "Return the change number as a string under point."
+  "Return the change number as a string of a change under point."
   (interactive)
   (aref (tabulated-list-get-entry) 0))
+
+(defun gerrit-dashboard--topic ()
+  "Return the topicname as a string of a change under point."
+  (interactive)
+  (aref (tabulated-list-get-entry) 7))
 
 (defun gerrit-dashboard-browse-change ()
   "Open the change under point in a browser."
@@ -621,6 +626,11 @@ myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
   "Open the patch of the change under point in a new buffer."
   (interactive)
   (gerrit-rest-change-patch (gerrit-dashboard--entry-number)))
+
+(defun gerrit-dashboard-open-topic ()
+  "Open the topic information of a topic under point in a new buffer."
+  (interactive)
+  (gerrit-section-topic-info (gerrit-dashboard--topic)))
 
 (defun gerrit-dashboard-assign-change ()
   "Set assignee of the change under point."
@@ -676,6 +686,7 @@ myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
     (define-key map (kbd "g") 'gerrit-dashboard--refresh--and-point-restore)
     (define-key map (kbd "o") 'gerrit-dashboard-browse-change)
     (define-key map (kbd "RET") 'gerrit-dashboard-open-change)
+    (define-key map (kbd "t") 'gerrit-dashboard-open-topic)
     ;; <C-down> -> forward-paragraph
    map))
 
