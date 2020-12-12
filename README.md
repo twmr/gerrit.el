@@ -76,7 +76,9 @@ webinterface.  The currently supported keybindings in a dashboard buffer are
 * <kbd>A</kbd> Assign the change under point to me
 * <kbd>g</kbd> Refresh
 * <kbd>o</kbd> Open change under point in browser using `browse-url`
-* <kbd>RET</kbd> Download patch of change under point and display it in new buffer
+* <kbd>t</kbd> Switch to a buffer containing a topic-overview of the change under point
+* <kbd>RET</kbd> Download patch of change under point and display it in new
+  buffer
 
 If you want to create multiple dashboards you can create a dashboard using
 
