@@ -48,6 +48,7 @@
 (require 'hydra)
 (require 'magit)
 (require 'magit-margin) ;; for magit--age
+(require 'magit-section)
 (require 'recentf)
 (require 's)
 
@@ -143,8 +144,9 @@ Write data into the file specified by `gerrit-save-file'."
 (defun gerrit--init-accounts ()
   "Intialize `gerrit--accounts-alist`."
   (unless gerrit--accounts-alist
-    (setq gerrit--accounts-alist (gerrit-rest--get-gerrit-accounts))))
-
+    (message "Fetching gerrit accounts ...")
+    (setq gerrit--accounts-alist (gerrit-rest--get-gerrit-accounts))
+    (message "Fetched gerrit accounts (len=%d)" (length gerrit--accounts-alist))))
 
 (defun gerrit-load-lists ()
   "Load a previously saved recent list.
@@ -513,8 +515,7 @@ shown in the section buffer."
                          (format "%%-%ds %%-%ds %%%ds"
                              max-author-width
                              (- (window-width) max-author-width max-date-width 2)
-                             max-date-width
-                             ))))
+                             max-date-width))))
     (magit-insert-section (gerrit-change changenr)
       ;; projectname: First line of commit msg, maybe owner
       (magit-insert-heading

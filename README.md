@@ -12,9 +12,10 @@ tool to add support for
 * creating a dashboard  (`gerrit-dashboard`).
 
 The emacs interfaces for uploading and downloading changes require
-`git-review` and are implemented using the great
-[hydra](https://github.com/abo-abo/hydra) package. In the case of the
-`gerrit-upload` hydra it is possible to
+`git-review` (There are plans to get rid of this dependency - see
+[#10](https://github.com/thisch/gerrit.el/issues/10)) and are implemented
+using the great [hydra](https://github.com/abo-abo/hydra) package. In the
+case of the `gerrit-upload` hydra it is possible to
 
 * specify reviewers
 * set an assignee
@@ -66,6 +67,8 @@ variables have to be set:
 
 ![gerrit-upload](https://user-images.githubusercontent.com/206581/88589947-356a1480-d05a-11ea-8964-e7d0b4bc8a18.png)
 
+![gerrit-section-change-info](https://user-images.githubusercontent.com/206581/101976331-9dee1280-3c44-11eb-8d01-629d3634da43.png)
+
 ## Dashboards
 
 `gerrit-dashboard` displays a dashboard similar to the one in the gerrit
@@ -75,7 +78,9 @@ webinterface.  The currently supported keybindings in a dashboard buffer are
 * <kbd>A</kbd> Assign the change under point to me
 * <kbd>g</kbd> Refresh
 * <kbd>o</kbd> Open change under point in browser using `browse-url`
-* <kbd>RET</kbd> Download patch of change under point and display it in new buffer
+* <kbd>t</kbd> Switch to a buffer containing a topic-overview of the change under point
+* <kbd>RET</kbd> Download patch of change under point and display it in new
+  buffer
 
 If you want to create multiple dashboards you can create a dashboard using
 
