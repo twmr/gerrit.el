@@ -48,6 +48,7 @@
 (require 'hydra)
 (require 'magit)
 (require 'magit-margin) ;; for magit--age
+(require 'magit-section)
 (require 'recentf)
 (require 's)
 
