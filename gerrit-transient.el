@@ -24,7 +24,8 @@
 (define-transient-command gerrit-upload-transient ()
   "Test Transient Title"
   ["Arguments"
-   ("r" "Add reviewer" "reviewers=") ;; TODO multi-value
+   ;; ("r" "Add reviewer" "reviewers=") ;; TODO multi-value
+   (gerrit-upload:--reviewers)
    ;; ("a" "Assignee" "assignee")
    (gerrit-upload:--assignee)
    ("w" "Work in Progress" "wip")
@@ -34,6 +35,40 @@
   ]
   ["Actions"
    ("u" "Upload" gerrit-upload--action)])
+
+(defclass reviewer-option (transient-option) ()
+  "Class used for command-line argument that can take a value.")
+
+(cl-defmethod transient-infix-value ((obj reviewer-option))
+  "Return (concat ARGUMENT VALUE) or nil.
+
+ARGUMENT and VALUE are the values of the respective slots of OBJ.
+If VALUE is nil, then return nil.  VALUE may be the empty string,
+which is not the same as nil."
+  (when-let ((value (oref obj value)))
+    (if (listp value) (setq value (string-join value ",")))
+    (concat (oref obj argument) value)))
+
+(transient-define-argument gerrit-upload:--reviewers ()
+  :description "Reviewers"
+  :class 'reviewer-option
+  :key "r"
+  :argument "reviewers="
+  :format " %k %v"
+  :multi-value t
+  :reader 'gerrit-upload:--read-reviewers)
+
+(defun gerrit-upload:--read-reviewers (prompt _initial-input history)
+  (gerrit--init-accounts)
+  (completing-read-multiple
+   prompt
+   (seq-map #'cdr gerrit--accounts-alist) ;; usernames
+   nil nil
+   nil))
+   ;; (mapconcat (lambda (ref)
+   ;;              ref)
+   ;;            (magit-get-all "notes.displayRef")
+   ;;            ",")))
 
 (transient-define-argument gerrit-upload:--assignee ()
   :description "Assignee"
@@ -50,44 +85,31 @@
   :reader 'gerrit-upload:--read-topic)
 
 (defun gerrit-upload:--read-assignee (prompt _initial-input history)
-  (message "GRA: %s %s %s" prompt _initial-input (symbol-value history))
-  (--when-let (magit-completing-read
-               prompt
-               (magit-list-notes-refnames)
-               nil
-               nil
-               nil ;; default value
-               ;; (--when-let (magit-get "core.notesRef")
-               ;;   (if (string-prefix-p "refs/notes/" it)
-               ;;       (substring it 11)
-               ;;     it))
-               history)
-    it))
-
-(defun gerrit-upload:--read-assignee (prompt _initial-input history)
   (gerrit--init-accounts)
-  (gerrit--read-assignee))
+  ;; (gerrit--read-assignee) this doesn't update the history
+
+  ;; using the history here doesn't have an effect (maybe it doesn, but for
+  ;; ivy-completing-read it doesnt)
+  (completing-read
+   prompt
+   (seq-map #'cdr gerrit--accounts-alist) ;; usernames
+   nil ;; predicate
+   t ;; require match
+   nil ;; initial ;; Maybe it makes sense to use the last/first history element here
+   history ;; hist (output only?)
+   ;; def
+   nil))
 
 (defun gerrit-upload:--read-topic (prompt _initial-input history)
-  (message "GRT: %s %s %s" prompt _initial-input (symbol-value history))
+  ;; (message "GRT: %s %s %s" prompt _initial-input (symbol-value history))
   ;; (gerrit-upload-completing-set
   ;;                          "Topic: "
   ;;                          gerrit-upload-topic-history))
-  (let ((value (completing-read
-                prompt
-                (symbol-value history);;nil
-                nil nil nil
-                history)))
-    value))
-     ;;            nil
-     ;;             nil ;;(car ,history)
 
-     ;;             )))
-     ;; ;; (unless (equal "" value)
-     ;; ;;   ;; todo simplify the duplicate handling
-     ;; ;;   (push value ,history)
-     ;; ;;   (setq ,history (cl-remove-duplicates ,history :test 'string=)))
-     ;; value))
-
+  (completing-read
+   prompt
+   (symbol-value history)
+   nil nil nil
+   history))
 
 (gerrit-upload-transient)
