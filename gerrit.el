@@ -497,6 +497,18 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
     (verified . ,(caar (gerrit--alist-get-recursive
                         'labels 'Verified change)))))
 
+(defun gerrit--format-abbrev-date (datestr)
+  "Convert DATESTR to pretty relative time (eg. 3min ago)."
+  ;; take a look at magit-log-format-author-margin (style = age-abbreviated)
+  (let ((abbr t))
+    (apply #'format (if abbr "%2i%c ago" "%s %s ago")
+           (magit--age
+            (float-time
+             (apply #'encode-time
+                    (parse-time-string
+                     datestr)))
+            abbr))))
+
 (defun gerrit-dashboard--change-metadata-2-entry (change-metadata)
   `[,(propertize
       (number-to-string (alist-get 'number change-metadata))
@@ -522,16 +534,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
     ,(propertize (or (alist-get 'topic change-metadata) "")
                  'face 'magit-tag)
 
-    ;; convert datetime str to pretty relative time (eg. 3min ago)
-    ;; take a look at  magit-log-format-author-margin (style = age-abbreviated)
-    ,(let ((abbr t))
-       (apply #'format (if abbr "%2i%c ago" "%s %s ago")
-            (magit--age
-             (float-time
-              (apply #'encode-time
-                     (parse-time-string
-                      (alist-get 'updated change-metadata))))
-             abbr)))
+    ,(gerrit--format-abbrev-date (alist-get 'updated change-metadata))
 
     ;; TODO finish this
     ,(if (< (+ (alist-get 'deletions change-metadata)
