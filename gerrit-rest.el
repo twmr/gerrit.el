@@ -113,6 +113,18 @@ down the URL structure to send the request."
   (interactive)
   (gerrit-rest-sync "GET" nil "/config/server/info"))
 
+(defun gerrit-rest-get-change-info (changenr)
+  "Return information about an open change with CHANGENR."
+  (interactive "sEnter a changenr name: ")
+  (let* ((req (concat "/changes/"
+                      changenr
+                      "?o=DOWNLOAD_COMMANDS&"
+                      "o=CURRENT_REVISION&"
+                      "o=CURRENT_COMMIT&"
+                      "o=DETAILED_LABELS&"
+                      "o=DETAILED_ACCOUNTS")))
+         (gerrit-rest-sync "GET" nil req)))
+
 (defun gerrit-rest-get-topic-info (topicname)
   "Return information about an open topic with TOPICNAME."
   ;; TODO create new buffer and insert stuff there
@@ -138,15 +150,6 @@ down the URL structure to send the request."
               (gerrit-rest-sync "GET" nil "/accounts/?q=is:active&o=DETAILS&S=0"))
     (error '())))
 
-(defun gerrit-rest--set-assignee (changenr assignee)
-  "Set the assignee to ASSIGNEE of a change with nr CHANGENR."
-  (interactive "sEnter a changenr: \nsEnter assignee: ")
-  ;; TODO error handling?
-  (gerrit-rest-sync "PUT"
-                    (encode-coding-string (json-encode-list
-                                           `((assignee . ,assignee))) 'utf-8)
-                    (format "/changes/%s/assignee"  changenr)))
-
 (defun gerrit-rest-open-reviews-for-project (project)
   "Return list of open reviews returned for the project PROJECT."
   (interactive "sEnter gerrit project: ")
@@ -162,6 +165,26 @@ down the URL structure to send the request."
          (resp (gerrit-rest-sync "GET" nil req)))
     ;; (setq open-reviews-response resp) ;; for debugging only (use M-x ielm)
     resp))
+
+
+;; change commands
+
+(defun gerrit-rest-change-set-assignee (changenr assignee)
+  "Set the assignee to ASSIGNEE of a change with nr CHANGENR."
+  (interactive "sEnter a changenr: \nsEnter assignee: ")
+  ;; TODO error handling?
+  (gerrit-rest-sync "PUT"
+                    (encode-coding-string (json-encode-list
+                                           `((assignee . ,assignee))) 'utf-8)
+                    (format "/changes/%s/assignee"  changenr)))
+
+(defun gerrit-rest-change-get-messages (changenr)
+  ;; note that filenames are returned as symbols
+  (gerrit-rest-sync "GET" nil (format "/changes/%s/messages" changenr)))
+
+(defun gerrit-rest-change-get-comments (changenr)
+  ;; note that filenames are returned as symbols
+  (gerrit-rest-sync "GET" nil (format "/changes/%s/comments" changenr)))
 
 (defun gerrit-rest-change-set-vote (changenr vote message)
   "Set a Code-Review vote VOTE of a change CHANGENR.
@@ -201,33 +224,20 @@ A comment MESSAGE can be provided."
                                            `((message . ,"Set using gerrit.el"))) 'utf-8)
                     (format "/changes/%s/ready" changenr)))
 
+(defun gerrit-rest-change-add-comment (changenr comment)
+  "Add a comment message COMMENT to latest version of change CHANGENR."
+  (interactive "sEnter changenr: \nsEnter comment: ")
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode-list
+                                           `((message . ,comment))) 'utf-8)
+                    (format "/changes/%s/revisions/current/review" changenr)))
+
 (defun gerrit-rest-change-get-labels (changenr)
   "Return the current labels dictionary of a change CHANGENR."
   (interactive "sEnter changenr: ")
   (let* ((req (format "/changes/%s/revisions/current/review" changenr))
          (resp (gerrit-rest-sync "GET" nil req)))
     (assoc 'labels (cdr resp))))
-
-;;  topic commands
-
-(defun gerrit-rest-topic-set-vote (topic vote message)
-  "Set a Code-Review vote VOTE for all changes of a topic TOPIC.
-A comment MESSAGE can be provided."
- (interactive "sEnter a topic: \nsEnter vote [-2, -1, 0, +1, +2]: \nsEnter message: ")
- (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
-          (let ((changenr (cdr (assoc 'change_id (cdr change-info)))))
-            (message "Setting vote %s for %s" vote changenr)
-            (gerrit-rest-change-set-vote changenr vote message)
-            )))
-
-(defun gerrit-rest-topic-verify (topic vote message)
-  "Verify a topic TOPIC by voting with VOTE.
-A comment MESSAGE can be provided."
- (interactive "sEnter a topic: \nsEnter vote [-1, 0, +1]: \nsEnter message: ")
- (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
-          (let ((changenr (cdr (assoc 'change_id (cdr change-info)))))
-            (message "Setting Verify-vote %s for %s" vote changenr)
-            (gerrit-rest-change-verify changenr vote message))))
 
 (defun gerrit-rest-change-query (expression)
   "Return information about changes that match EXPRESSION."
@@ -250,7 +260,7 @@ A comment MESSAGE can be provided."
 (defun gerrit-rest-change-patch (changenr)
   "Download latest patch of change with CHANGENR and open it in new buffer."
   (interactive "sEnter changenr: ")
-  ;; does not return json, therefore we don't use `gerrit-rest-sync`
+  ;; does not return json
   (let ((url-request-method "GET")
         (url-request-extra-headers
          `(("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
@@ -272,6 +282,36 @@ A comment MESSAGE can be provided."
         (diff-mode)))
 
     (switch-to-buffer gerrit-patch-buffer)))
+
+
+;;  topic commands
+
+(defun gerrit-rest-topic-set-assignee (topic assignee)
+  "Set the ASSIGNEE of all changes of a TOPIC."
+ (interactive "sEnter a topic: \nsEnter assignee: ")
+ (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
+          (let ((changenr (alist-get 'change_id change-info)))
+            (message "Setting assignee %s for %s" assignee changenr)
+            (gerrit-rest-change-set-assignee changenr assignee))))
+
+(defun gerrit-rest-topic-set-vote (topic vote message)
+  "Set a Code-Review vote VOTE for all changes of a topic TOPIC.
+A comment MESSAGE can be provided."
+ (interactive "sEnter a topic: \nsEnter vote [-2, -1, 0, +1, +2]: \nsEnter message: ")
+ (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
+          (let ((changenr (alist-get 'change_id change-info)))
+            (message "Setting vote %s for %s" vote changenr)
+            (gerrit-rest-change-set-vote changenr vote message)
+            )))
+
+(defun gerrit-rest-topic-verify (topic vote message)
+  "Verify a topic TOPIC by voting with VOTE.
+A comment MESSAGE can be provided."
+ (interactive "sEnter a topic: \nsEnter vote [-1, 0, +1]: \nsEnter message: ")
+ (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
+          (let ((changenr (alist-get 'change_id change-info)))
+            (message "Setting Verify-vote %s for %s" vote changenr)
+            (gerrit-rest-change-verify changenr vote message))))
 
 (provide 'gerrit-rest)
 
