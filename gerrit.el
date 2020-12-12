@@ -462,8 +462,7 @@ shown in the section buffer."
                          (format "%%-%ds %%-%ds %%%ds"
                              max-author-width
                              (- (window-width) max-author-width max-date-width 2)
-                             max-date-width
-                             ))))
+                             max-date-width))))
     (magit-insert-section (gerrit-change changenr)
       ;; projectname: First line of commit msg, maybe owner
       (magit-insert-heading
