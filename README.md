@@ -67,6 +67,8 @@ variables have to be set:
 
 ![gerrit-upload](https://user-images.githubusercontent.com/206581/88589947-356a1480-d05a-11ea-8964-e7d0b4bc8a18.png)
 
+![gerrit-section-change-info](https://user-images.githubusercontent.com/206581/101976331-9dee1280-3c44-11eb-8d01-629d3634da43.png)
+
 ## Dashboards
 
 `gerrit-dashboard` displays a dashboard similar to the one in the gerrit
