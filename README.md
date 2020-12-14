@@ -4,15 +4,17 @@
 gerrit.el
 =========
 
-This package uses the gerrit REST interface and the `git-review` CLI
-tool to add support for
+Gerrit is a great code review tool and a great git hosting serivce. This
+package provides an emacs interface for
 
 * uploading changes (`gerrit-upload-transient` or the legacy `gerrit-upload`)
 * downloading changes (`gerrit-download-new` or the legacy `gerrit-download`)
-* creating a dashboard  (`gerrit-dashboard`).
+* creating a dashboard  (`gerrit-dashboard`)
+* creating buffers that contain details about gerrit topics an gerrit
+  changes (`gerrit-section-topic-info` and `gerrit-section-change-info`).
 
 The function `gerrit-upload-transient` uses the `transient` package and in
-addition to uploading new changes (and new patchsets) it provides to
+addition to uploading new changes (and new patchsets) it provides the
 following features
 
 * specify reviewers
@@ -21,8 +23,8 @@ following features
 * set WIP flag
 * set a ready-for-review flag
 
-This package also contains a minimalistic open-reviews status-section
-(`gerrit-magit-insert-status`) for magit status buffers.
+Furthermore, a minimalistic open-reviews status-section
+(`gerrit-magit-insert-status`) for magit status buffers is available.
 
 This code is tested using gerrit=2.16 and the gerrit version used on
 `review.gerrithub.org`.
