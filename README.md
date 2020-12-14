@@ -7,26 +7,34 @@ gerrit.el
 This package uses the gerrit REST interface and the `git-review` CLI
 tool to add support for
 
-* uploading changes (`gerrit-upload`)
-* downloading changes (`gerrit-download`)
+* uploading changes (`gerrit-upload-transient` or the legacy `gerrit-upload`)
+* downloading changes (`gerrit-download-new` or the legacy `gerrit-download`)
 * creating a dashboard  (`gerrit-dashboard`).
 
-The emacs interfaces for uploading and downloading changes require
-`git-review` (There are plans to get rid of this dependency - see
-[#10](https://github.com/thisch/gerrit.el/issues/10)) and are implemented
-using the great [hydra](https://github.com/abo-abo/hydra) package. In the
-case of the `gerrit-upload` hydra it is possible to
+The function `gerrit-upload-transient` uses the `transient` package and in
+addition to uploading new changes (and new patchsets) it provides to
+following features
 
 * specify reviewers
 * set an assignee
 * set a topic name
 * set WIP flag
-* specify custom parameters for `git-review`.
+* set a ready-for-review flag
 
 This package also contains a minimalistic open-reviews status-section
 (`gerrit-magit-insert-status`) for magit status buffers.
 
-This code is tested using git-review=0.27 and gerrit=2.16.
+This code is tested using gerrit=2.16 and the gerrit version used on
+`review.gerrithub.org`.
+
+## Legacy git-review functions and new style REST-based functions
+
+Initially this package depended on the `git-review` command line tool, which
+was used for downloading and uploading gerrit changes. The functions are
+still provided but the are no longer actively updated. The recommended
+interface for downloading gerrit changes is `gerrit-download-new` and for
+uploading there is a `transient` called `gerrit-upload-transient`. Both of
+them no longer depend on `git-review`, but use the REST-API instead.
 
 ## Installation
 
@@ -47,8 +55,8 @@ Example `use-package` config
   :config
   (progn
     (add-hook 'magit-status-sections-hook #'gerrit-magit-insert-status t)
-    (global-set-key (kbd "C-x i") 'gerrit-upload)
-    (global-set-key (kbd "C-x o") 'gerrit-download)))
+    (global-set-key (kbd "C-x i") 'gerrit-upload-transient)
+    (global-set-key (kbd "C-x o") 'gerrit-download-new)))
 ```
 
 In the case of the gerrit server [review.opendev.org](https://review.opendev.org), the following
