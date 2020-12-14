@@ -1,6 +1,7 @@
 (defun gerrit-section-insert-comments ()
   (magit-insert-section (toplevel) ; without this, I can't toggle the repo
                                         ; sections for some reason.
+    (insert "This is a gerrit section demo\n") ;; without this line pressing "1" doesn't collapse all the sections ...
     (cl-loop for changename in '("chg1" "chg2") do
              (magit-insert-section (gerrit-change changename)
                (magit-insert-heading changename)
@@ -33,4 +34,5 @@
       (let ((inhibit-read-only t))
         (erase-buffer)
         (magit-section-mode)
-        (gerrit-section-insert-comments)))))
+        (gerrit-section-insert-comments))
+      (switch-to-buffer-other-window (current-buffer)))))
