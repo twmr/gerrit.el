@@ -336,15 +336,14 @@ which is not the same as nil."
 
 (defun gerrit-upload:--read-reviewers (prompt _initial-input history)
   (gerrit--init-accounts)
-  (let ((val
+  ;; FIXME the sorting order here seems to be different than the one used in
+  ;; completing-read! Maybe this is just an ivy issue
   (completing-read-multiple
    prompt
    (seq-map #'cdr gerrit--accounts-alist) ;; usernames
    nil
    nil
-   nil)))
-    ;; (message "%s" val)
-    val))
+   nil))
 
 (transient-define-argument gerrit-upload:--assignee ()
   :description "Assignee"
@@ -366,8 +365,6 @@ which is not the same as nil."
 
   ;; using the history here doesn't have an effect (maybe it does, but for
   ;; ivy-completing-read it doesn't)
-  ;; FIXME the sorting order here seems to be different than the one used in
-  ;; completing-read! Maybe this is just an ivy issue
   (completing-read
    prompt
    (seq-map #'cdr gerrit--accounts-alist) ;; usernames
