@@ -288,7 +288,6 @@ A section in the respective process buffer is created."
                    ((string= "wip" arg)
                     (push "wip" push-opts))
                    (t
-                    ;; TODO error
                     (error (format "no match for arg: %s" arg)))))
 
     (when push-opts
