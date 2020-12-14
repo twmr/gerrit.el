@@ -238,38 +238,6 @@ A section in the respective process buffer is created."
 (defun gerrit-upload--get-refspec ()
   (concat "refs/for/" (gerrit-get-upstream-branch)))
 
-(defun gerrit-upload--new (assignee reviewers topic ready-for-review wip)
-  "Push the current changes/commits to the gerrit server and set metadata."
-
-  (gerrit--ensure-commit-msg-hook-exists)
-  ;; TODO check that all to-be-uploaded commits have a changeid line
-
-  (let ((remote (gerrit-get-remote))
-        (refspec (gerrit-upload--get-refspec)))
-    ;; there are a bunch of push options that are supported by gerrit:
-    ;; https://gerrit-review.googlesource.com/Documentation/user-upload.html#push_options
-    (let ((push-opts nil))
-      (unless (equal "" topic)
-        (push (concat "topic=" topic) push-opts))
-      (when ready-for-review
-        (push "ready" push-opts))
-      (when wip
-        (push "wip" push-opts))
-
-      (cl-loop for reviewer in reviewers do
-               ;; TODO check that reviewers are valid (by checking that all
-               ;; reviewers don't contain a white-space)
-               (push (concat "r=" reviewer) push-opts))
-
-      (when push-opts
-        (setq refspec (concat refspec "%" (s-join "," push-opts)))))
-
-    (gerrit-push-and-assign
-     assignee
-     "--no-follow-tags"
-     remote
-     (concat "HEAD:" refspec))))
-
 ;; The transient history is saved when the kill-emacs-hook is run, which is
 ;; run when (kill-emacs) is called. Make sure that you run kill-emacs when
 ;; you stop emacs (or restart an emacs (systemd) service).  Note that
@@ -289,9 +257,48 @@ A section in the respective process buffer is created."
 ;; to work!).
 
 (defun gerrit-upload--action (&optional args)
+  "Push the current changes/commits to the gerrit server and set metadata."
   (interactive
    (list (transient-args 'gerrit-upload-transient)))
-  (message "args: %s" args))
+
+  (gerrit--ensure-commit-msg-hook-exists)
+  ;; TODO check that all to-be-uploaded commits have a changeid line
+
+  (let (assignee
+        push-opts
+        (remote (gerrit-get-remote))
+        (refspec (gerrit-upload--get-refspec)))
+    ;; there are a bunch of push options that are supported by gerrit:
+    ;; https://gerrit-review.googlesource.com/Documentation/user-upload.html#push_options
+
+    ;; I don't like this handling of transient-args, maybe transient can
+    ;; pass alists to gerrit-upload--action istead of a list os strings
+    (cl-loop for arg in args do
+             (cond ((s-starts-with? "reviewers=" arg)
+                    (cl-loop for reviewer in (s-split "," (s-chop-prefix "reviewers=" arg)) do
+                             ;; TODO check that reviewers are valid (by checking that all
+                             ;; reviewers don't contain a white-space)
+                             (push (concat "r=" reviewer) push-opts)))
+                   ((s-starts-with? "assignee=" arg)
+                    (setq assignee (s-chop-prefix "assignee=" arg)))
+                   ((s-starts-with? "topic=" arg)
+                    (push  arg push-opts))
+                   ((string= "ready" arg)
+                    (push "ready" push-opts))
+                   ((string= "wip" arg)
+                    (push "wip" push-opts))
+                   (t
+                    ;; TODO error
+                    (error (format "no match for arg: %s" arg)))))
+
+    (when push-opts
+      (setq refspec (concat refspec "%" (s-join "," push-opts))))
+
+    (gerrit-push-and-assign
+     assignee
+     "--no-follow-tags"
+     remote
+     (concat "HEAD:"  refspec))))
 
 (define-transient-command gerrit-upload-transient ()
   "Transient used for uploading changes to gerrit"
@@ -383,32 +390,7 @@ which is not the same as nil."
    nil nil nil
    history))
 
-(defhydra hydra-gerrit-upload-new-v1 (:color amaranth ;; foreign-keys warning, blue heads exit hydra
-                                             :hint nil ;; show hint in the echo area
-                                             :columns 1
-                                             :body-pre (progn
-                                                         (gerrit-load-lists)
-                                                         (setq gerrit-last-topic "")
-                                                         (setq gerrit-last-reviewers nil)
-                                                         (setq gerrit-last-assignee "")
-                                                         (setq gerrit-upload-ready-for-review nil))
-                                             :after-exit (gerrit-save-lists))
-  "
-gerrit-upload-new:
-"
-  ("r" gerrit-upload-add-reviewer "Add reviewer")
-  ("R" gerrit-upload-remove-reviewer "Remove reviewer")
-  ("a" gerrit-upload-set-assignee "Set assignee")
-  ("t" gerrit-upload-set-topic "Set topic")
-  ("v" gerrit-upload-toggle-ready-for-review "Toggle ready-for-review")
-  ("G" (lambda () (interactive) (gerrit-upload--new
-                            gerrit-last-assignee
-                            gerrit-last-reviewers
-                            gerrit-last-topic
-                            gerrit-upload-ready-for-review
-                            nil))  "Upload" :color blue))
-
-(defalias 'gerrit-upload-new #'hydra-gerrit-upload-new-v1/body)
+(defalias 'gerrit-upload-new #'gerrit-upload-transient)
 
 (provide 'gerrit-gitreviewless)
 ;;; gerrit-gitreviewless.el ends here
