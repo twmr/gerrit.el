@@ -207,7 +207,7 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
                      "--set-upstream-to" (format "%s/%s" (gerrit-get-remote) change-branch)
                      local-branch))))
 
-(defun gerrit-download-new-v3 ()
+(defun gerrit-download-new ()
   "Download change from the gerrit server."
   (interactive)
   (gerrit--init-accounts)
