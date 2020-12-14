@@ -256,7 +256,7 @@ A section in the respective process buffer is created."
 ;; reader is specified, the history parameter needs to be updated for this
 ;; to work!).
 
-(defun gerrit-upload--action (&optional args)
+(defun gerrit-upload:--action (&optional args)
   "Push the current changes/commits to the gerrit server and set metadata."
   (interactive
    (list (transient-args 'gerrit-upload-transient)))
@@ -310,7 +310,7 @@ A section in the respective process buffer is created."
    (gerrit-upload:--topic)
   ]
   ["Actions"
-   ("u" "Upload" gerrit-upload--action)])
+   ("u" "Upload" gerrit-upload:--action)])
 
 ;; TODO ask on github why a subclass of transient option is needed.
 (defclass gerrit-multivalue-option (transient-option) ())
