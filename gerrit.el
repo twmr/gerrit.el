@@ -371,7 +371,7 @@ which is not the same as nil."
   :multi-value t
   :reader 'gerrit-upload:--read-reviewers)
 
-(defun gerrit-upload:--read-reviewers (prompt _initial-input history)
+(defun gerrit-upload:--read-reviewers (prompt _initial-input _history)
   (gerrit--init-accounts)
   ;; FIXME the sorting order here seems to be different than the one used in
   ;; completing-read! Maybe this is just an ivy issue
