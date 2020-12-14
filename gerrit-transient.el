@@ -36,10 +36,9 @@
   ["Actions"
    ("u" "Upload" gerrit-upload--action)])
 
-(defclass reviewer-option (transient-option) ()
-  "Class used for command-line argument that can take a value.")
+(defclass gerrit-multivalue-option (transient-option) ())
 
-(cl-defmethod transient-infix-value ((obj reviewer-option))
+(cl-defmethod transient-infix-value ((obj gerrit-multivalue-option))
   "Return (concat ARGUMENT VALUE) or nil.
 
 ARGUMENT and VALUE are the values of the respective slots of OBJ.
@@ -51,20 +50,24 @@ which is not the same as nil."
 
 (transient-define-argument gerrit-upload:--reviewers ()
   :description "Reviewers"
-  :class 'reviewer-option
+  :class 'gerrit-multivalue-option
   :key "r"
   :argument "reviewers="
-  :format " %k %v"
+  ;; :format " %k %v"
   :multi-value t
   :reader 'gerrit-upload:--read-reviewers)
 
 (defun gerrit-upload:--read-reviewers (prompt _initial-input history)
   (gerrit--init-accounts)
+  (let ((val
   (completing-read-multiple
    prompt
    (seq-map #'cdr gerrit--accounts-alist) ;; usernames
-   nil nil
-   nil))
+   nil
+   nil
+   nil)))
+    (message "%s" val)
+    val))
    ;; (mapconcat (lambda (ref)
    ;;              ref)
    ;;            (magit-get-all "notes.displayRef")
