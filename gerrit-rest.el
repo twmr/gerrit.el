@@ -186,24 +186,6 @@ down the URL structure to send the request."
   ;; note that filenames are returned as symbols
   (gerrit-rest-sync "GET" nil (format "/changes/%s/comments" changenr)))
 
-(defun gerrit-rest-change-formatted-comments (changenr)
-  "WIP. TODO move this to gerrit.el?"
-  (interactive "sEnter a changenr: ")
-  (s-join "\n"
-  (cl-loop for (filename . filecomments) in
-           (gerrit-rest-change-get-comments changenr)
-           collect
-           (concat (format "fname: %s\n------------\n"
-                           filename)
-           (s-join "\n" (cl-loop for comment in filecomments
-                    collect
-                    (let* ((author (gerrit--alist-get-recursive 'author 'name comment))
-                           (msg (alist-get 'message comment)))
-                      (format "%s: %s"
-                              author
-                              msg
-                              ))))))))
-
 (defun gerrit-rest-change-set-vote (changenr vote message)
   "Set a Code-Review vote VOTE of a change CHANGENR.
 A comment MESSAGE can be provided."
@@ -321,12 +303,6 @@ A comment MESSAGE can be provided."
             (message "Setting vote %s for %s" vote changenr)
             (gerrit-rest-change-set-vote changenr vote message)
             )))
-
-(defun gerrit-rest-topic-formatted-comments (topic)
-  ;; WIP
-  (interactive "sEnter a topic: ")
-  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) collect
-           (gerrit-rest-change-formatted-comments (alist-get 'change_id change-info))))
 
 (defun gerrit-rest-topic-verify (topic vote message)
   "Verify a topic TOPIC by voting with VOTE.
