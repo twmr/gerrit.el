@@ -7,15 +7,15 @@ gerrit.el
 Gerrit is a great code review tool and a great git hosting serivce. This
 package provides an emacs interface for
 
-* uploading changes (`gerrit-upload-transient` or the legacy `gerrit-upload`)
-* downloading changes (`gerrit-download-new` or the legacy `gerrit-download`)
+* uploading changes (`gerrit-upload`)
+* downloading changes (`gerrit-download`)
 * creating a dashboard  (`gerrit-dashboard`)
 * creating buffers that contain details about gerrit topics an gerrit
   changes (`gerrit-section-topic-info` and `gerrit-section-change-info`).
 
-The function `gerrit-upload-transient` uses the `transient` package and in
-addition to uploading new changes (and new patchsets) it provides the
-following features
+The function `gerrit-upload` uses the `transient` package (if
+`gerrit-use-gitreview-interface` is set to `nil`) and provides the following
+features in addition to uploading new changes (and new patchsets)
 
 * specify reviewers
 * set an assignee
@@ -33,16 +33,19 @@ This code is tested using gerrit=2.16 and the gerrit version used on
 
 Initially this package depended on the `git-review` command line tool, which
 was used for downloading and uploading gerrit changes. The functions are
-still provided but the are no longer actively updated. The recommended
-interface for downloading gerrit changes is `gerrit-download-new` and for
-uploading there is a `transient` called `gerrit-upload-transient`. Both of
-them no longer depend on `git-review`, but use the REST-API instead.
+still provided but they are no longer actively updated. They can be used by
+setting `gerrit-use-gitreview-interface` to `t`, which is the default value.
+
+The recommended interface for downloading and uploading gerrit changes is
+the new REST-API only interface that has to be activated by setting
+`gerrit-use-gitreview-interface` to `nil`.
 
 ## Installation
 
-Make sure that [git-review](https://opendev.org/opendev/git-review) is
-installed and that every cloned gerrit repo has a gerrit-specific pre-commit
-hook configured (`git review -s`).
+If you want to use the git-review interface, make sure that
+[git-review](https://opendev.org/opendev/git-review) is installed and that
+every cloned gerrit repo has a gerrit-specific pre-commit hook configured
+(`git review -s`).
 
 This emacs package is available on
 [MELPA](http://melpa.org/#/gerrit).
@@ -54,6 +57,7 @@ Example `use-package` config
   :ensure t
   :custom
   (gerrit-host "gerrit.my.domain")  ;; is needed for REST API calls
+  (gerrit-use-gitreview-interface nil)
   :config
   (progn
     (add-hook 'magit-status-sections-hook #'gerrit-magit-insert-status t)
@@ -79,16 +83,15 @@ variables have to be set:
 
 ![gerrit-section-change-info](https://user-images.githubusercontent.com/206581/101976331-9dee1280-3c44-11eb-8d01-629d3634da43.png)
 
-## Usage notes for the `gerrit-upload-transient`
+## Usage notes for the `gerrit-upload` transient
 
-All settings entered in the `gerrit-upload-transient` are saved to a file,
+All settings entered in the `gerrit-upload` transient are saved to a file,
 whose filename is in the `transient-history-file` variable. This file is
 updated in the `kill-emacs-hook`, which is run when the emacs
 process/daemon is stopped using `(kill-emacs)`.
 
 If you are using `systemd` for starting emacs as a daemon, make sure that your
 unit files contains
-
 
 ```
 ExecStop=/usr/bin/emacsclient --eval "(kill-emacs)"

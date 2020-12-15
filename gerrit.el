@@ -79,6 +79,14 @@
   :group 'gerrit
   :type 'int)
 
+(defcustom gerrit-use-gitreview-interface t
+  "If t, use deprecated git-review interface.
+
+Otherwise, the new REST-only interface of gerrit-upload and
+gerrit-download is used."
+  :group 'gerrit
+  :type 'boolean)
+
 (defun gerrit--init-accounts ()
   "Intialize `gerrit--accounts-alist`."
   (unless gerrit--accounts-alist
@@ -207,7 +215,7 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
                      "--set-upstream-to" (format "%s/%s" (gerrit-get-remote) change-branch)
                      local-branch))))
 
-(defun gerrit-download-new ()
+(defun gerrit-download--new ()
   "Download change from the gerrit server."
   (interactive)
   (gerrit--init-accounts)
@@ -418,22 +426,6 @@ which is not the same as nil."
    (symbol-value history)
    nil nil nil
    history))
-
-(defalias 'gerrit-upload-new #'gerrit-upload-transient)
-
-(defun gerrit-download ()
-  "Download change from the gerrit server."
-  (interactive)
-  ;; TODO handle non-zero exit status (see https://stackoverflow.com/questions/23299314/finding-the-exit-code-of-a-shell-command-in-elisp)
-  (let ((open-changes (shell-command-to-string "git review -l")))
-
-    ;; remove last two lines
-    (setq open-changes (nbutlast (s-lines open-changes) 2))
-    ;; (message (s-join "\n" open-changes))
-    (let ((changenr (completing-read
-                     "Download Change: " open-changes nil nil)))
-      (magit-git-command (concat "git review -d "
-                                 (car (s-split " " (s-trim changenr))))))))
 
 
 
@@ -1164,7 +1156,34 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   ("A" gerrit-upload-set-args "Set additional args")
   ("RET" gerrit-upload-run "Upload" :color blue))
 
-(defalias 'gerrit-upload #'hydra-gerrit-upload/body)
+(defun gerrit-download--gitreview ()
+  "Download change from the gerrit server."
+  (interactive)
+  ;; TODO handle non-zero exit status (see https://stackoverflow.com/questions/23299314/finding-the-exit-code-of-a-shell-command-in-elisp)
+  (let ((open-changes (shell-command-to-string "git review -l")))
+
+    ;; remove last two lines
+    (setq open-changes (nbutlast (s-lines open-changes) 2))
+    ;; (message (s-join "\n" open-changes))
+    (let ((changenr (completing-read
+                     "Download Change: " open-changes nil nil)))
+      (magit-git-command (concat "git review -d "
+                                 (car (s-split " " (s-trim changenr))))))))
+
+
+
+(defun gerrit-download ()
+  "Download change from the gerrit server."
+  (interactive)
+   (if gerrit-use-gitreview-interface
+       (gerrit-download--gitreview)
+     (gerrit-download--new)))
+
+(defun gerrit-upload ()
+  (interactive)
+   (if gerrit-use-gitreview-interface
+       (hydra-gerrit-upload/body)
+     (call-interactively #'gerrit-upload-transient)))
 
 (provide 'gerrit)
 ;;; gerrit.el ends here
