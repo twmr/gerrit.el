@@ -79,6 +79,28 @@ variables have to be set:
 
 ![gerrit-section-change-info](https://user-images.githubusercontent.com/206581/101976331-9dee1280-3c44-11eb-8d01-629d3634da43.png)
 
+## Usage notes for the `gerrit-upload-transient`
+
+All settings entered in the `gerrit-upload-transient` are saved to a file,
+whose filename is in the `transient-history-file` variable. This file is
+updated in the `kill-emacs-hook`, which is run when the emacs
+process/daemon is stopped using `(kill-emacs)`.
+
+If you are using `systemd` for starting emacs as a daemon, make sure that your
+unit files contains
+
+
+```
+ExecStop=/usr/bin/emacsclient --eval "(kill-emacs)"
+```
+
+You can cycle through the history by using <kbd>M-p</kbd> and
+<kbd>M-n</kbd>.
+
+The reviewers have to be added as a comma-separated string. Completion of
+the individual reviewres using the account information from the gerrit
+servers should work with <kbd>TAB</kbd>.
+
 ## Dashboards
 
 `gerrit-dashboard` displays a dashboard similar to the one in the gerrit
