@@ -26,10 +26,7 @@
 
 ;; This package contains
 ;;
-;; * defuns for downloading and uploading a change (`gerrit-upload` and `gerrit-download`)
-;;
-;;   The git-review command line tool as well as the REST API is used for
-;;   these defuns under the hood.
+;; * defuns for downloading and uploading a change (`gerrit-upload-transient` and `gerrit-download-new`)
 ;;
 ;; * gerrit-dashboard, defun for displaying a dashboard, similar to the
 ;;   one of the gerrit webinterface
@@ -54,18 +51,7 @@
 
 (require 'gerrit-rest)
 
-(defvar gerrit-upload-topic-history nil "List of recently used topic names.")
-(defvar gerrit-upload-args-history nil "List of recently used args for git-review cmd.")
-
 (defvar gerrit--accounts-alist nil)
-
-;; these two vars are mainly needed for the hydra-based implementation because
-;; I don't know how I can communicate between different heads of the hydra
-(defvar gerrit-last-reviewers nil)
-(defvar gerrit-last-topic nil)
-(defvar gerrit-last-assignee nil)
-(defvar gerrit-upload-args nil)
-(defvar gerrit-upload-ready-for-review nil)
 
 (defvar gerrit-dashboard-buffer-name "*gerrit-dashboard*" nil)
 (defvar gerrit-dashboard-query-alist
@@ -77,33 +63,11 @@
     ("Recently closed" . "is:closed -is:ignored (-is:wip OR owner:self) (owner:self OR reviewer:self OR assignee:self OR cc:self) limit:15"))
   "Query search string that is used for the data shown in the gerrit-dashboard.")
 
-(defalias 'gerrit-dump-variable #'recentf-dump-variable)
-
 (defgroup gerrit nil
   "Maintain a menu of recently opened files."
   :version "25.1"
   ;; which group should be used?
   :group 'files)
-
-(defcustom gerrit-upload-max-saved-items 200
-  "Maximum number of items of the gerrit lists that will be saved.
-A nil value means to save the whole lists."
-  :group 'gerrit
-  :type 'integer)
-
-(defcustom gerrit-save-file (locate-user-emacs-file ".git-review")
-  "File to save the recent lists into."
-  ;; Persistency:
-  ;; The save/load logic was copied from recentf.el
-  ;; Other places in the emacs git repo, where settings are saved/loaded to/from disk are:
-  ;;   savehist-mode
-  ;;   ...
-  ;; See http://mbork.pl/2018-09-10_Persisting_Emacs_variables
-  ;; See https://lists.gnu.org/archive/html/help-gnu-emacs/2018-03/msg00120.html
-
-  ;; TODO outsource this persistency code
-  :group 'gerrit
-  :type 'file)
 
 (defcustom gerrit-host nil
   "Hostname of the gerrit instance (without the protocol prefix)."
@@ -115,31 +79,13 @@ A nil value means to save the whole lists."
   :group 'gerrit
   :type 'int)
 
-(defun gerrit-save-lists ()
-  "Save the recent lists.
-Write data into the file specified by `gerrit-save-file'."
-  (interactive)
-  (condition-case error
-      (with-temp-buffer
-        (erase-buffer)
-        (set-buffer-file-coding-system 'utf-8-emacs)
-        (insert (format-message ";;; Automatically generated on %s.\n"
-                                (current-time-string)))
-        (gerrit-dump-variable 'gerrit-upload-topic-history gerrit-upload-max-saved-items)
-        (insert "\n\n;; Local Variables:\n"
-                ";; coding: utf-8-emacs\n"
-                ";; End:\n")
-        (let ((inhibit-message t))
-          (write-file (expand-file-name gerrit-save-file)))
-        (set-file-modes gerrit-save-file #o600)
-        nil)
-    (error
-     (warn "gerrit: %s" (error-message-string error)))))
+(defcustom gerrit-use-gitreview-interface t
+  "If t, use deprecated git-review interface.
 
-(defcustom gerrit-upload-default-args ""
-  "Default args used when calling 'git review' to upload a change."
+Otherwise, the new REST-only interface of gerrit-upload and
+gerrit-download is used."
   :group 'gerrit
-  :type 'string)
+  :type 'boolean)
 
 (defun gerrit--init-accounts ()
   "Intialize `gerrit--accounts-alist`."
@@ -147,16 +93,6 @@ Write data into the file specified by `gerrit-save-file'."
     (message "Fetching gerrit accounts ...")
     (setq gerrit--accounts-alist (gerrit-rest--get-gerrit-accounts))
     (message "Fetched gerrit accounts (len=%d)" (length gerrit--accounts-alist))))
-
-(defun gerrit-load-lists ()
-  "Load a previously saved recent list.
-Read data from the file specified by `gerrit-save-file'."
-  (interactive)
-  (let ((file (expand-file-name gerrit-save-file))
-        ;; We do not want Tramp asking for passwords.
-        (non-essential t))
-    (when (file-readable-p file)
-      (load-file file))))
 
 (defun gerrit--read-assignee ()
   "Ask for the name of an assignee."
@@ -170,171 +106,348 @@ Read data from the file specified by `gerrit-save-file'."
    ;; def
    nil))
 
-(defmacro gerrit-upload-completing-set (msg history)
-  "Call `completing-read' using prompt MSG and use the collection HISTORY."
-  `(let ((value (completing-read
-                 ,msg
-                 ,history
-                 nil nil nil nil
-                 (car ,history))))
-     (unless (equal "" value)
-       ;; todo simplify the duplicate handling
-       (push value ,history)
-       (setq ,history (cl-remove-duplicates ,history :test 'string=)))
-     value))
+
 
-(defmacro gerrit-upload-completing-set-with-fixed-collection
-    (msg collection history &optional history-excludes)
-  "Call `completing-read' using prompt MSG and use the collection COLLECTION.
+;; gerrit-upload* and gerrit-download* functions
+;;
+;; TODO finalize API (think about a consistent naming scheme (when to use -- and when not)
+;; DONE copy the gitreviewless code into gerrit.el file
+;; TODO provide a C-u version for gerrit-download-new, which also asks for the PS number
+;; TODO defvar for turning off .gitreview parsing. I would rather not parse it.
+;;         use "origin" as the remote if this parsing is turned off
+;; TODO if git-review parsing is turned off - how do we determine the upstream branch then?
+;;         if the local branch has an upstream configured -> use it
+;;         if it doesn't -> ask the user (magit-read-string)
+;;         Note:
+;;         git checkout -b fb -t origin/version0.2  # this can be used for creating
+;;         a local branch fb that is based on origin/version0.2 and which tracks
+;;         origin/version0.2 (=upstream)
+;; TODO write some unit tests that create git repos and test elisp functions
+;; DONE use gerrit-magit-process-buffer-add-item for:
+;;       setting the assignee:
+;;            section name: changenr and assignee
+;;            section body: maybe rest output? especially useful if there is an error
+;; TODO download gerrit change on top of current branch (like cherry-pick)
+;; TODO download command that lists only the changes in the current branch
+;; TODO check (in advance) that the uploaded commits contain a Change-Id
+;;       see (magit-insert-log "@{upstream}.." args)
+;;       for commit in $(git rev-list 15044377058d2481e1d9a1334c71037598f9a006..HEAD); do
+;;           git log --format=%B -r $commit -n1; done
+;;       or check if 'Change-Id string is in the output of
+;;           git log --format=%B -r start-sha1..end-sha1
+;;       how do I determine the start-sha1?
+;;           -> use  branchname@{u}
+;; TODO upload: before uploading a change check the sha1 of the latest commit and check
+;;              if it is alredy a change on gerrit with this sha1
+;; TODO upload: always-rebase by default? git-review always rebases by default
+;;              but for merge commits it must not rebase automatically
+;; DONE use transient for upload form
+;; -> The test-transient allows one to cycle over all settings C-M-p / C-M-n
+;; and also over all the infix history
 
-Contrary to `gerrit-upload-completing-set' this macro uses
-a (fixed) collection that may be different from the history
-HISTORY of selected values.
+(defun gerrit-download-format-change (change)
+  (concat
+   (propertize (number-to-string (alist-get '_number change)) 'face 'magit-hash)
+   " "
+   (propertize (alist-get 'branch change) 'face 'magit-branch-remote)
+   " "
+   (propertize (alist-get 'subject change) 'face 'magit-section-highlight)))
 
-To determine the default value in `completing-read' an optional
-list HISTORY-EXCLUDES may be used, whose entries are removed from
-HISTORY."
-  `(let* ((reduced-history (-difference ,history ,history-excludes))
-          (value (completing-read
-                  ,msg
-                  ,collection
-                  nil ;; predicate
-                  t ;; require match
-                  nil ;; initial input
-                  nil ;; history
-                  ;; default value set to LRU value
-                  (car reduced-history))))
-     (unless (equal "" value)
-       ;; todo simplify the duplicate handling
-       (push value ,history) ;; note that we don't need this if the builtin
-                             ;; completeing-read is used. Bug in
-                             ;; ivy-completing-read?
-       (setq ,history (cl-remove-duplicates ,history :test 'string=)))
-     value))
+(defun gerrit-download--get-refspec (change-metadata)
+  "Return the refspec of a gerrit change from CHANGE-METADATA.
 
-(defun gerrit-upload-add-reviewer ()
-  "Interactively ask for to-be-added reviewer name."
-  (interactive)
-  (gerrit--init-accounts)
-
-  ;; exclude the ones from the history that have already been added
-  (gerrit-upload-completing-set-with-fixed-collection
-         "Reviewer: "
-         (seq-map #'cdr gerrit--accounts-alist) ;; usernames
-         gerrit-last-reviewers))
-
-(defun gerrit-upload-remove-reviewer ()
-  "Interactively ask for to-be-removed reviewer name."
-  (interactive)
-  (setq gerrit-last-reviewers
-        (delete (gerrit-upload-completing-set
-                 "Reviewer: "
-                 gerrit-last-reviewers)
-                gerrit-last-reviewers)))
-
-(defun gerrit-upload-set-assignee ()
-  "Interactively ask for an assignee."
-  (interactive)
-  (gerrit--init-accounts)
-  (setq gerrit-last-assignee (gerrit--read-assignee)))
-
-(defun gerrit-upload-set-topic ()
-  "Interactively ask for a topic name."
-  (interactive)
-  (setq gerrit-last-topic (gerrit-upload-completing-set
-                           "Topic: "
-                           gerrit-upload-topic-history)))
-
-(defun gerrit-upload-set-args ()
-  "Interactively ask for arguments that are passed to git-review."
-  (interactive)
-  (setq gerrit-upload-args (gerrit-upload-completing-set
-                            "Args (space separated): "
-                            gerrit-upload-args-history)))
-
-(defun gerrit-upload-toggle-ready-for-review ()
-  "Toggle git-review's -W parameter on/off."
-  (interactive)
-  (setq gerrit-upload-ready-for-review (not gerrit-upload-ready-for-review)))
-
-(defun gerrit-upload-create-git-review-cmd ()
-  "Create cmdstr for git-review."
-  (interactive)
-  (let ((reviewers (s-join " " gerrit-last-reviewers)) ;;(sort gerrit-last-reviewers #'string<)))
-        (topic gerrit-last-topic)
-        (args gerrit-upload-args)
-        (cmdstr "git review --yes"))
-    (unless (equal "" topic)
-      (setq cmdstr (concat cmdstr " -t " topic)))
-    (unless (equal "" reviewers)
-      (setq cmdstr (concat cmdstr " --reviewers " reviewers)))
-    (unless (equal "" args)
-      (setq cmdstr (concat cmdstr " " args)))
-    (when gerrit-upload-ready-for-review
-      (setq cmdstr (concat cmdstr " -W ")))
-    cmdstr))
-
-(defun gerrit-upload-run ()
-  "Run git-review."
-  (interactive)
-  (let ((cmdstr (gerrit-upload-create-git-review-cmd)))
-    (if (string= "" gerrit-last-assignee)
-        (magit-git-command cmdstr)
-        ;; see #2 (Is it possible to use magit-git-command and pass the
-        ;; output of the git review to a defun that sets the assignee?)
-        (progn
-          ;; TODO create a temporary buffer for the output of git-review?
-          (message "Running %s" cmdstr)
-          (let ((git-review-output (shell-command-to-string cmdstr)))
-            (message "%s" git-review-output)
-            (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+"
-                                                           git-review-output)))
-                ;; TODO confirmation?
-                (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
-                                 (message "Setting assignee of %s to %s" changenr gerrit-last-assignee)
-                                 (gerrit-rest-change-set-assignee changenr gerrit-last-assignee)))
-                        matched-changes)))))))
-
-
-(defhydra hydra-gerrit-upload (:color amaranth ;; foreign-keys warning, blue heads exit hydra
-                               :hint nil ;; show hint in the echo area
-                               :columns 1
-                               :body-pre (progn
-                                           (gerrit-load-lists)
-                                           (setq gerrit-last-topic "")
-                                           (setq gerrit-last-reviewers '())
-                                           (setq gerrit-last-assignee "")
-                                           (setq gerrit-upload-args gerrit-upload-default-args)
-                                           (setq gerrit-upload-ready-for-review nil))
-                               :after-exit (gerrit-save-lists))
-  "
-gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
+This refspec is a string of the form 'refs/changes/xx/xx/x'.
 "
-  ("r" gerrit-upload-add-reviewer "Add reviewer")
-  ("R" gerrit-upload-remove-reviewer "Remove reviewer")
-  ("a" gerrit-upload-set-assignee "Set assignee")
-  ("t" gerrit-upload-set-topic "Set topic")
-  ("v" gerrit-upload-toggle-ready-for-review "Toggle ready-for-review")
-  ("A" gerrit-upload-set-args "Set additional args")
-  ("RET" gerrit-upload-run "Upload" :color blue))
+  ;; this is important for determining the refspec needed for
+  ;; git-fetch
+  ;; change-ref is e.g. "refs/changes/16/35216/2"
+  (let* ((revisions (alist-get 'revisions change-metadata))
+         (revision (alist-get 'current_revision change-metadata)))
+    (gerrit--alist-get-recursive (intern revision) 'ref revisions)))
 
-(defalias 'gerrit-upload #'hydra-gerrit-upload/body)
+(defun gerrit--get-tracked (branch)
+  "Get upstream-remote and upstream-branch of a local BRANCH."
+  ;; Note that magit-get-upstream-branch returns a propertized string
+  (let ((tracked (magit-get-upstream-branch branch)))
+    (s-split-up-to "/" tracked 1 t)))
 
-(defun gerrit-download ()
+(defun gerrit--download-change (change-metadata)
+  ;; to see what git-review does under the hood - see:
+  ;; strace -z -f -e execve git-review -d 3591
+  (let* ((change-nr (alist-get '_number change-metadata))
+         (change-branch (alist-get 'branch change-metadata))
+         (change-topic (or (alist-get 'topic change-metadata)
+                           (number-to-string change-nr)))
+         (change-owner (alist-get (gerrit--alist-get-recursive
+                                   'owner '_account_id change-metadata)
+                                  gerrit--accounts-alist))
+         (local-branch (format "review/%s/%s"
+                               ;; change-owner is 'escaped' by git-review (_
+                               ;; instead of . is used). git-review uses
+                               ;; re.sub(r'\W+', "_", ownername), which was
+                               ;; introduced 2011 (commit 08bd9c). I don't
+                               ;; know why they did it.
+                               (replace-regexp-in-string "\\W+" "_" change-owner)
+                               change-topic)))
+
+    ;;TODO
+    ;; this next call doesn't work if the authorization doesn't work
+    ;; (e.g. if ssh-add was not called)
+    (magit-call-git "fetch" (gerrit-get-remote) (gerrit-download--get-refspec change-metadata))
+
+    (if-let* ((local-ref (concat "refs/heads/" local-branch))
+              (branch-exists (magit-git-success "show-ref" "--verify" "--quiet" local-ref)))
+        (progn
+          ;; since local-branch exists, gerrit--get-tracked never returns nil
+          (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked local-branch)
+            (unless (and (equal tracked-remote (gerrit-get-remote))
+                         (equal tracked-branch change-branch))
+              (error "Branch tracking incompatibility: Tracking %s/%s instead of %s/%s"
+                     tracked-remote tracked-branch
+                     (gerrit-get-remote) change-branch)))
+          (magit-run-git "checkout" local-branch)
+          (magit-run-git "reset" "--hard" "FETCH_HEAD"))
+      ;;
+      (magit-branch-and-checkout local-branch "FETCH_HEAD")
+      ;; set upstream here (see checkout_review function in cmd.py)
+      ;; this upstream branch is needed for rebasing
+      (magit-run-git "branch"
+                     "--set-upstream-to" (format "%s/%s" (gerrit-get-remote) change-branch)
+                     local-branch))))
+
+(defun gerrit-download--new ()
   "Download change from the gerrit server."
   (interactive)
-  ;; TODO handle non-zero exit status (see https://stackoverflow.com/questions/23299314/finding-the-exit-code-of-a-shell-command-in-elisp)
-  (let ((open-changes (shell-command-to-string "git review -l")))
+  (gerrit--init-accounts)
+  (let* ((open-changes
+          (seq-map #'gerrit-download-format-change (gerrit-rest-change-query
+                                                    (concat "status:open project:"
+                                                            (gerrit-get-current-project)))))
+         (selected-line (completing-read
+                         "Download Change: " open-changes nil nil))
+         (changenr (car (s-split " " (s-trim selected-line))))
 
-    ;; remove last two lines
-    (setq open-changes (nbutlast (s-lines open-changes) 2))
-    ;; (message (s-join "\n" open-changes))
-    (let ((changenr (completing-read
-                     "Download Change: " open-changes nil nil)))
-      (magit-git-command (concat "git review -d "
-                                 (car (s-split " " (s-trim changenr))))))))
+         ;; the return value of `gerrit-rest-change-query` contains the
+         ;; current revision, but not the one of `gerrit-rest-change-get`.
+         (change-metadata (car (gerrit-rest-change-query changenr))))
+
+    (gerrit--download-change change-metadata)))
+
+(defun gerrit--ensure-commit-msg-hook-exists ()
+  "Create a commit-msg hook, if it doesn't exist."
+  (let ((hook-file (magit-git-dir "hooks/commit-msg")))
+    (unless (file-exists-p hook-file)
+      (message "downloading commit-msg hook file")
+      (url-copy-file
+       (concat "https://" gerrit-host  "/tools/hooks/commit-msg") hook-file)
+      (set-file-modes hook-file #o755))))
+
+(defun gerrit-push-and-assign (assignee &rest push-args)
+  "Execute Git push with PUSH-ARGS and assign changes to ASSIGNEE.
+
+A section in the respective process buffer is created."
+  (interactive)
+  (progn
+    (apply #'magit-run-git-async "push" push-args)
+    (set-process-sentinel
+     magit-this-process
+     (lambda (process event)
+       (when (memq (process-status process) '(exit signal))
+         (when (buffer-live-p (process-buffer process))
+           (with-current-buffer (process-buffer process)
+             (when-let ((section (get-text-property (point) 'magit-section))
+                        (output (buffer-substring-no-properties
+                                 (oref section content)
+                                 (oref section end))))
+               (if (not (zerop (process-exit-status process)))
+                   ;; error
+                   (magit-process-sentinel process event)
+
+                 ;; success
+                 (process-put process 'inhibit-refresh t)
+
+                 ;; parse the output of "git push" and extract the change numbers. This
+                 ;; information is used for setting the specified assignee
+                 ;; Alternatively we could perform a gerrit query with owner:me and set the
+                 ;; assignee for the latest change(s).
+                 (unless (equal "" assignee)
+                   (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+" output)))
+                       (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
+                                        (message "Setting assignee of %s to %s" changenr assignee)
+                                        (gerrit-rest-change-set-assignee changenr assignee)
+                                        (gerrit-magit-process-buffer-add-item
+                                         (format "Assignee of change %s was set to %s" changenr assignee)
+                                         "set-assignee" changenr)))
+                               matched-changes)))
+                 (magit-process-sentinel process event))))))))))
+
+(defun gerrit-upload--get-refspec ()
+  (concat "refs/for/" (gerrit-get-upstream-branch)))
+
+;; The transient history is saved when the kill-emacs-hook is run, which is
+;; run when (kill-emacs) is called. Make sure that you run kill-emacs when
+;; you stop emacs (or restart an emacs (systemd) service).  Note that
+;; (transient-save-history) is the function that saves the history.
+
+;; There is a limit for the number of entries saved per option(?) into the
+;; history file, which is 10 by default. I think it makes sense to increase
+;; this value to at least 50 (only 10 saved topic names may not be enough).
+
+;; The `history` in the reader callbacks is updated after the reader
+;; callback was called.
+
+;; The history file contains both the history elements of "submitted"
+;; settings (where the action was called) as well as the history of the
+;; individual options independent whether the qction was called or not (if a
+;; reader is specified, the history parameter needs to be updated for this
+;; to work!).
+
+(defun gerrit-upload:--action (&optional args)
+  "Push the current changes/commits to the gerrit server and set metadata."
+  (interactive
+   (list (transient-args 'gerrit-upload-transient)))
+
+  (gerrit--ensure-commit-msg-hook-exists)
+  ;; TODO check that all to-be-uploaded commits have a changeid line
+
+  (let (assignee
+        push-opts
+        (remote (gerrit-get-remote))
+        (refspec (gerrit-upload--get-refspec)))
+    ;; there are a bunch of push options that are supported by gerrit:
+    ;; https://gerrit-review.googlesource.com/Documentation/user-upload.html#push_options
+
+    ;; I don't like this handling of transient-args, maybe transient can
+    ;; pass alists to gerrit-upload--action istead of a list os strings
+    (cl-loop for arg in args do
+             (cond ((s-starts-with? "reviewers=" arg)
+                    (cl-loop for reviewer in (s-split "," (s-chop-prefix "reviewers=" arg)) do
+                             ;; TODO check that reviewers are valid (by checking that all
+                             ;; reviewers don't contain a white-space)
+                             (push (concat "r=" reviewer) push-opts)))
+                   ((s-starts-with? "assignee=" arg)
+                    (setq assignee (s-chop-prefix "assignee=" arg)))
+                   ((s-starts-with? "topic=" arg)
+                    (push  arg push-opts))
+                   ((string= "ready" arg)
+                    (push "ready" push-opts))
+                   ((string= "wip" arg)
+                    (push "wip" push-opts))
+                   (t
+                    (error (format "no match for arg: %s" arg)))))
+
+    (when push-opts
+      (setq refspec (concat refspec "%" (s-join "," push-opts))))
+
+    (gerrit-push-and-assign
+     assignee
+     "--no-follow-tags"
+     remote
+     (concat "HEAD:"  refspec))))
+
+(define-transient-command gerrit-upload-transient ()
+  "Transient used for uploading changes to gerrit"
+  ["Arguments"
+   (gerrit-upload:--reviewers)
+   (gerrit-upload:--assignee)
+   ("w" "Work in Progress" "wip")
+   ("v" "Ready for Review" "ready")
+   (gerrit-upload:--topic)
+  ]
+  ["Actions"
+   ("u" "Upload" gerrit-upload:--action)])
+
+;; TODO ask on github why a subclass of transient option is needed.
+(defclass gerrit-multivalue-option (transient-option) ())
+
+(cl-defmethod transient-infix-value ((obj gerrit-multivalue-option))
+  "Return (concat ARGUMENT VALUE) or nil.
+
+ARGUMENT and VALUE are the values of the respective slots of OBJ.
+If VALUE is nil, then return nil.  VALUE may be the empty string,
+which is not the same as nil."
+  (when-let ((value (oref obj value)))
+    (if (listp value) (setq value (string-join value ",")))
+    (concat (oref obj argument) value)))
+
+(transient-define-argument gerrit-upload:--reviewers ()
+  :description "Reviewers"
+  :class 'gerrit-multivalue-option
+  :key "r"
+  :argument "reviewers="
+  ;; :format " %k %v"
+  :multi-value t
+  :reader 'gerrit-upload:--read-reviewers)
+
+(defun gerrit-upload:--read-reviewers (prompt _initial-input _history)
+  (gerrit--init-accounts)
+  ;; FIXME the sorting order here seems to be different than the one used in
+  ;; completing-read! Maybe this is just an ivy issue
+  (completing-read-multiple
+   prompt
+   (seq-map #'cdr gerrit--accounts-alist) ;; usernames
+   nil
+   nil
+   nil))
+
+(transient-define-argument gerrit-upload:--assignee ()
+  :description "Assignee"
+  :class 'transient-option
+  :key "a"
+  :argument "assignee="
+  :reader 'gerrit-upload:--read-assignee)
+
+(transient-define-argument gerrit-upload:--topic ()
+  :description "Topic"
+  :class 'transient-option
+  :key "t"
+  :argument "topic="
+  :reader 'gerrit-upload:--read-topic)
+
+(defun gerrit-upload:--read-assignee (prompt _initial-input history)
+  (gerrit--init-accounts)
+  ;; (gerrit--read-assignee) this doesn't update the history
+
+  ;; using the history here doesn't have an effect (maybe it does, but for
+  ;; ivy-completing-read it doesn't)
+  (completing-read
+   prompt
+   (seq-map #'cdr gerrit--accounts-alist) ;; usernames
+   nil ;; predicate
+   t ;; require match
+   nil ;; initial ;; Maybe it makes sense to use the last/first history element here
+   history ;; hist (output only?)
+   ;; def
+   nil))
+
+(defun gerrit-upload:--read-topic (prompt _initial-input history)
+  (completing-read
+   prompt
+   (symbol-value history)
+   nil nil nil
+   history))
 
 
+
+(defun gerrit-magit-process-buffer-add-item (msg &rest args)
+  "Create a new section and write message MSG into magit process buffer.
+
+MSG needs to be a string and ARGS are the args are used for the
+section header."
+  (interactive)
+  (let (mpf)
+    (unwind-protect
+        (progn
+          (setq mpf (make-temp-file "gerrit-magit-process-file"))
+          (delete-file mpf)
+          (write-region msg nil mpf)
+          (with-current-buffer (magit-process-buffer t)
+            (magit-process-insert-section default-directory
+                                          "REST"
+                                          args nil
+                                          mpf
+                                          )))
+      (ignore-errors (delete-file mpf)))))
 
 (defun gerrit-magit-insert-status ()
   "Show all open gerrit reviews when called in the magit-status-section via `magit-status-section-hook'."
@@ -398,10 +511,24 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 
 (defun gerrit-get-remote ()
   "Return the name of the remote."
-  ;; TODO read remote name from .gitreview file
-  ;; using sth like `git config -f .gitreview --get gerrit.defaultremote`
-  ;; ideally read the data from a cache
-  "origin")
+  ;; TODO read the data from a cache
+  (or (magit-git-string "config" "-f" (expand-file-name ".gitreview" (magit-toplevel))
+                       "--get" "gerrit.defaultremote")
+      "origin"))
+
+(defun gerrit-get-upstream-branch ()
+  "Return the name of the upstream branch. The returned string is not prefixed with the remote."
+  ;; TODO read the data from a cache
+  (or (when-let ((upstream-branch (magit-get-upstream-branch)))
+        (cadr (s-split "/" upstream-branch)))
+      (magit-git-string "config" "-f" (expand-file-name ".gitreview" (magit-toplevel))
+                        "--get" "gerrit.defaultbranch")
+      (when-let ((upstream-branch (magit-read-upstream-branch
+                                   nil
+                                   (concat "No upstream branch is configured, please specify one "
+                                           "(starting with the remote)"))))
+        (magit-set-upstream-branch (magit-get-current-branch) upstream-branch)
+        (cadr (s-split "/" upstream-branch)))))
 
 (defun gerrit-get-current-project ()
   "Return the gerrit project name, e.g., 'software/jobdeck'."
@@ -414,6 +541,24 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
       (s-chop-suffix
        ".git"
        (nth 1 (s-split ":" remote-url))))))
+
+(defun gerrit-get-changeid-from-current-commit ()
+  "Determine the changeid in from the current commit.
+
+A string like the following is returned:
+myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
+  (interactive)
+  (let ((branch (substring-no-properties (gerrit-get-upstream-branch)))
+        (project (substring-no-properties (gerrit-get-current-project)))
+        (commit-message-lines (magit-git-lines "log" "-1" "--pretty=%B")))
+    (unless
+        (s-starts-with? "Change-Id: " (car (last commit-message-lines)))
+      (error "Commit message doesn't end with a change-id"))
+    (concat (gerrit-rest--escape-project project)
+            "~"
+            branch
+            "~"
+            (s-chop-prefix "Change-Id: " (car (last commit-message-lines))))))
 
 
 
@@ -563,12 +708,12 @@ shown in the section buffer."
   "Column-names and column-sizes of the gerrit dashboard.")
 
 (defface gerrit-fail
-  '((t (:foreground "red4")))
+  `((t (:foreground ,(face-foreground 'magit-diff-removed-highlight))))
   "Used for negative votes."
   :group 'faces)
 
 (defface gerrit-success
-  '((t (:foreground "green4")))
+  `((t (:foreground ,(face-foreground 'magit-diff-added-highlight))))
   "Used for positive votes."
   :group 'faces)
 
@@ -655,8 +800,10 @@ shown in the section buffer."
              ("ABANDONED" "Abandoned")
              (_ "")))))
 
-    ,(or (alist-get (alist-get 'owner change-metadata) gerrit--accounts-alist) "")
-    ,(or (alist-get (alist-get 'assignee change-metadata) gerrit--accounts-alist) "")
+    ,(propertize (or (alist-get (alist-get 'owner change-metadata) gerrit--accounts-alist) "")
+                 'face 'magit-log-author)
+    ,(propertize (or (alist-get (alist-get 'assignee change-metadata) gerrit--accounts-alist) "")
+                 'face 'magit-log-author)
     ,(alist-get 'repo change-metadata)
     ,(propertize (alist-get 'branch change-metadata)
                  'face 'magit-branch-remote)
@@ -787,6 +934,256 @@ shown in the section buffer."
   (interactive)
   (switch-to-buffer gerrit-dashboard-buffer-name)
   (gerrit-dashboard-mode))
+
+
+
+;; legacy functions
+
+;; these two vars are mainly needed for the hydra-based implementation because
+;; I don't know how I can communicate between different heads of the hydra
+(defvar gerrit-last-reviewers nil)
+(defvar gerrit-last-topic nil)
+(defvar gerrit-last-assignee nil)
+(defvar gerrit-upload-args nil)
+(defvar gerrit-upload-ready-for-review nil)
+
+(defvar gerrit-upload-topic-history nil "List of recently used topic names.")
+(defvar gerrit-upload-args-history nil "List of recently used args for git-review cmd.")
+
+(defcustom gerrit-upload-max-saved-items 200
+  "Maximum number of items of the gerrit lists that will be saved.
+A nil value means to save the whole lists."
+  :group 'gerrit
+  :type 'integer)
+
+(defcustom gerrit-save-file (locate-user-emacs-file ".git-review")
+  "File to save the recent lists into."
+  ;; Persistency:
+  ;; The save/load logic was copied from recentf.el
+  ;; Other places in the emacs git repo, where settings are saved/loaded to/from disk are:
+  ;;   savehist-mode
+  ;;   ...
+  ;; See http://mbork.pl/2018-09-10_Persisting_Emacs_variables
+  ;; See https://lists.gnu.org/archive/html/help-gnu-emacs/2018-03/msg00120.html
+
+  ;; TODO outsource this persistency code
+  :group 'gerrit
+  :type 'file)
+
+(defcustom gerrit-upload-default-args ""
+  "Default args used when calling 'git review' to upload a change."
+  :group 'gerrit
+  :type 'string)
+
+(defalias 'gerrit-dump-variable #'recentf-dump-variable)
+
+(defun gerrit-save-lists ()
+  "Save the recent lists.
+Write data into the file specified by `gerrit-save-file'."
+  (interactive)
+  (condition-case error
+      (with-temp-buffer
+        (erase-buffer)
+        (set-buffer-file-coding-system 'utf-8-emacs)
+        (insert (format-message ";;; Automatically generated on %s.\n"
+                                (current-time-string)))
+        (gerrit-dump-variable 'gerrit-upload-topic-history gerrit-upload-max-saved-items)
+        (insert "\n\n;; Local Variables:\n"
+                ";; coding: utf-8-emacs\n"
+                ";; End:\n")
+        (let ((inhibit-message t))
+          (write-file (expand-file-name gerrit-save-file)))
+        (set-file-modes gerrit-save-file #o600)
+        nil)
+    (error
+     (warn "gerrit: %s" (error-message-string error)))))
+
+(defun gerrit-load-lists ()
+  "Load a previously saved recent list.
+Read data from the file specified by `gerrit-save-file'."
+  (interactive)
+  (let ((file (expand-file-name gerrit-save-file))
+        ;; We do not want Tramp asking for passwords.
+        (non-essential t))
+    (when (file-readable-p file)
+      (load-file file))))
+
+(defmacro gerrit-upload-completing-set (msg history)
+  "Call `completing-read' using prompt MSG and use the collection HISTORY."
+  `(let ((value (completing-read
+                 ,msg
+                 ,history
+                 nil nil nil nil
+                 (car ,history))))
+     (unless (equal "" value)
+       ;; todo simplify the duplicate handling
+       (push value ,history)
+       (setq ,history (cl-remove-duplicates ,history :test 'string=)))
+     value))
+
+(defmacro gerrit-upload-completing-set-with-fixed-collection
+    (msg collection history &optional history-excludes)
+  "Call `completing-read' using prompt MSG and use the collection COLLECTION.
+
+Contrary to `gerrit-upload-completing-set' this macro uses
+a (fixed) collection that may be different from the history
+HISTORY of selected values.
+
+To determine the default value in `completing-read' an optional
+list HISTORY-EXCLUDES may be used, whose entries are removed from
+HISTORY."
+  `(let* ((reduced-history (-difference ,history ,history-excludes))
+          (value (completing-read
+                  ,msg
+                  ,collection
+                  nil ;; predicate
+                  t ;; require match
+                  nil ;; initial input
+                  nil ;; history
+                  ;; default value set to LRU value
+                  (car reduced-history))))
+     (unless (equal "" value)
+       ;; todo simplify the duplicate handling
+       (push value ,history) ;; note that we don't need this if the builtin
+                             ;; completeing-read is used. Bug in
+                             ;; ivy-completing-read?
+       (setq ,history (cl-remove-duplicates ,history :test 'string=)))
+     value))
+
+(defun gerrit-upload-add-reviewer ()
+  "Interactively ask for to-be-added reviewer name."
+  (interactive)
+  (gerrit--init-accounts)
+
+  ;; exclude the ones from the history that have already been added
+  (gerrit-upload-completing-set-with-fixed-collection
+         "Reviewer: "
+         (seq-map #'cdr gerrit--accounts-alist) ;; usernames
+         gerrit-last-reviewers))
+
+(defun gerrit-upload-remove-reviewer ()
+  "Interactively ask for to-be-removed reviewer name."
+  (interactive)
+  (setq gerrit-last-reviewers
+        (delete (gerrit-upload-completing-set
+                 "Reviewer: "
+                 gerrit-last-reviewers)
+                gerrit-last-reviewers)))
+
+(defun gerrit-upload-set-assignee ()
+  "Interactively ask for an assignee."
+  (interactive)
+  (gerrit--init-accounts)
+  (setq gerrit-last-assignee (gerrit--read-assignee)))
+
+(defun gerrit-upload-set-topic ()
+  "Interactively ask for a topic name."
+  (interactive)
+  (setq gerrit-last-topic (gerrit-upload-completing-set
+                           "Topic: "
+                           gerrit-upload-topic-history)))
+
+(defun gerrit-upload-set-args ()
+  "Interactively ask for arguments that are passed to git-review."
+  (interactive)
+  (setq gerrit-upload-args (gerrit-upload-completing-set
+                            "Args (space separated): "
+                            gerrit-upload-args-history)))
+
+(defun gerrit-upload-toggle-ready-for-review ()
+  "Toggle git-review's -W parameter on/off."
+  (interactive)
+  (setq gerrit-upload-ready-for-review (not gerrit-upload-ready-for-review)))
+
+(defun gerrit-upload-create-git-review-cmd ()
+  "Create cmdstr for git-review."
+  (interactive)
+  (let ((reviewers (s-join " " gerrit-last-reviewers)) ;;(sort gerrit-last-reviewers #'string<)))
+        (topic gerrit-last-topic)
+        (args gerrit-upload-args)
+        (cmdstr "git review --yes"))
+    (unless (equal "" topic)
+      (setq cmdstr (concat cmdstr " -t " topic)))
+    (unless (equal "" reviewers)
+      (setq cmdstr (concat cmdstr " --reviewers " reviewers)))
+    (unless (equal "" args)
+      (setq cmdstr (concat cmdstr " " args)))
+    (when gerrit-upload-ready-for-review
+      (setq cmdstr (concat cmdstr " -W ")))
+    cmdstr))
+
+(defun gerrit-upload-run ()
+  "Run git-review."
+  (interactive)
+  (let ((cmdstr (gerrit-upload-create-git-review-cmd)))
+    (if (string= "" gerrit-last-assignee)
+        (magit-git-command cmdstr)
+        ;; see #2 (Is it possible to use magit-git-command and pass the
+        ;; output of the git review to a defun that sets the assignee?)
+        (progn
+          ;; TODO create a temporary buffer for the output of git-review?
+          (message "Running %s" cmdstr)
+          (let ((git-review-output (shell-command-to-string cmdstr)))
+            (message "%s" git-review-output)
+            (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+"
+                                                           git-review-output)))
+                ;; TODO confirmation?
+                (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
+                                 (message "Setting assignee of %s to %s" changenr gerrit-last-assignee)
+                                 (gerrit-rest-change-set-assignee changenr gerrit-last-assignee)))
+                        matched-changes)))))))
+
+
+(defhydra hydra-gerrit-upload (:color amaranth ;; foreign-keys warning, blue heads exit hydra
+                               :hint nil ;; show hint in the echo area
+                               :columns 1
+                               :body-pre (progn
+                                           (gerrit-load-lists)
+                                           (setq gerrit-last-topic "")
+                                           (setq gerrit-last-reviewers '())
+                                           (setq gerrit-last-assignee "")
+                                           (setq gerrit-upload-args gerrit-upload-default-args)
+                                           (setq gerrit-upload-ready-for-review nil))
+                               :after-exit (gerrit-save-lists))
+  "
+gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
+"
+  ("r" gerrit-upload-add-reviewer "Add reviewer")
+  ("R" gerrit-upload-remove-reviewer "Remove reviewer")
+  ("a" gerrit-upload-set-assignee "Set assignee")
+  ("t" gerrit-upload-set-topic "Set topic")
+  ("v" gerrit-upload-toggle-ready-for-review "Toggle ready-for-review")
+  ("A" gerrit-upload-set-args "Set additional args")
+  ("RET" gerrit-upload-run "Upload" :color blue))
+
+(defun gerrit-download--gitreview ()
+  "Download change from the gerrit server."
+  (interactive)
+  ;; TODO handle non-zero exit status (see https://stackoverflow.com/questions/23299314/finding-the-exit-code-of-a-shell-command-in-elisp)
+  (let ((open-changes (shell-command-to-string "git review -l")))
+
+    ;; remove last two lines
+    (setq open-changes (nbutlast (s-lines open-changes) 2))
+    ;; (message (s-join "\n" open-changes))
+    (let ((changenr (completing-read
+                     "Download Change: " open-changes nil nil)))
+      (magit-git-command (concat "git review -d "
+                                 (car (s-split " " (s-trim changenr))))))))
+
+
+
+(defun gerrit-download ()
+  "Download change from the gerrit server."
+  (interactive)
+   (if gerrit-use-gitreview-interface
+       (gerrit-download--gitreview)
+     (gerrit-download--new)))
+
+(defun gerrit-upload ()
+  (interactive)
+   (if gerrit-use-gitreview-interface
+       (hydra-gerrit-upload/body)
+     (call-interactively #'gerrit-upload-transient)))
 
 (provide 'gerrit)
 ;;; gerrit.el ends here

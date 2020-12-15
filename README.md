@@ -4,35 +4,48 @@
 gerrit.el
 =========
 
-This package uses the gerrit REST interface and the `git-review` CLI
-tool to add support for
+Gerrit is a great code review tool and a great git hosting serivce. This
+package provides an emacs interface for
 
 * uploading changes (`gerrit-upload`)
 * downloading changes (`gerrit-download`)
-* creating a dashboard  (`gerrit-dashboard`).
+* creating a dashboard  (`gerrit-dashboard`)
+* creating buffers that contain details about gerrit topics an gerrit
+  changes (`gerrit-section-topic-info` and `gerrit-section-change-info`).
 
-The emacs interfaces for uploading and downloading changes require
-`git-review` (There are plans to get rid of this dependency - see
-[#10](https://github.com/thisch/gerrit.el/issues/10)) and are implemented
-using the great [hydra](https://github.com/abo-abo/hydra) package. In the
-case of the `gerrit-upload` hydra it is possible to
+The function `gerrit-upload` uses the `transient` package (if
+`gerrit-use-gitreview-interface` is set to `nil`) and provides the following
+features in addition to uploading new changes (and new patchsets)
 
 * specify reviewers
 * set an assignee
 * set a topic name
 * set WIP flag
-* specify custom parameters for `git-review`.
+* set a ready-for-review flag
 
-This package also contains a minimalistic open-reviews status-section
-(`gerrit-magit-insert-status`) for magit status buffers.
+Furthermore, a minimalistic open-reviews status-section
+(`gerrit-magit-insert-status`) for magit status buffers is available.
 
-This code is tested using git-review=0.27 and gerrit=2.16.
+This code is tested using gerrit=2.16 and the gerrit version used on
+`review.gerrithub.org`.
+
+## Legacy git-review functions and new style REST-based functions
+
+Initially this package depended on the `git-review` command line tool, which
+was used for downloading and uploading gerrit changes. The functions are
+still provided but they are no longer actively updated. They can be used by
+setting `gerrit-use-gitreview-interface` to `t`, which is the default value.
+
+The recommended interface for downloading and uploading gerrit changes is
+the new REST-API only interface that has to be activated by setting
+`gerrit-use-gitreview-interface` to `nil`.
 
 ## Installation
 
-Make sure that [git-review](https://opendev.org/opendev/git-review) is
-installed and that every cloned gerrit repo has a gerrit-specific pre-commit
-hook configured (`git review -s`).
+If you want to use the git-review interface, make sure that
+[git-review](https://opendev.org/opendev/git-review) is installed and that
+every cloned gerrit repo has a gerrit-specific pre-commit hook configured
+(`git review -s`).
 
 This emacs package is available on
 [MELPA](http://melpa.org/#/gerrit).
@@ -44,11 +57,12 @@ Example `use-package` config
   :ensure t
   :custom
   (gerrit-host "gerrit.my.domain")  ;; is needed for REST API calls
+  (gerrit-use-gitreview-interface nil)
   :config
   (progn
     (add-hook 'magit-status-sections-hook #'gerrit-magit-insert-status t)
-    (global-set-key (kbd "C-x i") 'gerrit-upload)
-    (global-set-key (kbd "C-x o") 'gerrit-download)))
+    (global-set-key (kbd "C-x i") 'gerrit-upload-transient)
+    (global-set-key (kbd "C-x o") 'gerrit-download-new)))
 ```
 
 In the case of the gerrit server [review.opendev.org](https://review.opendev.org), the following
@@ -68,6 +82,27 @@ variables have to be set:
 ![gerrit-upload](https://user-images.githubusercontent.com/206581/88589947-356a1480-d05a-11ea-8964-e7d0b4bc8a18.png)
 
 ![gerrit-section-change-info](https://user-images.githubusercontent.com/206581/101976331-9dee1280-3c44-11eb-8d01-629d3634da43.png)
+
+## Usage notes for the `gerrit-upload` transient
+
+All settings entered in the `gerrit-upload` transient are saved to a file,
+whose filename is in the `transient-history-file` variable. This file is
+updated in the `kill-emacs-hook`, which is run when the emacs
+process/daemon is stopped using `(kill-emacs)`.
+
+If you are using `systemd` for starting emacs as a daemon, make sure that your
+unit files contains
+
+```
+ExecStop=/usr/bin/emacsclient --eval "(kill-emacs)"
+```
+
+You can cycle through the history by using <kbd>M-p</kbd> and
+<kbd>M-n</kbd>.
+
+The reviewers have to be added as a comma-separated string. Completion of
+the individual reviewres using the account information from the gerrit
+servers should work with <kbd>TAB</kbd>.
 
 ## Dashboards
 
