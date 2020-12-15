@@ -103,7 +103,7 @@
 ;; gerrit-upload* and gerrit-download* functions
 ;;
 ;; TODO finalize API (think about a consistent naming scheme (when to use -- and when not)
-;; TODO copy the gitreviewless code into gerrit.el file
+;; DONE copy the gitreviewless code into gerrit.el file
 ;; TODO provide a C-u version for gerrit-download-new, which also asks for the PS number
 ;; TODO defvar for turning off .gitreview parsing. I would rather not parse it.
 ;;         use "origin" as the remote if this parsing is turned off
@@ -115,7 +115,7 @@
 ;;         a local branch fb that is based on origin/version0.2 and which tracks
 ;;         origin/version0.2 (=upstream)
 ;; TODO write some unit tests that create git repos and test elisp functions
-;; TODO use gerrit-magit-process-buffer-add-item for:
+;; DONE use gerrit-magit-process-buffer-add-item for:
 ;;       setting the assignee:
 ;;            section name: changenr and assignee
 ;;            section body: maybe rest output? especially useful if there is an error
