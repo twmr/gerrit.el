@@ -835,7 +835,10 @@ shown in the section buffer."
 (defun gerrit-dashboard--topic ()
   "Return the topicname as a string of a change under point."
   (interactive)
-  (aref (tabulated-list-get-entry) 7))
+  (let ((topic-name (aref (tabulated-list-get-entry) 7)))
+    (when (string= "" topic-name)
+      (error "No topic set for the current change"))
+    topic-name))
 
 (defun gerrit-dashboard-browse-change ()
   "Open the change under point in a browser."
