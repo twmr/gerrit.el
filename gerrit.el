@@ -48,6 +48,7 @@
 (require 'magit-section)
 (require 'recentf)
 (require 's)
+(require 'subr-x) ;; for string-empty-p
 
 (require 'gerrit-rest)
 
@@ -837,7 +838,7 @@ shown in the section buffer."
   "Return the topicname as a string of a change under point."
   (interactive)
   (let ((topic-name (aref (tabulated-list-get-entry) 7)))
-    (when (string= "" topic-name)
+    (when (string-empty-p topic-name)
       (error "No topic set for the current change"))
     topic-name))
 
@@ -1120,7 +1121,7 @@ HISTORY."
   "Run git-review."
   (interactive)
   (let ((cmdstr (gerrit-upload-create-git-review-cmd)))
-    (if (string= "" gerrit-last-assignee)
+    (if (string-empty-p gerrit-last-assignee)
         (magit-git-command cmdstr)
         ;; see #2 (Is it possible to use magit-git-command and pass the
         ;; output of the git review to a defun that sets the assignee?)
