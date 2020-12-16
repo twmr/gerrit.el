@@ -672,6 +672,7 @@ shown in the section buffer."
         (when changenr
           (gerrit-section--insert-change-comments (gerrit-rest-get-change-info changenr)))
         (when topicname
+          (insert "Topic: " topicname "\n")
           ;; TODO check if there are no open topics with the name
           ;; topicname. If this is the case, check if there are non-open
           ;; topics with this name and offer to open it.
