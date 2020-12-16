@@ -270,7 +270,7 @@ A section in the respective process buffer is created."
                  ;; information is used for setting the specified assignee
                  ;; Alternatively we could perform a gerrit query with owner:me and set the
                  ;; assignee for the latest change(s).
-                 (unless (equal "" assignee)
+                 (when assignee
                    (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+" output)))
                        (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
                                         (message "Setting assignee of %s to %s" changenr assignee)
