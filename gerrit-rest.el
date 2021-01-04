@@ -45,14 +45,6 @@ servers it needs to be set to an empty string."
   :group 'gerrit
   :type 'str)
 
-;; (defun gerrit-rest-authentication ()
-
-;;   (let ((pass-entry (auth-source-user-and-password gerrit-host)))
-;;     (when-let ((username (nth 0 pass-entry))
-;;                (password (nth 1 pass-entry)))
-;;       (base64-encode-string
-;;        (concat username ":" password)))))
-
 (defun gerrit-get-credentials ()
   "Return a username a secret and a function to save the secret."
   (when-let* ((auth-source-creation-prompts
@@ -297,10 +289,10 @@ A comment MESSAGE can be provided."
   (let ((url-request-method "GET")
         (url-request-extra-headers
          `(("Authorization" . ,(concat "Basic "
-                                       (let ((gerrit-credentials (gerrit-get-credentials))
-                                             (base64-encode-string
-                                              (concat (nth 0 gerrit-credentials) ":"
-                                                      (nth 1 gerrit-credentials)))))))))
+                                       (let ((gerrit-credentials (gerrit-get-credentials)))
+                                         (base64-encode-string
+                                          (concat (nth 0 gerrit-credentials) ":"
+                                                  (nth 1 gerrit-credentials))))))))
         (url-request-data nil)
         (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix
                         (format "/changes/%s/revisions/current/patch" changenr))))
