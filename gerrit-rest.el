@@ -107,6 +107,7 @@ down the URL structure to send the request."
              (progn
                ;; save the credentials, required e.g. when the credentials
                ;; are written into the keyring.
+               ;; FIXME only save the credentials when they have not been saved already
                (when (functionp (nth 2 gerrit-credentials))
                    (message "Saving gerrit credentials")
                    (funcall (nth 2 gerrit-credentials)))
@@ -115,6 +116,15 @@ down the URL structure to send the request."
            ;; ")]}'" was not found in the REST response
            (let ((buffer (get-buffer-create "*gerrit-rest-status*"))
                  (contents (buffer-substring (point-min) (point-max))))
+
+             (goto-char (point-min))
+
+             ;; remove the credentials first from the cache (see hash-map `password-data')
+             (when-let ((pos (search-forward-regexp (concat "^Unauthorized$") nil t)))
+               (message (concat "Failed to authenticate at gerrit host -> Removing saved"
+                                "credentials"))
+               ((auth-source-forget+ :host gerrit-host)))
+
              (with-current-buffer buffer
                (goto-char (point-max))
                (insert ?\n)
