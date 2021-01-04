@@ -45,13 +45,35 @@ servers it needs to be set to an empty string."
   :group 'gerrit
   :type 'str)
 
-(defun gerrit-rest-authentication ()
-  "Return an encoded string with gerrit username and password."
-  (let ((pass-entry (auth-source-user-and-password gerrit-host)))
-    (when-let ((username (nth 0 pass-entry))
-               (password (nth 1 pass-entry)))
-      (base64-encode-string
-       (concat username ":" password)))))
+;; (defun gerrit-rest-authentication ()
+
+;;   (let ((pass-entry (auth-source-user-and-password gerrit-host)))
+;;     (when-let ((username (nth 0 pass-entry))
+;;                (password (nth 1 pass-entry)))
+;;       (base64-encode-string
+;;        (concat username ":" password)))))
+
+(defun gerrit-get-credentials ()
+  "Return a username a secret and a function to save the secret."
+  (when-let* ((auth-source-creation-prompts
+               '((user  . "Gerrit user at %h: ")
+                 (secret . "Gerrit password for %u@%h: ")))
+              (gerrit-auth-info (nth 0 (auth-source-search
+                                        :max 1
+                                        :host gerrit-host
+                                        :require '(:user :secret)
+                                        ;; where are the credentials stored?
+                                        ;; see the save-function code in
+                                        ;; https://www.gnu.org/software/emacs/manual/html_mono/auth.html#Help-for-developers
+                                        :create t))))
+    (let ((user (plist-get gerrit-auth-info :user))
+          (secret (plist-get gerrit-auth-info :secret))
+          (save-function (plist-get gerrit-auth-info :save-function)))
+      (list user
+            (if (functionp secret)
+                (funcall secret)
+              secret)
+            save-function))))
 
 (defmacro gerrit-rest--read-json (str)
   "Read json string STR."
@@ -72,12 +94,16 @@ servers it needs to be set to an empty string."
   "Interact with the API using method METHOD and data DATA.
 Optional arg PATH may be provided to specify another location further
 down the URL structure to send the request."
-  (let ((url-request-method method)
-        (url-request-extra-headers
-         `(("Content-Type" . "application/json")
-           ("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
-        (url-request-data data)
-        (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix path)))
+  (let* ((gerrit-credentials (gerrit-get-credentials))
+         (url-request-method method)
+         (url-request-extra-headers
+          `(("Content-Type" . "application/json")
+            ("Authorization" . ,(concat "Basic "
+                                        (base64-encode-string
+                                         (concat (nth 0 gerrit-credentials) ":"
+                                                 (nth 1 gerrit-credentials)))))))
+         (url-request-data data)
+         (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix path)))
 
     (with-current-buffer (url-retrieve-synchronously target t)
       (gerrit-rest--read-json
@@ -86,7 +112,14 @@ down the URL structure to send the request."
          ;; if there is an error in search-forward-regexp, write
          ;; the buffer contents to a *gerrit-rest-status* buffer
          (if-let ((pos (search-forward-regexp (concat "^" (regexp-quote ")]}'") "$") nil t)))
-             (buffer-substring pos (point-max))
+             (progn
+               ;; save the credentials, required e.g. when the credentials
+               ;; are written into the keyring.
+               (when (functionp (nth 2 gerrit-credentials))
+                   (message "Saving gerrit credentials")
+                   (funcall (nth 2 gerrit-credentials)))
+               (buffer-substring pos (point-max)))
+
            ;; ")]}'" was not found in the REST response
            (let ((buffer (get-buffer-create "*gerrit-rest-status*"))
                  (contents (buffer-substring (point-min) (point-max))))
@@ -263,7 +296,11 @@ A comment MESSAGE can be provided."
   ;; does not return json
   (let ((url-request-method "GET")
         (url-request-extra-headers
-         `(("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
+         `(("Authorization" . ,(concat "Basic "
+                                       (let ((gerrit-credentials (gerrit-get-credentials))
+                                             (base64-encode-string
+                                              (concat (nth 0 gerrit-credentials) ":"
+                                                      (nth 1 gerrit-credentials)))))))))
         (url-request-data nil)
         (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix
                         (format "/changes/%s/revisions/current/patch" changenr))))
