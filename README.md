@@ -73,6 +73,46 @@ variables have to be set:
 (setq gerrit-rest-endpoint-prefix "") ;; needed for older(?) gerrit server versions
 ```
 
+## Authentication
+
+### netrc
+
+TODO
+
+### keyring
+
+Make sure that emacs was compiled with dbus support (requires devel pacakges
+of libdbus)
+
+Load dbus library
+
+
+Make sure that `(dbus-list-names :session)` returns a non-empty list,
+otherwise dbus is not working
+
+Load the `secrets` library, which depends on a working dbus setup.
+
+`(load-library 'secrets)` and check that the `secrets-enabled` variable is
+`t`.
+
+Now you can list the secrets using `secrets-show-secrets`.
+
+Make sure that you have a secret for gerrit
+
+https://github.com/mrvdb/emacs-config
+```
+;; Use only password-store
+(use-package auth-source-pass
+  :ensure password-store
+  :init
+  (auth-source-pass-enable)
+  :config
+  ;; Make sure it's the only mechanism
+  (setq auth-sources '(password-store))
+```
+
+If not you can add one using ....
+
 ## Screenshots
 
 ![gerrit-dashboard](https://user-images.githubusercontent.com/206581/88588506-f8048780-d057-11ea-9c57-ac2a58aadd58.png)
