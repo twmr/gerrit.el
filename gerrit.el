@@ -346,7 +346,7 @@ A section in the respective process buffer is created."
      remote
      (concat "HEAD:"  refspec))))
 
-(define-transient-command gerrit-upload-transient ()
+(transient-define-prefix gerrit-upload-transient ()
   "Transient used for uploading changes to gerrit"
   ["Arguments"
    (gerrit-upload:--reviewers)
