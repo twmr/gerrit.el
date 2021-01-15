@@ -265,7 +265,6 @@ A section in the respective process buffer is created."
                    (magit-process-sentinel process event)
 
                  ;; success
-                 (process-put process 'inhibit-refresh t)
 
                  ;; parse the output of "git push" and extract the change numbers. This
                  ;; information is used for setting the specified assignee
@@ -280,6 +279,9 @@ A section in the respective process buffer is created."
                                          (format "Assignee of change %s was set to %s" changenr assignee)
                                          "set-assignee" changenr)))
                                matched-changes)))
+
+                 (process-put process 'inhibit-refresh t) ;; modify behavior
+                                                          ;; of `magit-process-sentinel'
                  (magit-process-sentinel process event))))))))))
 
 (defun gerrit-upload--get-refspec ()
