@@ -73,6 +73,41 @@ variables have to be set:
 (setq gerrit-rest-endpoint-prefix "") ;; needed for older(?) gerrit server versions
 ```
 
+## Authentication
+
+### `.authinfo`, `.authinfo.gpg` and `.netrc`
+
+By default emacs searches in files called `~/.authinfo`, `~/.authinfo.gpg`
+and `~/.netrc` in the specified order for credentials. Take a look at the
+`auth-sources` variable and its documentation if you want to change this.
+
+You can add an entry with the following format to any of above files
+
+```
+machine gerrithostname.org
+    login my-gerrit-username
+    password xxxx
+```
+
+### Keyring
+
+Make sure that emacs was compiled with dbus support (requires devel packages
+of libdbus).
+
+Load `dbus` emacs library using `(load-library 'dbus)`.
+
+Make sure that `(dbus-list-names :session)` returns a non-empty list,
+otherwise dbus is not working
+
+Load the `secrets` library, which depends on a working dbus setup.
+
+`(load-library 'secrets)` and check that the `secrets-enabled` variable is
+`t`.
+
+Now you can list the secrets using `secrets-show-secrets`.
+
+**TODO** extend/finalize this documentation.
+
 ## Screenshots
 
 ![gerrit-dashboard](https://user-images.githubusercontent.com/206581/88588506-f8048780-d057-11ea-9c57-ac2a58aadd58.png)
