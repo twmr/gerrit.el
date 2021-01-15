@@ -75,17 +75,26 @@ variables have to be set:
 
 ## Authentication
 
-### netrc
+### `.authinfo`,  `.authinfo.gpg` and `.netrc`
 
-TODO
+By default emacs searches in files called `~/.authinfo`, `~/.authinfo.gpg`
+and `~/.netrc` in the specified order for credentials. Take a look at the
+`auth-sources` variable if you want to change this.
 
-### keyring
+You can add an entry with the following format to any of above files
 
-Make sure that emacs was compiled with dbus support (requires devel pacakges
-of libdbus)
+```
+machine gerrithostname.org
+    login my-gerrit-username
+    password xxxx
+```
 
-Load dbus library
+### Keyring
 
+Make sure that emacs was compiled with dbus support (requires devel packages
+of libdbus).
+
+Load `dbus` emacs library using `(load-library 'dbus)`.
 
 Make sure that `(dbus-list-names :session)` returns a non-empty list,
 otherwise dbus is not working
@@ -97,21 +106,7 @@ Load the `secrets` library, which depends on a working dbus setup.
 
 Now you can list the secrets using `secrets-show-secrets`.
 
-Make sure that you have a secret for gerrit
-
-https://github.com/mrvdb/emacs-config
-```
-;; Use only password-store
-(use-package auth-source-pass
-  :ensure password-store
-  :init
-  (auth-source-pass-enable)
-  :config
-  ;; Make sure it's the only mechanism
-  (setq auth-sources '(password-store))
-```
-
-If not you can add one using ....
+**TODO** extend/finalize this documentation.
 
 ## Screenshots
 
