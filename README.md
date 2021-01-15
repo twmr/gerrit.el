@@ -62,7 +62,7 @@ Example `use-package` config
   (progn
     (add-hook 'magit-status-sections-hook #'gerrit-magit-insert-status t)
     (global-set-key (kbd "C-x i") 'gerrit-upload-transient)
-    (global-set-key (kbd "C-x o") 'gerrit-download-new)))
+    (global-set-key (kbd "C-x o") 'gerrit-download)))
 ```
 
 In the case of the gerrit server [review.opendev.org](https://review.opendev.org), the following

@@ -26,9 +26,10 @@
 
 ;; This package contains
 ;;
-;; * defuns for downloading and uploading a change (`gerrit-upload-transient` and `gerrit-download-new`)
+;; * functions for downloading and uploading a change
+;; * (`gerrit-upload-transient` and `gerrit-download`)
 ;;
-;; * gerrit-dashboard, defun for displaying a dashboard, similar to the
+;; * `gerrit-dashboard`, function for displaying a dashboard, similar to the
 ;;   one of the gerrit webinterface
 ;;
 ;; * open-reviews section for the magit-status buffer (`magit-gerrit-insert-status`)
@@ -113,7 +114,7 @@ gerrit-download is used."
 ;;
 ;; TODO finalize API (think about a consistent naming scheme (when to use -- and when not)
 ;; DONE copy the gitreviewless code into gerrit.el file
-;; TODO provide a C-u version for gerrit-download-new, which also asks for the PS number
+;; TODO provide a C-u version for gerrit-download, which also asks for the PS number
 ;; TODO defvar for turning off .gitreview parsing. I would rather not parse it.
 ;;         use "origin" as the remote if this parsing is turned off
 ;; TODO if git-review parsing is turned off - how do we determine the upstream branch then?
