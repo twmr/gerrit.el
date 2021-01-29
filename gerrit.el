@@ -117,7 +117,7 @@ gerrit-download is used."
 ;; TODO provide a C-u version for gerrit-download, which also asks for the PS number
 ;; TODO defvar for turning off .gitreview parsing. I would rather not parse it.
 ;;         use "origin" as the remote if this parsing is turned off
-;; TODO if git-review parsing is turned off - how do we determine the upstream branch then?
+;; TODO if .gitreview parsing is turned off - how do we determine the upstream branch then?
 ;;         if the local branch has an upstream configured -> use it
 ;;         if it doesn't -> ask the user (magit-read-string)
 ;;         Note:
