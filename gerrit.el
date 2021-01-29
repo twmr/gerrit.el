@@ -554,7 +554,11 @@ myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
         (project (substring-no-properties (gerrit-get-current-project)))
         (commit-message-lines (magit-git-lines "log" "-1" "--pretty=%B")))
     (unless
-        (s-starts-with? "Change-Id: " (car (last commit-message-lines)))
+        ;; in the case of cherry-picks, the Change-Id line may not be the
+        ;; last line of the commit message. Therefore, iterate over all
+        ;; lines of the commit until a match is found.
+        (cl-some (lambda (line) (s-starts-with? "Change-Id: " line))
+                 commit-message-lines)
       (error "Commit message doesn't end with a change-id"))
     (concat (gerrit-rest--escape-project project)
             "~"
