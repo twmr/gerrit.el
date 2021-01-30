@@ -42,6 +42,7 @@
 ;;; Code:
 
 (require 'cl-lib)  ;; for cl-remove-duplicates
+(require 'cl-extra)  ;; for cl-some
 (require 'dash)
 (require 'hydra)
 (require 'magit)
