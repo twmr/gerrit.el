@@ -348,7 +348,7 @@ A section in the respective process buffer is created."
      remote
      (concat "HEAD:"  refspec))))
 
-(define-transient-command gerrit-upload-transient ()
+(transient-define-prefix gerrit-upload-transient ()
   "Transient used for uploading changes to gerrit"
   ["Arguments"
    (gerrit-upload:--reviewers)
@@ -497,7 +497,9 @@ section header."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") #'gerrit-magit-open-reviews--open-gerrit-change)
     map)
-  "Keymap for `magit-open-reviews' top level section.  The prefix magit- prefix is requred by `magit-insert-section'.")
+  "Keymap for `magit-open-reviews' top level section.
+
+The prefix magit- prefix is required by `magit-insert-section'.")
 
 (defun gerrit-magit-open-reviews--open-gerrit-change ()
   "Open the gerrit change under point in the browser."
