@@ -47,7 +47,7 @@ servers it needs to be set to an empty string."
 
 (defun gerrit-rest-authentication ()
   "Return an encoded string with gerrit username and password."
-  (let ((pass-entry (auth-source-user-and-password gerrit-host)))
+  (let ((pass-entry (auth-source-user-and-password (gerrit--get-gerrit-host-for-current-project))))
     (when-let ((username (nth 0 pass-entry))
                (password (nth 1 pass-entry)))
       (base64-encode-string
@@ -77,7 +77,7 @@ down the URL structure to send the request."
          `(("Content-Type" . "application/json")
            ("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
         (url-request-data data)
-        (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix path)))
+        (target (concat "https://" (gerrit--get-gerrit-host-for-current-project) gerrit-rest-endpoint-prefix path)))
 
     (with-current-buffer (url-retrieve-synchronously target t)
       (gerrit-rest--read-json
@@ -265,7 +265,7 @@ A comment MESSAGE can be provided."
         (url-request-extra-headers
          `(("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
         (url-request-data nil)
-        (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix
+        (target (concat "https://" (gerrit--get-gerrit-host-for-current-project) gerrit-rest-endpoint-prefix
                         (format "/changes/%s/revisions/current/patch" changenr))))
     (message "Opening patch of %s" changenr)
     (setq gerrit-patch-buffer (get-buffer-create "*gerrit-patch*"))

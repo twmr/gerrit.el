@@ -3,7 +3,7 @@
 ;; Author: Thomas Hisch <t.hisch@gmail.com>
 ;; Maintainer: Thomas Hisch <t.hisch@gmail.com>
 ;; URL: https://github.com/thisch/gerrit.el
-;; Version: 0.1
+;; Version: 0.2
 ;; Package-Requires: ((emacs "25.1") (hydra "0.15.0") (magit "2.13.1") (s "1.12.0") (dash "0.2.15"))
 ;; Keywords: extensions
 
@@ -53,6 +53,9 @@
 
 (require 'gerrit-rest)
 
+(eval-after-load 'gerrit
+  '(gerrit--load-gerrit-info-for-projects-from-file))
+
 (defvar gerrit--accounts-alist nil)
 
 (defvar gerrit-dashboard-buffer-name "*gerrit-dashboard*" nil)
@@ -65,6 +68,13 @@
     ("Recently closed" . "is:closed -is:ignored (-is:wip OR owner:self) (owner:self OR reviewer:self OR assignee:self OR cc:self) limit:15"))
   "Query search string that is used for the data shown in the gerrit-dashboard.")
 
+(defcustom gerrit-projects-configuration-file
+  (expand-file-name "gerrit-projects.el"
+                    user-emacs-directory)
+  "Location of configuration file for gerrit projects."
+  :group 'gerrit
+  :type 'string)
+
 (defgroup gerrit nil
   "Maintain a menu of recently opened files."
   :version "25.1"
@@ -75,6 +85,16 @@
   "Hostname of the gerrit instance (without the protocol prefix)."
   :group 'gerrit
   :type 'string)
+
+(define-obsolete-variable-alias 'gerrit-host 'gerrit-info-alist
+  "gerrit 0.2")
+
+(defcustom gerrit-info-alist nil
+  "Infomation mapping between the project and its gerrit instance.
+The information is a list of the gerrit hostname without protocol
+prefix and the corresponding project name."
+  :group 'gerrit
+  :type 'alist)
 
 (defcustom gerrit-change-max-nr-digits 5
   "Number of digits used for displaying gerrit changes."
@@ -224,7 +244,7 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
   (let* ((open-changes
           (seq-map #'gerrit-download-format-change (gerrit-rest-change-query
                                                     (concat "status:open project:"
-                                                            (gerrit-get-current-project)))))
+                                                            (gerrit--get-gerrit-project-for-current-project)))))
          (selected-line (completing-read
                          "Download Change: " open-changes nil nil))
          (changenr (car (s-split " " (s-trim selected-line))))
@@ -241,7 +261,7 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
     (unless (file-exists-p hook-file)
       (message "downloading commit-msg hook file")
       (url-copy-file
-       (concat "https://" gerrit-host  "/tools/hooks/commit-msg") hook-file)
+       (concat "https://" (gerrit--get-gerrit-host-for-current-project) "/tools/hooks/commit-msg") hook-file)
       (set-file-modes hook-file #o755))))
 
 (defun gerrit-push-and-assign (assignee &rest push-args)
@@ -454,42 +474,45 @@ section header."
 (defun gerrit-magit-insert-status ()
   "Show all open gerrit reviews when called in the magit-status-section via `magit-status-section-hook'."
 
- (when-let ((fetched-reviews (condition-case nil
-                                 (gerrit-rest-open-reviews-for-project (gerrit-get-current-project))
-                               (error '()))))
-   (magit-insert-section (open-reviews)
-     (magit-insert-heading "Open Gerrit Reviews")
-     (let* ((fetched-reviews-string-lists
-             (seq-map (lambda (change) (list
-                                   (number-to-string (cdr (assoc '_number change)))
-                                   (cdr (assoc 'branch change))
-                                   (or (cdr (assoc 'topic change)) "") ;; topic may be nil
-                                   (cdr (assoc 'subject change))))
-                      (seq-map #'cdr fetched-reviews)))
-            (max-column-sizes (seq-reduce
-                               (lambda (a b) (--zip-with (max it other)
-                                                    a ;; list of ints
-                                                    (seq-map #'length b) ;; convert list of strs to list of numbers
-                                                    ))
-                               ;; results is a list of lists of strings
-                               fetched-reviews-string-lists
-                               ;; initial value
-                               (mapcar #'length (car fetched-reviews-string-lists))))
+  (when-let ((fetched-reviews (condition-case nil
+                                  (and
+                                   (gerrit--get-gerrit-host-for-current-project)
+                                   (gerrit-rest-open-reviews-for-project
+                                    (gerrit--get-gerrit-project-for-current-project)))
+                                (error '()))))
+    (magit-insert-section (open-reviews)
+      (magit-insert-heading "Open Gerrit Reviews")
+      (let* ((fetched-reviews-string-lists
+              (seq-map (lambda (change) (list
+                                         (number-to-string (cdr (assoc '_number change)))
+                                         (cdr (assoc 'branch change))
+                                         (or (cdr (assoc 'topic change)) "") ;; topic may be nil
+                                         (cdr (assoc 'subject change))))
+                       (seq-map #'cdr fetched-reviews)))
+             (max-column-sizes (seq-reduce
+                                (lambda (a b) (--zip-with (max it other)
+                                                          a ;; list of ints
+                                                          (seq-map #'length b) ;; convert list of strs to list of numbers
+                                                          ))
+                                ;; results is a list of lists of strings
+                                fetched-reviews-string-lists
+                                ;; initial value
+                                (mapcar #'length (car fetched-reviews-string-lists))))
 
-            ;; TODO only left-align topic and subject?
-            (format-str (mapconcat (lambda (x) (concat "%-" (number-to-string x) "s")) max-column-sizes " ")))
+             ;; TODO only left-align topic and subject?
+             (format-str (mapconcat (lambda (x) (concat "%-" (number-to-string x) "s")) max-column-sizes " ")))
 
-       (seq-do (lambda (review)
-                 (seq-let (number topic branch subject) review
-                   (magit-insert-section (open-reviews-issue review t)
-                     (magit-insert-heading
-                       (format format-str
-                               (propertize number 'face 'magit-hash)
-                               (propertize topic 'face 'magit-tag)
-                               (propertize branch 'face 'magit-branch-remote)
-                               (propertize subject 'face 'magit-section-highlight))))))
-               fetched-reviews-string-lists))
-     (insert ?\n))))
+        (seq-do (lambda (review)
+                  (seq-let (number topic branch subject) review
+                    (magit-insert-section (open-reviews-issue review t)
+                      (magit-insert-heading
+                        (format format-str
+                                (propertize number 'face 'magit-hash)
+                                (propertize topic 'face 'magit-tag)
+                                (propertize branch 'face 'magit-branch-remote)
+                                (propertize subject 'face 'magit-section-highlight))))))
+                fetched-reviews-string-lists))
+      (insert ?\n))))
 
 ;; don't rename this var, as it is required for magit-sections
 (defvar magit-open-reviews-issue-section-map
@@ -503,7 +526,7 @@ section header."
   (interactive)
   (browse-url (format
                "https://%s/c/%s"
-               gerrit-host
+               (gerrit--get-gerrit-host-for-current-project)
                ;; (oref (magit-current-section) value) returns the object
                ;; passed as the 2nd arg to (magit-insert-section)
 
@@ -551,7 +574,7 @@ A string like the following is returned:
 myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
   (interactive)
   (let ((branch (substring-no-properties (gerrit-get-upstream-branch)))
-        (project (substring-no-properties (gerrit-get-current-project)))
+        (project (substring-no-properties (gerrit--get-gerrit-project-for-current-project)))
         (commit-message-lines (magit-git-lines "log" "-1" "--pretty=%B")))
     (unless
         ;; in the case of cherry-picks, the Change-Id line may not be the
@@ -852,7 +875,7 @@ shown in the section buffer."
   (interactive)
   (browse-url (format
                "https://%s/c/%s"
-               gerrit-host
+               (gerrit--get-gerrit-host-for-current-project)
                (gerrit-dashboard--entry-number))))
 
 (defun gerrit-dashboard-open-change ()
@@ -942,8 +965,11 @@ shown in the section buffer."
 (defun gerrit-dashboard ()
   "Show a dashboard in a new buffer."
   (interactive)
-  (switch-to-buffer gerrit-dashboard-buffer-name)
-  (gerrit-dashboard-mode))
+  (if (gerrit--get-gerrit-host-for-current-project)
+      (progn
+        (switch-to-buffer gerrit-dashboard-buffer-name)
+        (gerrit-dashboard-mode))
+    (message "No gerrit configuration for project. Please run gerrit-set-gerrit-info-for-current-project")))
 
 
 
@@ -1194,6 +1220,43 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
    (if gerrit-use-gitreview-interface
        (hydra-gerrit-upload/body)
      (call-interactively #'gerrit-upload-transient)))
+
+(defun gerrit-set-gerrit-info-for-current-project (hostname project)
+  "Set gerrit HOSTNAME and PROJECT for the current project."
+  (interactive "sGerrit host: \nsProject: ")
+  (let ((project-root (magit-toplevel)))
+    (if project-root
+        (progn (setq gerrit-info-alist
+                     (acons project-root (list hostname project)
+                            (assoc-delete-all project-root gerrit-info-alist)))
+               (gerrit--store-gerrit-info-for-project-to-file))
+      (message "Not inside a project."))))
+
+(defun gerrit--get-gerrit-host-for-current-project ()
+  "Get the configured gerrit hostname for current project."
+  (cadr (assoc (magit-toplevel) gerrit-info-alist)))
+
+(defun gerrit--get-gerrit-project-for-current-project ()
+  "Get the configured gerrit hostname for current project."
+  (nth 2 (assoc (magit-toplevel) gerrit-info-alist)))
+
+(defun gerrit--load-gerrit-info-for-projects-from-file ()
+  "Load the gerrit configuration for projects from file.
+The projects configuration is read from `gerrit-projects-configuration-file."
+  (let ((conf-file gerrit-projects-configuration-file))
+    (setq gerrit-info-alist
+          (when (file-exists-p conf-file)
+            (with-temp-buffer
+              (insert-file-contents conf-file)
+              (read (buffer-string)))))))
+
+(defun gerrit--store-gerrit-info-for-project-to-file ()
+  "Store the gerrit configuration for projects to file.
+The project configuration is stored to `gerrit-projects-configuration-file."
+  (let ((conf-file gerrit-projects-configuration-file))
+  (when (file-writable-p conf-file)
+    (with-temp-file conf-file
+      (insert (let (print-length) (prin1-to-string gerrit-info-alist)))))))
 
 (provide 'gerrit)
 ;;; gerrit.el ends here
