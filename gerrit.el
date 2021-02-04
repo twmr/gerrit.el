@@ -548,26 +548,35 @@ The prefix magit- prefix is required by `magit-insert-section'.")
        (nth 1 (s-split ":" remote-url))))))
 
 (defun gerrit-get-changeid-from-current-commit ()
-  "Determine the changeid in from the current commit.
+  "Determine the change-id from the current commit.
+
+A string like the following is returned:
+I8473b95934b5732ac55d26311a706c9c2bde9940"
+  (let* (
+        (commit-message-lines (magit-git-lines "log" "-1" "--pretty=%B"))
+        (change-id-line
+         ;; in the case of cherry-picks, the Change-Id line may not be the
+         ;; last line of the commit message. Therefore, iterate over all
+         ;; lines of the commit until a match is found.
+         (cl-some (lambda (line) (and (s-starts-with? "Change-Id: " line) line))
+                  commit-message-lines)))
+
+    (unless change-id-line
+      (error "Commit message doesn't end with a change-id"))
+    (s-chop-prefix "Change-Id: " change-id-line)))
+
+(defun gerrit-get-unique-changeid-from-current-commit ()
+  "Determine the unique change-id from the current commit.
 
 A string like the following is returned:
 myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
-  (interactive)
   (let ((branch (substring-no-properties (gerrit-get-upstream-branch)))
-        (project (substring-no-properties (gerrit-get-current-project)))
-        (commit-message-lines (magit-git-lines "log" "-1" "--pretty=%B")))
-    (unless
-        ;; in the case of cherry-picks, the Change-Id line may not be the
-        ;; last line of the commit message. Therefore, iterate over all
-        ;; lines of the commit until a match is found.
-        (cl-some (lambda (line) (s-starts-with? "Change-Id: " line))
-                 commit-message-lines)
-      (error "Commit message doesn't end with a change-id"))
+        (project (substring-no-properties (gerrit-get-current-project))))
     (concat (gerrit-rest--escape-project project)
             "~"
             branch
             "~"
-            (s-chop-prefix "Change-Id: " (car (last commit-message-lines))))))
+            (gerrit--get-last-commit-changeid))))
 
 
 
@@ -1196,6 +1205,13 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   (interactive)
    (if gerrit-use-gitreview-interface
        (hydra-gerrit-upload/body)
+
+     (condition-case err
+         (gerrit-get-changeid-from-current-commit)
+       (error
+        (gerrit--ensure-commit-msg-hook-exists) ;; create commit-msg hook
+        (error (error-message-string err))))
+
      (call-interactively #'gerrit-upload-transient)))
 
 (provide 'gerrit)
