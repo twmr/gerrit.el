@@ -576,7 +576,7 @@ myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
             "~"
             branch
             "~"
-            (gerrit--get-last-commit-changeid))))
+            (gerrit-get-changeid-from-current-commit))))
 
 
 
