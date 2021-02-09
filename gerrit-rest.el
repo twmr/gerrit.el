@@ -286,11 +286,18 @@ A comment MESSAGE can be provided."
 
 ;;  topic commands
 
+(defun gerrit-rest--change-info-to-unique-changeid (change-info)
+  (concat (gerrit-rest--escape-project (alist-get 'project change-info))
+          "~"
+          (alist-get 'branch change-info)
+          "~"
+          (alist-get 'change_id change-info)))
+
 (defun gerrit-rest-topic-set-assignee (topic assignee)
   "Set the ASSIGNEE of all changes of a TOPIC."
  (interactive "sEnter a topic: \nsEnter assignee: ")
  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
-          (let ((changenr (alist-get 'change_id change-info)))
+          (let ((changenr (gerrit-rest--change-info-to-unique-changeid change-info)))
             (message "Setting assignee %s for %s" assignee changenr)
             (gerrit-rest-change-set-assignee changenr assignee))))
 
@@ -299,17 +306,16 @@ A comment MESSAGE can be provided."
 A comment MESSAGE can be provided."
  (interactive "sEnter a topic: \nsEnter vote [-2, -1, 0, +1, +2]: \nsEnter message: ")
  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
-          (let ((changenr (alist-get 'change_id change-info)))
+          (let ((changenr (gerrit-rest--change-info-to-unique-changeid change-info)))
             (message "Setting vote %s for %s" vote changenr)
-            (gerrit-rest-change-set-vote changenr vote message)
-            )))
+            (gerrit-rest-change-set-vote changenr vote message))))
 
 (defun gerrit-rest-topic-verify (topic vote message)
   "Verify a topic TOPIC by voting with VOTE.
 A comment MESSAGE can be provided."
  (interactive "sEnter a topic: \nsEnter vote [-1, 0, +1]: \nsEnter message: ")
  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
-          (let ((changenr (alist-get 'change_id change-info)))
+          (let ((changenr (gerrit-rest--change-info-to-unique-changeid change-info)))
             (message "Setting Verify-vote %s for %s" vote changenr)
             (gerrit-rest-change-verify changenr vote message))))
 
