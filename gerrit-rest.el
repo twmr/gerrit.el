@@ -205,7 +205,7 @@ A comment MESSAGE can be provided."
                     (encode-coding-string (json-encode-list
                                            `((message . ,message)
                                              (labels .
-                                               ((Code-Review . ,vote))))) 'utf-8)
+                                               ((Verified . ,vote))))) 'utf-8)
                     (format "/changes/%s/revisions/current/review" changenr)))
 
 (defun gerrit-rest-change-set-Work-in-Progress (changenr)
