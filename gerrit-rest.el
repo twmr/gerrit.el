@@ -106,7 +106,10 @@ down the URL structure to send the request."
 (defun gerrit-rest-get-server-version ()
   "Return the gerrit server version."
   (interactive)
-  (gerrit-rest-sync "GET" nil "/config/server/version"))
+  (let ((versionstr (gerrit-rest-sync "GET" nil "/config/server/version")))
+    (when (called-interactively-p 'interactive)
+      (message versionstr))
+    versionstr))
 
 (defun gerrit-rest-get-server-info ()
   "Return the gerrit server info."
