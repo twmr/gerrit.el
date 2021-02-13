@@ -114,7 +114,15 @@ down the URL structure to send the request."
 (defun gerrit-rest-get-server-info ()
   "Return the gerrit server info."
   (interactive)
-  (gerrit-rest-sync "GET" nil "/config/server/info"))
+  (let ((serverinfo (gerrit-rest-sync "GET" nil "/config/server/info")))
+    (when (called-interactively-p 'interactive)
+      (switch-to-buffer (get-buffer-create "*gerrit-server-info*"))
+      (erase-buffer)
+      (cl-prettyprint serverinfo)
+      (unless buffer-read-only
+        (read-only-mode t))
+      (lisp-mode))
+    serverinfo))
 
 (defun gerrit-rest-get-change-info (changenr)
   "Return information about an open change with CHANGENR."
