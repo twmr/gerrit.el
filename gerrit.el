@@ -174,6 +174,7 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
   (let ((tracked (magit-get-upstream-branch branch)))
     (s-split-up-to "/" tracked 1 t)))
 
+
 (defun gerrit--download-change (change-metadata)
   ;; to see what git-review does under the hood - see:
   ;; strace -z -f -e execve git-review -d 3591
@@ -193,30 +194,50 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
                                (replace-regexp-in-string "\\W+" "_" change-owner)
                                change-topic)))
 
-    ;;TODO
-    ;; this next call doesn't work if the authorization doesn't work
-    ;; (e.g. if ssh-add was not called)
-    (magit-call-git "fetch" (gerrit-get-remote) (gerrit-download--get-refspec change-metadata))
+    ;; This next (async) call ensures that the authorization works
+    ;; (e.g. if ssh-add was not called) this async call runs
+    ;; magit-process-password-prompt-regexps (used in magit-process-filter)
+    ;; which is called in magit-start-process
+    (magit-run-git-async "fetch"
+                         (gerrit-get-remote)
+                         (gerrit-download--get-refspec change-metadata))
+    (set-process-sentinel
+     magit-this-process
+     (lambda (process event)
+       (when (memq (process-status process) '(exit signal))
+         (if (not (zerop (process-exit-status process)))
+             ;; error
+             (magit-process-sentinel process event)
 
-    (if-let* ((local-ref (concat "refs/heads/" local-branch))
-              (branch-exists (magit-git-success "show-ref" "--verify" "--quiet" local-ref)))
-        (progn
-          ;; since local-branch exists, gerrit--get-tracked never returns nil
-          (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked local-branch)
-            (unless (and (equal tracked-remote (gerrit-get-remote))
-                         (equal tracked-branch change-branch))
-              (error "Branch tracking incompatibility: Tracking %s/%s instead of %s/%s"
-                     tracked-remote tracked-branch
-                     (gerrit-get-remote) change-branch)))
-          (magit-run-git "checkout" local-branch)
-          (magit-run-git "reset" "--hard" "FETCH_HEAD"))
+           ;; git-fetch was successful
 
-      (magit-call-git "checkout" "-b" local-branch "FETCH_HEAD")
-      ;; set upstream here (see checkout_review function in cmd.py)
-      ;; this upstream branch is needed for rebasing
-      (magit-run-git "branch"
-                     "--set-upstream-to" (format "%s/%s" (gerrit-get-remote) change-branch)
-                     local-branch))))
+           ;; see magit-delete-remote-branch-sentinel
+           (process-put process 'inhibit-refresh t)
+           (magit-process-sentinel process event)
+
+           (if-let* ((local-ref (concat "refs/heads/" local-branch))
+                     (branch-exists (magit-git-success
+                                     "show-ref" "--verify" "--quiet" local-ref)))
+               (progn
+                 ;; since local-branch exists, gerrit--get-tracked never returns nil
+                 (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked local-branch)
+                   (unless (and (equal tracked-remote (gerrit-get-remote))
+                                (equal tracked-branch change-branch))
+                     (magit-refresh)
+                     (error "Branch tracking incompatibility: Tracking %s/%s instead of %s/%s"
+                            tracked-remote tracked-branch
+                            (gerrit-get-remote) change-branch)))
+                 (magit-call-git "checkout" local-branch)
+                 (magit-call-git "reset" "--hard" "FETCH_HEAD"))
+
+             (magit-call-git "checkout" "-b" local-branch "FETCH_HEAD")
+             ;; set upstream here (see checkout_review function in cmd.py)
+             ;; this upstream branch is needed for rebasing
+             (magit-call-git "branch"
+                             "--set-upstream-to"
+                             (format "%s/%s" (gerrit-get-remote) change-branch)
+                             local-branch))
+           (magit-refresh))))))
 
 (defun gerrit-download--new ()
   "Download change from the gerrit server."
