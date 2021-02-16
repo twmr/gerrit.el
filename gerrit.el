@@ -210,8 +210,8 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
                      (gerrit-get-remote) change-branch)))
           (magit-run-git "checkout" local-branch)
           (magit-run-git "reset" "--hard" "FETCH_HEAD"))
-      ;;
-      (magit-branch-and-checkout local-branch "FETCH_HEAD")
+
+      (magit-call-git "checkout" "-b" local-branch "FETCH_HEAD")
       ;; set upstream here (see checkout_review function in cmd.py)
       ;; this upstream branch is needed for rebasing
       (magit-run-git "branch"
