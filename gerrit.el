@@ -344,7 +344,8 @@ A section in the respective process buffer is created."
 
     (gerrit-push-and-assign
      assignee
-     "--no-follow-tags"
+     "--no-follow-tags" ;; don't error when encountering local tags, which
+                        ;; are absent from gerrit.
      remote
      (concat "HEAD:"  refspec))))
 
