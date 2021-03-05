@@ -110,8 +110,8 @@ down the URL structure to send the request."
                                 "*gerrit-rest-status* buffer for more information")))))))))))
 
 (defun gerrit-rest--escape-project (project)
-  "Escape project name PROJECT for usage in REST API requets."
-  (s-replace-all '(("/" . "%2F")) project))
+  "Escape project name PROJECT for usage in REST API requests."
+  (url-hexify-string project))
 
 (defun gerrit-rest-get-server-version ()
   "Return the gerrit server version."
