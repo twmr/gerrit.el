@@ -563,15 +563,15 @@ The prefix magit- prefix is required by `magit-insert-section'.")
   (let* ((remote-url (car
                       (magit-config-get-from-cached-list
                        (format "remote.%s.url" (gerrit-get-remote)))))
-		     (parsed-url (url-generic-parse-url remote-url))
-		     (parsed-path (url-filename parsed-url)))
-	  (cond ((not (string= remote-url parsed-path)) ; Any URL with scheme:// AND scp-like w/o username
-		       (replace-regexp-in-string "^/?\\(.*?\\)\\(\\.git/?\\)?$" "\\1"
-									                   parsed-path))
-		      ((string-match "^\\(?:[^@]+@\\)?[^:]+:\\(.*?\\)\\(?:\\.git/?\\)?$" remote-url) ; scp-like
-		       ;; the matching regex is very generous, assume the URL is correct
-		       (match-string 1 remote-url))
-		      (t (error "Remote URL %s is not recognized" remote-url)))))
+         (parsed-url (url-generic-parse-url remote-url))
+         (parsed-path (url-filename parsed-url)))
+    (cond ((not (string= remote-url parsed-path)) ; Any URL with scheme:// AND scp-like w/o username
+           (replace-regexp-in-string "^/?\\(.*?\\)\\(\\.git/?\\)?$" "\\1"
+                                     parsed-path))
+          ((string-match "^\\(?:[^@]+@\\)?[^:]+:\\(.*?\\)\\(?:\\.git/?\\)?$" remote-url) ; scp-like
+           ;; the matching regex is very generous, assume the URL is correct
+           (match-string 1 remote-url))
+          (t (error "Remote URL %s is not recognized" remote-url)))))
 
 (defun gerrit-get-changeid-from-current-commit ()
   "Determine the change-id from the current commit.
