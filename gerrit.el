@@ -30,7 +30,7 @@
 ;; * (`gerrit-upload-transient` and `gerrit-download`)
 ;;
 ;; * `gerrit-dashboard`, function for displaying a dashboard, similar to the
-;;   one of the gerrit webinterface
+;;   one of the gerrit web-interface
 ;;
 ;; * open-reviews section for the magit-status buffer (`magit-gerrit-insert-status`)
 ;;
@@ -141,7 +141,7 @@ gerrit-download is used."
 ;;       how do I determine the start-sha1?
 ;;           -> use  branchname@{u}
 ;; TODO upload: before uploading a change check the sha1 of the latest commit and check
-;;              if it is alredy a change on gerrit with this sha1
+;;              if it is already a change on gerrit with this sha1
 ;; TODO upload: always-rebase by default? git-review always rebases by default
 ;;              but for merge commits it must not rebase automatically
 ;; DONE use transient for upload form
@@ -322,7 +322,7 @@ A section in the respective process buffer is created."
 
 ;; The history file contains both the history elements of "submitted"
 ;; settings (where the action was called) as well as the history of the
-;; individual options independent whether the qction was called or not (if a
+;; individual options independent whether the action was called or not (if a
 ;; reader is specified, the history parameter needs to be updated for this
 ;; to work!).
 
@@ -1091,9 +1091,9 @@ HISTORY."
                   ;; default value set to LRU value
                   (car reduced-history))))
      (unless (equal "" value)
-       ;; todo simplify the duplicate handling
+       ;; TODO simplify the duplicate handling
        (push value ,history) ;; note that we don't need this if the builtin
-                             ;; completeing-read is used. Bug in
+                             ;; completing-read is used. Bug in
                              ;; ivy-completing-read?
        (setq ,history (cl-remove-duplicates ,history :test 'string=)))
      value))
