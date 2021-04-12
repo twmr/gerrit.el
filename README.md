@@ -171,7 +171,7 @@ If you want to create multiple dashboards you can create a dashboard using
 ## Similar elisp packages
 
 * [magit-gerrit](https://github.com/darcylee/magit-gerrit) Fork of
-unmaintained https://github.com/terranpro/magit-gerrit. Uses the
+https://github.com/emacsorphanage/magit-gerrit. Uses the
 [`ssh`](https://gerrit-review.googlesource.com/Documentation/cmd-index.html)
 interface for performing gerrit requests.
 
