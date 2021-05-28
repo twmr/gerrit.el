@@ -88,6 +88,7 @@ machine gerrithostname.org
     login my-gerrit-username
     password xxxx
 ```
+Note: Gerrit's HTTP basic authentication expects the HTTP password from the user’s account settings page. Make sure to generate one, copy it and add it as the password in your auth-source.
 
 ### Keyring
 
