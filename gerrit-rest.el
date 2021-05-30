@@ -37,6 +37,7 @@
 
 (defvar gerrit-host)
 (defvar gerrit-patch-buffer)
+(defvar url-http-end-of-headers)
 
 (defcustom gerrit-rest-endpoint-prefix "/a"
   "String that is appended to 'gerrit-host`.
@@ -82,10 +83,10 @@ down the URL structure to send the request."
     (with-current-buffer (url-retrieve-synchronously target t)
       (gerrit-rest--read-json
        (progn
-         (goto-char (point-min))
+         (goto-char url-http-end-of-headers)
          ;; if there is an error in search-forward-regexp, write
          ;; the buffer contents to a *gerrit-rest-status* buffer
-         (if-let ((pos (search-forward-regexp (concat "^" (regexp-quote ")]}'") "$") nil t)))
+         (if-let ((pos (search-forward-regexp "^)]}'$" nil t)))
              (buffer-substring pos (point-max))
            ;; ")]}'" was not found in the REST response
            (let ((buffer (get-buffer-create "*gerrit-rest-status*"))
