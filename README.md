@@ -88,6 +88,7 @@ machine gerrithostname.org
     login my-gerrit-username
     password xxxx
 ```
+Note: Depending on your auth configuration, Gerrit may expect a generated HTTP password (ex. if you have `git_basic_auth_policy="HTTP_LDAP"`). If there is an HTTP credentials section in your user's account settings page, then an HTTP password needs to be generated and supplied in your auth-source file.
 
 ### Keyring
 
