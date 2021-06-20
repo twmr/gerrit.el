@@ -459,20 +459,15 @@ which is not the same as nil."
 
 MSG needs to be a string and ARGS are the args are used for the
 section header."
-  (interactive)
-  (let (mpf)
-    (unwind-protect
-        (progn
-          (setq mpf (make-temp-file "gerrit-magit-process-file"))
-          (delete-file mpf)
-          (write-region msg nil mpf)
-          (with-current-buffer (magit-process-buffer t)
-            (magit-process-insert-section default-directory
-                                          "REST"
-                                          args nil
-                                          mpf
-                                          )))
-      (ignore-errors (delete-file mpf)))))
+  (with-temp-buffer
+    (insert msg)
+    (let ((msg-buffer (get-buffer (buffer-name))))
+    (with-current-buffer (magit-process-buffer t)
+      (magit-process-insert-section default-directory
+                                    "REST"
+                                    args nil
+                                    msg-buffer)))))
+
 
 (defun gerrit-magit-insert-status ()
   "Show all open gerrit reviews when called in the magit-status-section via `magit-status-section-hook'."
