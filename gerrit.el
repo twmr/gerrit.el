@@ -544,7 +544,9 @@ The prefix magit- prefix is required by `magit-insert-section'.")
       "origin"))
 
 (defun gerrit-get-upstream-branch ()
-  "Return the name of the upstream branch. The returned string is not prefixed with the remote."
+  "Return the name of the upstream branch.
+
+The returned string is not prefixed with the remote."
   ;; TODO read the data from a cache
   (or (when-let ((upstream-branch (magit-get-upstream-branch)))
         (cadr (s-split "/" upstream-branch)))
