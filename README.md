@@ -137,13 +137,13 @@ You can cycle through the history by using <kbd>M-p</kbd> and
 <kbd>M-n</kbd>.
 
 The reviewers have to be added as a comma-separated string. Completion of
-the individual reviewres using the account information from the gerrit
+the individual reviewers using the account information from the gerrit
 servers should work with <kbd>TAB</kbd>.
 
 ## Dashboards
 
 `gerrit-dashboard` displays a dashboard similar to the one in the gerrit
-webinterface.  The currently supported keybindings in a dashboard buffer are
+web-interface.  The currently supported keybindings in a dashboard buffer are
 
 * <kbd>a</kbd> Assign the change under point
 * <kbd>A</kbd> Assign the change under point to me
