@@ -190,6 +190,22 @@ down the URL structure to send the request."
                                            `((assignee . ,assignee))) 'utf-8)
                     (format "/changes/%s/assignee"  changenr)))
 
+(defun gerrit-rest-change-add-reviewer (changenr reviewer)
+  "Add REVIEWER to a change with nr CHANGENR."
+  (interactive "sEnter a changenr: \nsEnter reviewer: ")
+  ;; Do we want to verify the return entity?
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode-list
+                                           `((reviewer . ,reviewer))) 'utf-8)
+                    (format "/changes/%s/reviewers/%s"  changenr reviewer)))
+
+(defun gerrit-rest-change-remove-reviewer (changenr reviewer)
+  "Remove REVIEWER from a change with nr CHANGENR."
+  (interactive "sEnter a changenr: \nsEnter reviewer: ")
+  (gerrit-rest-sync "DELETE"
+                    nil
+                    (format "/changes/%s/reviewers/%s"  changenr reviewer)))
+
 (defun gerrit-rest-change-get-messages (changenr)
   ;; note that filenames are returned as symbols
   (gerrit-rest-sync "GET" nil (format "/changes/%s/messages" changenr)))
@@ -312,6 +328,22 @@ A comment MESSAGE can be provided."
           (let ((changenr (gerrit-rest--change-info-to-unique-changeid change-info)))
             (message "Setting assignee %s for %s" assignee changenr)
             (gerrit-rest-change-set-assignee changenr assignee))))
+
+(defun gerrit-rest-topic-add-reviewer (topic reviewer)
+  "Add a REVIEWER to all changes of a TOPIC."
+ (interactive "sEnter a topic: \nsEnter reviewer: ")
+ (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
+          (let ((changenr (gerrit-rest--change-info-to-unique-changeid change-info)))
+            (message "Adding reviewer %s to %s" reviewer changenr)
+            (gerrit-rest-change-add-reviewer changenr reviewer))))
+
+(defun gerrit-rest-topic-remove-reviewer (topic reviewer)
+  "Remove a REVIEWER from all changes of a TOPIC."
+ (interactive "sEnter a topic: \nsEnter reviewer: ")
+ (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
+          (let ((changenr (gerrit-rest--change-info-to-unique-changeid change-info)))
+            (message "Removing reviewer %s from %s" reviewer changenr)
+            (gerrit-rest-change-remove-reviewer changenr reviewer))))
 
 (defun gerrit-rest-topic-set-vote (topic vote message)
   "Set a Code-Review vote VOTE for all changes of a topic TOPIC.
