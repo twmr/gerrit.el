@@ -239,22 +239,11 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
                              local-branch))
            (magit-refresh)))))))
 
-(defun gerrit-download--new ()
-  "Download change from the gerrit server."
-  (interactive)
-  (gerrit--init-accounts)
-  (let* ((open-changes
-          (seq-map #'gerrit-download-format-change (gerrit-rest-change-query
-                                                    (concat "status:open project:"
-                                                            (gerrit-get-current-project)))))
-         (selected-line (completing-read
-                         "Download Change: " open-changes nil nil))
-         (changenr (car (s-split " " (s-trim selected-line))))
-
-         ;; the return value of `gerrit-rest-change-query` contains the
-         ;; current revision, but not the one of `gerrit-rest-change-get`.
-         (change-metadata (car (gerrit-rest-change-query changenr))))
-
+(defun gerrit-download--new (changenr)
+  "Download change CHANGENR from the gerrit server using REST interface."
+  (let ((change-metadata (car (gerrit-rest-change-query changenr))))
+    ;; the return value of `gerrit-rest-change-query` contains the
+    ;; current revision, but not the one of `gerrit-rest-change-get`.
     (gerrit--download-change change-metadata)))
 
 (defun gerrit--ensure-commit-msg-hook-exists ()
@@ -1201,28 +1190,27 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   ("A" gerrit-upload-set-args "Set additional args")
   ("RET" gerrit-upload-run "Upload" :color blue))
 
-(defun gerrit-download--gitreview ()
-  "Download change from the gerrit server."
-  (interactive)
-  ;; TODO handle non-zero exit status (see https://stackoverflow.com/questions/23299314/finding-the-exit-code-of-a-shell-command-in-elisp)
-  (let ((open-changes (shell-command-to-string "git review -l")))
-
-    ;; remove last two lines
-    (setq open-changes (nbutlast (s-lines open-changes) 2))
-    ;; (message (s-join "\n" open-changes))
-    (let ((changenr (completing-read
-                     "Download Change: " open-changes nil nil)))
-      (magit-git-command (concat "git review -d "
-                                 (car (s-split " " (s-trim changenr))))))))
+(defun gerrit-download--gitreview (changenr)
+  "Download change with CHANGENR from the gerrit server using git-review."
+  (magit-git-command (format "git review -d %s" changenr)))
 
 
 
-(defun gerrit-download ()
-  "Download change from the gerrit server."
-  (interactive)
+(defun gerrit-download (changenr)
+  "Download change with CHANGENR from the gerrit server."
+  (interactive
+   (list
+    (let* ((open-changes
+            (seq-map #'gerrit-download-format-change (gerrit-rest-change-query
+                                                      (concat "status:open project:"
+                                                              (gerrit-get-current-project)))))
+           (selected-line (completing-read
+                           "Download Change: " open-changes nil nil))
+           (changenr (car (s-split " " (s-trim selected-line))))))))
+
    (if gerrit-use-gitreview-interface
-       (gerrit-download--gitreview)
-     (gerrit-download--new)))
+       (gerrit-download--gitreview changenr)
+     (gerrit-download--new changenr)))
 
 (defun gerrit-upload ()
   (interactive)
