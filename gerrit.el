@@ -1208,6 +1208,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                            "Download Change: " open-changes nil nil))
            (changenr (car (s-split " " (s-trim selected-line))))))))
 
+  (gerrit--init-accounts)
   (if gerrit-use-gitreview-interface
       (gerrit-download--gitreview changenr)
     (gerrit-download--new changenr)))
