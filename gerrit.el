@@ -1206,7 +1206,9 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                                                               (gerrit-get-current-project)))))
            (selected-line (completing-read
                            "Download Change: " open-changes nil nil))
-           (changenr (car (s-split " " (s-trim selected-line))))))))
+           (changenr (car (s-split " " (s-trim selected-line)))))
+      changenr
+      )))
 
   (gerrit--init-accounts)
   (if gerrit-use-gitreview-interface
