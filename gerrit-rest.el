@@ -31,6 +31,7 @@
 ;;; Code:
 
 (eval-when-compile (require 'subr-x)) ;; when-let
+(require 'auth-source)
 (require 's)
 (require 'json)
 (require 'cl-lib)
