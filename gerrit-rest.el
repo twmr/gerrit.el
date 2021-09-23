@@ -34,6 +34,7 @@
 (require 's)
 (require 'json)
 (require 'cl-lib)
+(require 'cl-extra) ;; for cl-prettyprint
 
 (defvar gerrit-host)
 (defvar gerrit-patch-buffer)
@@ -186,7 +187,7 @@ down the URL structure to send the request."
   (interactive "sEnter a changenr: \nsEnter assignee: ")
   ;; TODO error handling?
   (gerrit-rest-sync "PUT"
-                    (encode-coding-string (json-encode-list
+                    (encode-coding-string (json-encode
                                            `((assignee . ,assignee))) 'utf-8)
                     (format "/changes/%s/assignee"  changenr)))
 
@@ -195,7 +196,7 @@ down the URL structure to send the request."
   (interactive "sEnter a changenr: \nsEnter reviewer: ")
   ;; Do we want to verify the return entity?
   (gerrit-rest-sync "POST"
-                    (encode-coding-string (json-encode-list
+                    (encode-coding-string (json-encode
                                            `((reviewer . ,reviewer))) 'utf-8)
                     (format "/changes/%s/reviewers/%s"  changenr reviewer)))
 
@@ -219,7 +220,7 @@ down the URL structure to send the request."
 A comment MESSAGE can be provided."
   (interactive "sEnter a changenr: \nsEnter vote [-2, -1, 0, +1, +2]: \nsEnter message: ")
   (gerrit-rest-sync "POST"
-                    (encode-coding-string (json-encode-list
+                    (encode-coding-string (json-encode
                                            `((message . ,message)
                                              (labels .
                                                ((Code-Review . ,vote))))) 'utf-8)
@@ -230,7 +231,7 @@ A comment MESSAGE can be provided."
 A comment MESSAGE can be provided."
   (interactive "sEnter a changenr: \nsEnter vote [-1, 0, +1]: \nsEnter message: ")
   (gerrit-rest-sync "POST"
-                    (encode-coding-string (json-encode-list
+                    (encode-coding-string (json-encode
                                            `((message . ,message)
                                              (labels .
                                                ((Verified . ,vote))))) 'utf-8)
@@ -240,7 +241,7 @@ A comment MESSAGE can be provided."
   "Set the state of the change CHANGENR to Work-in-Progress."
   (interactive "sEnter a changenr: ")
   (gerrit-rest-sync "POST"
-                    (encode-coding-string (json-encode-list
+                    (encode-coding-string (json-encode
                                            `((message . ,"Set using gerrit.el"))) 'utf-8)
                     (format "/changes/%s/wip" changenr)))
 
@@ -248,7 +249,7 @@ A comment MESSAGE can be provided."
   "Set the state of the change CHANGENR to Reday-for-Review."
   (interactive "sEnter a changenr: ")
   (gerrit-rest-sync "POST"
-                    (encode-coding-string (json-encode-list
+                    (encode-coding-string (json-encode
                                            `((message . ,"Set using gerrit.el"))) 'utf-8)
                     (format "/changes/%s/ready" changenr)))
 
@@ -256,7 +257,7 @@ A comment MESSAGE can be provided."
   "Add a comment message COMMENT to latest version of change CHANGENR."
   (interactive "sEnter changenr: \nsEnter comment: ")
   (gerrit-rest-sync "POST"
-                    (encode-coding-string (json-encode-list
+                    (encode-coding-string (json-encode
                                            `((message . ,comment))) 'utf-8)
                     (format "/changes/%s/revisions/current/review" changenr)))
 

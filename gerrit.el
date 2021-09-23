@@ -151,26 +151,30 @@ gerrit-download is used."
 ;; this variable is used in `gerrit-download-format-change'
 (defvar gerrit-change-singleline-columns
   '(number branch subject)
-  "List of columns that should be displayed in functions that ask the user to select a change from a list of changes."
-  "Currently supported columns are:"
-  "'number (the change number)"
-  "'branch (the branch of the change)"
-  "'subject (the subject of the commit msg)"
-  "'project (the project name)"
+  "List of shown columns for change-selection.
+
+  List of columns that should be displayed in functions that ask
+  the user to select a change from a list of changes.
+
+  Currently supported columns are:
+  'number (the change number)
+  'branch (the branch of the change)
+  'subject (the subject of the commit msg)
+  'project (the project name)"
   )
 
 (defun gerrit-download-format-change (change)
   (let (columns)
     ;; can this be implemented in an easier way?
     (when (member 'number gerrit-change-singleline-columns)
-      (add-to-list 'columns (propertize (number-to-string
-                         (alist-get '_number change)) 'face 'magit-hash)))
+      (push (propertize (number-to-string
+                         (alist-get '_number change)) 'face 'magit-hash) columns))
     (when (member 'project gerrit-change-singleline-columns)
-      (add-to-list 'columns (propertize (alist-get 'project change) 'face 'magit-branch-remote)))
+      (push (propertize (alist-get 'project change) 'face 'magit-branch-remote) columns))
     (when (member 'branch gerrit-change-singleline-columns)
-      (add-to-list 'columns (propertize (alist-get 'branch change) 'face 'magit-branch-remote)))
+      (push (propertize (alist-get 'branch change) 'face 'magit-branch-remote) columns))
     (when (member 'subject gerrit-change-singleline-columns)
-      (add-to-list 'columns (propertize (alist-get 'subject change) 'face 'magit-section-highlight)))
+      (push (propertize (alist-get 'subject change) 'face 'magit-section-highlight) columns))
     (s-join " " (nreverse columns))))
 
 (defun gerrit-download--get-refspec (change-metadata)
@@ -1215,7 +1219,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 
 (defun gerrit--select-change-from-matching-changes (search-string)
   ;; see https://gerrit-review.googlesource.com/Documentation/user-search.html
-  (let* ((open-changes (seq-map #'reviewgerrit-download-format-change
+  (let* ((open-changes (seq-map #'gerrit-download-format-change
                                 (gerrit-rest-change-query
                                  (or search-string "is:open")
                                  )))
