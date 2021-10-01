@@ -352,7 +352,7 @@ A section in the respective process buffer is created."
     ;; https://gerrit-review.googlesource.com/Documentation/user-upload.html#push_options
 
     ;; I don't like this handling of transient-args, maybe transient can
-    ;; pass alists to gerrit-upload--action istead of a list os strings
+    ;; pass alists to gerrit-upload--action instead of a list of strings
     (cl-loop for arg in args do
              (cond ((s-starts-with? "reviewers=" arg)
                     (cl-loop for reviewer in (s-split "," (s-chop-prefix "reviewers=" arg)) do
