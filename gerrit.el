@@ -247,6 +247,7 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
     ;; (e.g. if ssh-add was not called) this async call runs
     ;; magit-process-password-prompt-regexps (used in magit-process-filter)
     ;; which is called in magit-start-process
+    ;; (see https://github.com/magit/magit/issues/4323)
     (magit-run-git-async "fetch"
                          (gerrit-get-remote)
                          (gerrit-download--get-refspec change-metadata))
@@ -1247,6 +1248,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
 
 (defun gerrit--select-change-from-matching-changes (search-string)
   ;; see https://gerrit-review.googlesource.com/Documentation/user-search.html
+  ;; clients can let-bind `gerrit-change-singleline-columns'
   (let* ((open-changes (seq-map #'gerrit-download-format-change
                                 (gerrit-rest-change-query
                                  (or search-string "is:open")
