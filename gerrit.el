@@ -1282,6 +1282,7 @@ current project."
                                  ;; TODO add support for other filter options
                                  (t
                                   nil))))))))
+  (gerrit--init-accounts)
   (gerrit-download--new changenr))
 
 (defun gerrit-download:--in-known-repo (changenr)
@@ -1299,6 +1300,7 @@ workspace of the project."
        ;; branch:...?)
        gerrit-interesting-open-changes-filter))))
 
+  (gerrit--init-accounts)
   ;; 1) get change metadata
   ;; 2) determine workspace directory (based on branch and projectname)
   ;; 3) switch to workspace
@@ -1306,7 +1308,7 @@ workspace of the project."
   (let* ((change-metadata (car (gerrit-rest-change-query changenr)))
          (project-name (alist-get 'project change-metadata))
          (branch (alist-get 'branch change-metadata))
-         (workspace-directory (or (cdr (assoc (list project-name branch)
+         (workspace-directory (or (cadr (assoc (list project-name branch)
                                               gerrit-project-to-local-workspace-alist))
                                   ;; TODO completion + write them to file
                                   (read-directory-name
