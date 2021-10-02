@@ -1228,6 +1228,48 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
          (changenr (car (s-split " " (s-trim selected-line)))))
     changenr))
 
+(transient-define-argument gerrit-download:--branch ()
+  :description "Branch"
+  :class 'transient-option
+  :key "b"
+  :argument "branch=")
+
+(defun gerrit-download:--in-current-repo (changenr &optional args)
+  (interactive
+   (let ((targs (transient-args 'gerrit-download-transient)))
+     (list
+      (gerrit--select-change-from-matching-changes
+       ;; create a filter that matches only changes for the current project
+       ;; and for the selected (if any) branch
+       (concat "status:open"
+               " project:" (gerrit-get-current-project)
+                (car (cl-loop for arg in targs collect
+                           (cond ((s-starts-with? "branch=" arg)
+                                  (concat " branch:" (s-chop-prefix "branch=" arg)))
+                                 ;; TODO add support for other filter options
+                                 (t
+                                  nil))))))
+      tags)))
+  ;; (message "CR: %s, %s" changenr args))
+  (gerrit-download--new changenr))
+
+(transient-define-prefix gerrit-download-transient ()
+  "Transient used for downloading changes"
+  ;; download in current repo (key c: current)
+  ;; TODO download in all known projects (key o: all/other)
+  ;; download specific branch (depends on project!)
+
+  ["Arguments"
+   (gerrit-download:--branch)
+  ]
+  ["Actions"
+   ;; TODO display somewhere the name of the current repo (not sure if
+   ;; emacs-transient supports this)
+   ("c" "In current repo" gerrit-download:--in-current-repo)
+   ;; ("k" "In known repo" gerrit-download:--in-known-repo)
+   ])
+
+;; deprecated
 (defun gerrit-download (changenr)
   "Download change with CHANGENR from the gerrit server."
   (interactive

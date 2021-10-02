@@ -109,6 +109,13 @@ Now you can list the secrets using `secrets-show-secrets`.
 
 **TODO** extend/finalize this documentation.
 
+## News
+
+October 2021:
+
+* Add a new transient called `gerrit-download-transient`, which will replace
+the `gerrit-download` function in the future.
+
 ## Screenshots
 
 ![gerrit-dashboard](https://user-images.githubusercontent.com/206581/88588506-f8048780-d057-11ea-9c57-ac2a58aadd58.png)
