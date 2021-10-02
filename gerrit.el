@@ -1234,22 +1234,20 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   :key "b"
   :argument "branch=")
 
-(defun gerrit-download:--in-current-repo (changenr &optional args)
+(defun gerrit-download:--in-current-repo (changenr)
   (interactive
-   (let ((targs (transient-args 'gerrit-download-transient)))
-     (list
-      (gerrit--select-change-from-matching-changes
-       ;; create a filter that matches only changes for the current project
-       ;; and for the selected (if any) branch
-       (concat "status:open"
-               " project:" (gerrit-get-current-project)
-                (car (cl-loop for arg in targs collect
+   (list
+    (gerrit--select-change-from-matching-changes
+     ;; create a filter that matches only changes for the current project
+     ;; and for the selected (if any) branch
+     (concat "status:open"
+             " project:" (gerrit-get-current-project)
+             (car (cl-loop for arg in (transient-args 'gerrit-download-transient) collect
                            (cond ((s-starts-with? "branch=" arg)
                                   (concat " branch:" (s-chop-prefix "branch=" arg)))
                                  ;; TODO add support for other filter options
                                  (t
-                                  nil))))))
-      tags)))
+                                  nil))))))))
   ;; (message "CR: %s, %s" changenr args))
   (gerrit-download--new changenr))
 
