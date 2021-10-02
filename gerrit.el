@@ -1235,6 +1235,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   :argument "branch=")
 
 (defun gerrit-download:--in-current-repo (changenr)
+  "Download a gerrit change CHANGENR for the current project into the current workspace."
   (interactive
    (list
     (gerrit--select-change-from-matching-changes
@@ -1248,7 +1249,6 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                                  ;; TODO add support for other filter options
                                  (t
                                   nil))))))))
-  ;; (message "CR: %s, %s" changenr args))
   (gerrit-download--new changenr))
 
 (transient-define-prefix gerrit-download-transient ()
