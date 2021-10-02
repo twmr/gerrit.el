@@ -4,7 +4,7 @@
 gerrit.el
 =========
 
-Gerrit is a great code review tool and a great git hosting serivce. This
+Gerrit is a great code review tool and a great git hosting service. This
 package provides an emacs interface for
 
 * uploading changes (`gerrit-upload`)
