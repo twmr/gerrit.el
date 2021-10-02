@@ -8,7 +8,7 @@ Gerrit is a great code review tool and a great git hosting serivce. This
 package provides an emacs interface for
 
 * uploading changes (`gerrit-upload`)
-* downloading changes (`gerrit-download`)
+* downloading changes (`gerrit-download` and `gerrit-download-transient`)
 * creating a dashboard  (`gerrit-dashboard`)
 * creating buffers that contain details about gerrit topics an gerrit
   changes (`gerrit-section-topic-info` and `gerrit-section-change-info`).
@@ -114,7 +114,9 @@ Now you can list the secrets using `secrets-show-secrets`.
 October 2021:
 
 * Add a new transient called `gerrit-download-transient`, which will replace
-the `gerrit-download` function in the future.
+  the `gerrit-download` function in the future.
+* Add support for downloading changes in arbitrary git workspaces using
+  `gerrit-download-transient`.
 
 ## Screenshots
 
