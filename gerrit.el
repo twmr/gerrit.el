@@ -163,6 +163,34 @@ gerrit-download is used."
   'project (the project name)"
   )
 
+;; TODO introduce a function?
+(defcustom gerrit-project-to-local-workspace-alist nil
+  "This alist can be used for specifying the 'known' gerrit projects.
+
+The alist is needed for determining the workspace directory for
+certain gerrit projects.
+
+Each element is a list comprising ((PROJECT BRANCH) WORKSPACE) ..."
+  :group 'gerrit
+  :type '(alist :key-type (list (symbol :tag "Project")
+                                (string :tag "Branch"))
+                :value-type (string :tag "Workspace Directory"))
+  )
+;; Example:
+;; (setq gerrit-project-to-local-workspace-alist
+;;   '(
+;;     (("software/pro1" "branch1") "~/sandbox/pro1")
+;;     (("software/pro2" "branch2") "~/sandbox/pro2")
+;;   ))
+
+(defcustom gerrit-interesting-open-changes-filter "is:open"
+  "Filter string used for querying gerrit changes.
+
+If you are interested only in the changes for certain projects,
+you can use 'is:open (project:A OR project:B OR project:C)'"
+  :group 'gerrit
+  :type 'string)
+
 (defun gerrit-download-format-change (change)
   (let (columns)
     ;; can this be implemented in an easier way?
@@ -1235,7 +1263,10 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   :argument "branch=")
 
 (defun gerrit-download:--in-current-repo (changenr)
-  "Download a gerrit change CHANGENR for the current project into the current workspace."
+  "Download a gerrit change CHANGENR for the current project.
+
+The download of the change is performed in the workspace of the
+current project."
   (interactive
    (list
     (gerrit--select-change-from-matching-changes
@@ -1251,10 +1282,43 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
                                   nil))))))))
   (gerrit-download--new changenr))
 
+(defun gerrit-download:--in-known-repo (changenr)
+  "Download a gerrit change CHANGENR for a known project.
+
+The download of the change is performed in the corresponding
+workspace of the project."
+  (interactive
+   (list
+    (let
+        ((gerrit-change-singleline-columns '(number branch project subject)))
+      (gerrit--select-change-from-matching-changes
+       ;; TODO add support for selecting branches (what if
+       ;; gerrit-interesting-open-changes-filter already contains
+       ;; branch:...?)
+       gerrit-interesting-open-changes-filter))))
+
+  ;; 1) get change metadata
+  ;; 2) determine workspace directory (based on branch and projectname)
+  ;; 3) switch to workspace
+  ;; 4) download change
+  (let* ((change-metadata (car (gerrit-rest-change-query changenr)))
+         (project-name (alist-get 'project change-metadata))
+         (branch (alist-get 'branch change-metadata))
+         (workspace-directory (or (cdr (assoc (list project-name branch)
+                                              gerrit-project-to-local-workspace-alist))
+                                  ;; TODO completion + write them to file
+                                  (read-directory-name
+                                   (format "Enter directory for project %s" project-name))))
+
+         (default-directory workspace-directory))
+    ;; (message "changeinfo: name: %s, branch: %s -> workspace: %s"
+    ;;          project-name branch workspace-directory)
+    (gerrit--download-change change-metadata)))
+
 (transient-define-prefix gerrit-download-transient ()
   "Transient used for downloading changes"
   ;; download in current repo (key c: current)
-  ;; TODO download in all known projects (key o: all/other)
+  ;; download in all known projects (key k: known)
   ;; download specific branch (depends on project!)
 
   ["Arguments"
@@ -1264,7 +1328,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
    ;; TODO display somewhere the name of the current repo (not sure if
    ;; emacs-transient supports this)
    ("c" "In current repo" gerrit-download:--in-current-repo)
-   ;; ("k" "In known repo" gerrit-download:--in-known-repo)
+   ("k" "In known repo" gerrit-download:--in-known-repo)
    ])
 
 ;; deprecated
