@@ -29,6 +29,15 @@ Furthermore, a minimalistic open-reviews status-section
 This code is tested using gerrit=2.16 and the gerrit version used on
 `review.gerrithub.org`.
 
+## News
+
+October 2021:
+
+* Add a new transient called `gerrit-download-transient`, which will replace
+  the `gerrit-download` function in the future.
+* Add support for downloading changes in arbitrary git workspaces using
+  `gerrit-download-transient`.
+
 ## Legacy git-review functions and new style REST-based functions
 
 Initially this package depended on the `git-review` command line tool, which
@@ -108,15 +117,6 @@ Load the `secrets` library, which depends on a working dbus setup.
 Now you can list the secrets using `secrets-show-secrets`.
 
 **TODO** extend/finalize this documentation.
-
-## News
-
-October 2021:
-
-* Add a new transient called `gerrit-download-transient`, which will replace
-  the `gerrit-download` function in the future.
-* Add support for downloading changes in arbitrary git workspaces using
-  `gerrit-download-transient`.
 
 ## Screenshots
 
