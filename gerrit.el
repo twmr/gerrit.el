@@ -160,8 +160,7 @@ gerrit-download is used."
   'number (the change number)
   'branch (the branch of the change)
   'subject (the subject of the commit msg)
-  'project (the project name)"
-  )
+  'project (the project name)")
 
 ;; TODO introduce a function?
 (defcustom gerrit-project-to-local-workspace-alist nil
@@ -174,8 +173,7 @@ Each element is a list comprising ((PROJECT BRANCH) WORKSPACE) ..."
   :group 'gerrit
   :type '(alist :key-type (list (symbol :tag "Project")
                                 (string :tag "Branch"))
-                :value-type (string :tag "Workspace Directory"))
-  )
+                :value-type (string :tag "Workspace Directory")))
 ;; Example:
 ;; (setq gerrit-project-to-local-workspace-alist
 ;;   '(
@@ -1251,8 +1249,7 @@ gerrit-upload: (current cmd: %(concat (gerrit-upload-create-git-review-cmd)))
   ;; clients can let-bind `gerrit-change-singleline-columns'
   (let* ((open-changes (seq-map #'gerrit-download-format-change
                                 (gerrit-rest-change-query
-                                 (or search-string "is:open")
-                                 )))
+                                 (or search-string "is:open"))))
          (selected-line (completing-read
                          "Download Change: " open-changes nil nil))
          (changenr (car (s-split " " (s-trim selected-line)))))
