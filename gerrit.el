@@ -927,6 +927,15 @@ shown in the section buffer."
                gerrit-host
                (gerrit-dashboard--entry-number))))
 
+(defun gerrit-dashboard-download-change ()
+  "Download the change under point into the workspace of the project.
+
+This function requires that the project of the change is cloned
+locally and is referenced in
+`gerrit-project-to-local-workspace-alist'."
+  (interactive)
+  (gerrit-download:--in-known-repo (gerrit-dashboard--entry-number)))
+
 (defun gerrit-dashboard-open-change ()
   "Open the patch of the change under point in a new buffer."
   (interactive)
@@ -990,6 +999,7 @@ shown in the section buffer."
     (define-key map (kbd "A") 'gerrit-dashboard-assign-change-to-me)
     (define-key map (kbd "g") 'gerrit-dashboard--refresh--and-point-restore)
     (define-key map (kbd "o") 'gerrit-dashboard-browse-change)
+    (define-key map (kbd "d") 'gerrit-dashboard-download-change)
     (define-key map (kbd "RET") 'gerrit-dashboard-open-change)
     (define-key map (kbd "t") 'gerrit-dashboard-open-topic)
     ;; <C-down> -> forward-paragraph

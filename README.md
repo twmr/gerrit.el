@@ -37,6 +37,7 @@ October 2021:
   the `gerrit-download` function in the future.
 * Add support for downloading changes in arbitrary git workspaces using
   `gerrit-download-transient`.
+* Add new <kbd>d</kbd> keybinding to gerrit-dashboard.
 
 ## Legacy git-review functions and new style REST-based functions
 
@@ -158,6 +159,7 @@ web-interface.  The currently supported keybindings in a dashboard buffer are
 * <kbd>A</kbd> Assign the change under point to me
 * <kbd>g</kbd> Refresh
 * <kbd>o</kbd> Open change under point in browser using `browse-url`
+* <kbd>d</kbd> Download change under point in a local clone of the repository
 * <kbd>t</kbd> Switch to a buffer containing a topic-overview of the change under point
 * <kbd>RET</kbd> Download patch of change under point and display it in new
   buffer
