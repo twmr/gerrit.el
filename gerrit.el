@@ -221,8 +221,7 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
   (let ((tracked (magit-get-upstream-branch branch)))
     (s-split-up-to "/" tracked 1 t)))
 
-
-(defun gerrit--download-change (change-metadata)
+(defun gerrit--download-change (change-metadata workspace-directory)
   ;; to see what git-review does under the hood - see:
   ;; strace -z -f -e execve git-review -d 3591
   (let* ((change-nr (alist-get '_number change-metadata))
@@ -246,53 +245,57 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
     ;; magit-process-password-prompt-regexps (used in magit-process-filter)
     ;; which is called in magit-start-process
     ;; (see https://github.com/magit/magit/issues/4323)
-    (magit-run-git-async "fetch"
-                         (gerrit-get-remote)
-                         (gerrit-download--get-refspec change-metadata))
+    (let ((default-directory workspace-directory))
+      (magit-run-git-async "fetch"
+                           (gerrit-get-remote)
+                           (gerrit-download--get-refspec change-metadata)))
+
     (set-process-sentinel
      magit-this-process
      (lambda (process event)
        (when (memq (process-status process) '(exit signal))
-         (if (not (zerop (process-exit-status process)))
-             ;; error
+         (let ((default-directory workspace-directory))
+           (if (not (zerop (process-exit-status process)))
+               ;; error
+               (magit-process-sentinel process event)
+
+             ;; git-fetch was successful
+
+             ;; see magit-delete-remote-branch-sentinel
+             (process-put process 'inhibit-refresh t)
              (magit-process-sentinel process event)
 
-           ;; git-fetch was successful
+             (if-let* ((local-ref (concat "refs/heads/" local-branch))
+                       (branch-exists (magit-git-success
+                                       "show-ref" "--verify" "--quiet" local-ref)))
+                 (progn
+                   ;; since local-branch exists, gerrit--get-tracked never returns nil
+                   (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked local-branch)
+                     (unless (and (equal tracked-remote (gerrit-get-remote))
+                                  (equal tracked-branch change-branch))
+                       (magit-refresh)
+                       (error "Branch tracking incompatibility: Tracking %s/%s instead of %s/%s"
+                              tracked-remote tracked-branch
+                              (gerrit-get-remote) change-branch)))
+                   (magit-call-git "checkout" local-branch)
+                   (magit-call-git "reset" "--hard" "FETCH_HEAD"))
 
-           ;; see magit-delete-remote-branch-sentinel
-           (process-put process 'inhibit-refresh t)
-           (magit-process-sentinel process event)
-
-           (if-let* ((local-ref (concat "refs/heads/" local-branch))
-                     (branch-exists (magit-git-success
-                                     "show-ref" "--verify" "--quiet" local-ref)))
-               (progn
-                 ;; since local-branch exists, gerrit--get-tracked never returns nil
-                 (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked local-branch)
-                   (unless (and (equal tracked-remote (gerrit-get-remote))
-                                (equal tracked-branch change-branch))
-                     (magit-refresh)
-                     (error "Branch tracking incompatibility: Tracking %s/%s instead of %s/%s"
-                            tracked-remote tracked-branch
-                            (gerrit-get-remote) change-branch)))
-                 (magit-call-git "checkout" local-branch)
-                 (magit-call-git "reset" "--hard" "FETCH_HEAD"))
-
-             (magit-call-git "checkout" "-b" local-branch "FETCH_HEAD")
-             ;; set upstream here (see checkout_review function in cmd.py)
-             ;; this upstream branch is needed for rebasing
-             (magit-call-git "branch"
-                             "--set-upstream-to"
-                             (format "%s/%s" (gerrit-get-remote) change-branch)
-                             local-branch))
-           (magit-refresh)))))))
+               (magit-call-git "checkout" "-b" local-branch "FETCH_HEAD")
+               ;; set upstream here (see checkout_review function in cmd.py)
+               ;; this upstream branch is needed for rebasing
+               (magit-call-git "branch"
+                               "--set-upstream-to"
+                               (format "%s/%s" (gerrit-get-remote) change-branch)
+                               local-branch))
+             (magit-refresh))))))))
 
 (defun gerrit-download--new (changenr)
   "Download change CHANGENR from the gerrit server using REST interface."
   (let ((change-metadata (car (gerrit-rest-change-query changenr))))
     ;; the return value of `gerrit-rest-change-query` contains the
     ;; current revision, but not the one of `gerrit-rest-change-get`.
-    (gerrit--download-change change-metadata)))
+    ;; TODO default-directory is not really the workspace directory
+    (gerrit--download-change change-metadata default-directory)))
 
 (defun gerrit--ensure-commit-msg-hook-exists ()
   "Create a commit-msg hook, if it doesn't exist."
@@ -1324,7 +1327,7 @@ workspace of the project."
          (default-directory workspace-directory))
     ;; (message "changeinfo: name: %s, branch: %s -> workspace: %s"
     ;;          project-name branch workspace-directory)
-    (gerrit--download-change change-metadata)))
+    (gerrit--download-change change-metadata workspace-directory)))
 
 (transient-define-prefix gerrit-download-transient ()
   "Transient used for downloading changes"
