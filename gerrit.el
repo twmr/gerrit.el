@@ -1322,7 +1322,8 @@ workspace of the project."
                                               gerrit-project-to-local-workspace-alist))
                                   ;; TODO completion + write them to file
                                   (read-directory-name
-                                   (format "Enter directory for project %s" project-name))))
+                                   (format "Enter directory for project '%s': "
+                                           project-name))))
 
          (default-directory workspace-directory))
     ;; (message "changeinfo: name: %s, branch: %s -> workspace: %s"
