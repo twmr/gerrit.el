@@ -10,7 +10,7 @@ package provides an emacs interface for
 * uploading changes (`gerrit-upload`)
 * downloading changes (`gerrit-download` and `gerrit-download-transient`)
 * creating a dashboard  (`gerrit-dashboard`)
-* creating buffers that contain details about gerrit topics an gerrit
+* creating buffers that contain details about gerrit topics and gerrit
   changes (`gerrit-section-topic-info` and `gerrit-section-change-info`).
 
 The function `gerrit-upload` uses the `transient` package (if
