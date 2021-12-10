@@ -208,6 +208,21 @@ down the URL structure to send the request."
                     nil
                     (format "/changes/%s/reviewers/%s"  changenr reviewer)))
 
+(defun gerrit-rest-change-set-topic (changenr topic)
+  "Set the topic to TOPIC of a change CHANGENR."
+  (interactive "sEnter a changenr: \nsEnter topic: ")
+  (gerrit-rest-sync "PUT"
+                    (encode-coding-string (json-encode
+                                           `((topic . ,topic))) 'utf-8)
+                    (format "/changes/%s/topic" changenr)))
+
+(defun gerrit-rest-change-delete-topic (changenr)
+  "Delete the topic of a change CHANGENR."
+  (interactive "sEnter a changenr: ")
+  (gerrit-rest-sync "DELETE"
+                    nil
+                    (format "/changes/%s/topic" changenr)))
+
 (defun gerrit-rest-change-get-messages (changenr)
   ;; note that filenames are returned as symbols
   (gerrit-rest-sync "GET" nil (format "/changes/%s/messages" changenr)))
