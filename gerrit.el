@@ -383,6 +383,8 @@ A section in the respective process buffer is created."
 
     ;; I don't like this handling of transient-args, maybe transient can
     ;; pass alists to gerrit-upload--action instead of a list of strings
+
+    ;; TODO use code from https://github.com/raxod502/apheleia/pull/56/files
     (cl-loop for arg in args do
              (cond ((s-starts-with? "reviewers=" arg)
                     (cl-loop for reviewer in (s-split "," (s-chop-prefix "reviewers=" arg)) do
@@ -1337,6 +1339,7 @@ workspace of the project."
   ;; download specific branch (depends on project!)
 
   ["Arguments"
+   ;; TODO patch-set, default=latest
    (gerrit-download:--branch)
   ]
   ["Actions"
