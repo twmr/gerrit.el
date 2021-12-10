@@ -311,8 +311,13 @@ to CHANGENR is not locally cloned."
         (delete-trailing-whitespace))
       (unless buffer-read-only
         (read-only-mode t))
+      ;; using magit-diff-mode would be nice here, but it doesn't work.
       (unless (bound-and-true-p diff-mode)
-        (diff-mode)))
+        (diff-mode))
+      ;; currently [TAB] is bound to diff-hunk-next. Do we want to change it
+      ;; to `outline-cycle'?
+      ;; beginning with emacs 28 set outline-minor-mode-cycle to t.
+      (outline-minor-mode))
 
     (switch-to-buffer gerrit-patch-buffer)))
 
