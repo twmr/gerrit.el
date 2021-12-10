@@ -288,7 +288,10 @@ A comment MESSAGE can be provided."
                    (format "/changes/%s" changenr)))
 
 (defun gerrit-rest-change-patch (changenr)
-  "Download latest patch of change with CHANGENR and open it in new buffer."
+  "Download latest patch of change with CHANGENR and open it in new buffer.
+
+This function can be called even if the project that corresponds
+to CHANGENR is not locally cloned."
   (interactive "sEnter changenr: ")
   ;; does not return json
   (let ((url-request-method "GET")
