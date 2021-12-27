@@ -13,9 +13,8 @@ package provides an emacs interface for
 * creating buffers that contain details about gerrit topics and gerrit
   changes (`gerrit-section-topic-info` and `gerrit-section-change-info`).
 
-The function `gerrit-upload` uses the `transient` package (if
-`gerrit-use-gitreview-interface` is set to `nil`) and provides the following
-features in addition to uploading new changes (and new patchsets)
+The function `gerrit-upload` uses the `transient` package and provides the
+following features in addition to uploading new changes (and new patchsets)
 
 * specify reviewers
 * set an assignee
@@ -31,6 +30,11 @@ This code is tested using gerrit=2.16 and the gerrit version used on
 
 ## News
 
+Jannuary 2022:
+
+* Legacy git-review functions were dropped. The
+  `gerrit-use-gitreview-interface` variable is no longer used.
+
 October 2021:
 
 * Add a new transient called `gerrit-download-transient`, which will replace
@@ -39,23 +43,7 @@ October 2021:
   `gerrit-download-transient`.
 * Add new <kbd>d</kbd> keybinding to gerrit-dashboard.
 
-## Legacy git-review functions and new style REST-based functions
-
-Initially this package depended on the `git-review` command line tool, which
-was used for downloading and uploading gerrit changes. The functions are
-still provided but they are no longer actively updated. They can be used by
-setting `gerrit-use-gitreview-interface` to `t`, which is the default value.
-
-The recommended interface for downloading and uploading gerrit changes is
-the new REST-API only interface that has to be activated by setting
-`gerrit-use-gitreview-interface` to `nil`.
-
 ## Installation
-
-If you want to use the git-review interface, make sure that
-[git-review](https://opendev.org/opendev/git-review) is installed and that
-every cloned gerrit repo has a gerrit-specific pre-commit hook configured
-(`git review -s`).
 
 This emacs package is available on
 [MELPA](http://melpa.org/#/gerrit).
@@ -67,7 +55,6 @@ Example `use-package` config
   :ensure t
   :custom
   (gerrit-host "gerrit.my.domain")  ;; is needed for REST API calls
-  (gerrit-use-gitreview-interface nil)
   :config
   (progn
     (add-hook 'magit-status-sections-hook #'gerrit-magit-insert-status t)
@@ -118,6 +105,14 @@ Load the `secrets` library, which depends on a working dbus setup.
 Now you can list the secrets using `secrets-show-secrets`.
 
 **TODO** extend/finalize this documentation.
+
+## Pre-commit hook
+
+As you know, there is a gerrit pre-commit hook that must be installed for
+every gerrit repo s.t. the Change-ID is added to the bottom of your git
+commit messages. This pre-commit hook can be installed using the
+`gerrit--ensure-commit-msg-hook-exists` function or e.g. by calling `git
+review -s` provided that the `git-review` CLI tool is installed.
 
 ## Screenshots
 
@@ -188,8 +183,8 @@ https://github.com/emacsorphanage/magit-gerrit. Uses the
 interface for performing gerrit requests.
 
 * [gerrit-download](https://github.com/chmouel/gerrit-download.el) Downloads
-  gerrit change and shows the diff in a diff buffer. Uses `git-review` under
-  the hood.
+  gerrit change and shows the diff in a diff buffer. Uses the `git-review`
+  command line tool under the hood.
 
 * [gerrit-el](https://github.com/iartarisi/gerrit-el) reimplementation of
   the gerrit code review Web UI in emacs.
