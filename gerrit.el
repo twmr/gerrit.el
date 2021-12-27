@@ -806,17 +806,21 @@ shown in the section buffer."
   "Used for the section names in the dashboard."
   :group 'faces)
 
-(defun gerrit--combined-level-to-numberstr (combined-label verify)
-  (or (if verify
-          (pcase combined-label
-            ('approved (propertize "+1" 'face 'gerrit-success))
-            ('rejected (propertize "❌" 'face 'gerrit-fail)))
-        (pcase combined-label
-          ('approve (propertize "✔" 'face 'gerrit-success))
-          ('recommended (propertize "+1" 'face 'gerrit-success))
-          ('disliked (propertize "-1" 'face 'gerrit-fail))
-          ('rejected (propertize "-2" 'face 'gerrit-fail))))
-      ""))
+(defun gerrit--code-review-label-to-numberstr (code-review-label)
+  (or
+   (pcase code-review-label
+     ('approve (propertize "✔" 'face 'gerrit-success))
+     ('recommended (propertize "+1" 'face 'gerrit-success))
+     ('disliked (propertize "-1" 'face 'gerrit-fail))
+     ('rejected (propertize "-2" 'face 'gerrit-fail)))
+   ""))
+
+(defun gerrit--verify-label-to-numberstr (verify-label)
+  (or
+   (pcase verify-label
+     ('approved (propertize "+1" 'face 'gerrit-success))
+     ('rejected (propertize "❌" 'face 'gerrit-fail)))
+   ""))
 
 (defun gerrit--alist-get-recursive (&rest args)
   "Recursively find keys in an alist (last elem of ARGS)."
@@ -899,8 +903,8 @@ shown in the section buffer."
     ;; TODO finish this
     ,(if (< (+ (alist-get 'deletions change-metadata)
                (alist-get 'insertions change-metadata)) 15) "S" "L")
-    ,(gerrit--combined-level-to-numberstr (alist-get 'CR-vote change-metadata) nil)
-    ,(gerrit--combined-level-to-numberstr (alist-get 'verified change-metadata) t)
+    ,(gerrit--code-review-label-to-numberstr (alist-get 'CR-vote change-metadata))
+    ,(gerrit--verify-label-to-numberstr (alist-get 'verified change-metadata))
     ])
 
 (defun gerrit-dashboard--get-data (expression)
