@@ -1,4 +1,4 @@
-![CI](https://github.com/thisch/gerrit.el/workflows/CI/badge.svg)
+[![Build Status](https://github.com/thisch/gerrit.el/workflows/CI/badge.svg)](https://github.com/thisch/gerrit.el/actions)
 [![MELPA](http://melpa.org/packages/gerrit-badge.svg)](http://melpa.org/#/gerrit)
 
 gerrit.el
