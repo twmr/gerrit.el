@@ -30,10 +30,7 @@
 (ert-deftest test-dashboard-getdata-real-oh ()
   (let* (
          (gerrit-host "review.opendev.org"))
-    ;; is:ignored is not supported by the server (too old gerrit
-    ;; version)
-    (should-error (gerrit-dashboard--get-data "is:open -is:ignored")
-                  :type '(error "tmp"))))
+    (should (= (length (gerrit-dashboard--get-data "is:open -is:ignored limit:4")) 4))))
 
 (ert-deftest test-dashboard-getchange-metadata-gh ()
   (let* (
