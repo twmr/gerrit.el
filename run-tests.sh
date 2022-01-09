@@ -14,7 +14,6 @@ INIT_PACKAGE_EL="(progn
          --eval "$INIT_PACKAGE_EL" \
          --eval "(unless package-archive-contents (package-refresh-contents))" \
          --eval "(unless (package-installed-p 'cl-lib) (package-install 'cl-lib))" \
-         --eval "(unless (package-installed-p 'hydra) (package-install 'hydra))" \
          --eval "(unless (package-installed-p 'magit) (package-install 'magit))" \
          --eval "(unless (package-installed-p 's) (package-install 's))"
 

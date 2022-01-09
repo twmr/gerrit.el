@@ -5,7 +5,7 @@
 ;; Author: Thomas Hisch <t.hisch@gmail.com>
 ;; Version: 0.1
 ;; URL: https://github.com/thisch/gerrit.el
-;; Package-Requires: ((emacs "25.1") (hydra "0.15.0") (magit "2.13.1") (s "1.12.0"))
+;; Package-Requires: ((emacs "25.1") (magit "2.13.1") (s "1.12.0"))
 
 ;; This file is not part of GNU Emacs.
 
