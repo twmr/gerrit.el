@@ -20,8 +20,6 @@ jobs:
           - '26.3'
           - '27.1'
           - 'snapshot'
-        cask_version:
-          - 'snapshot'
     steps:
       - uses: actions/checkout@v1
       - uses: purcell/setup-emacs@master
