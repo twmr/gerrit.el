@@ -140,7 +140,7 @@
 
 ;; this variable is used in `gerrit-download-format-change'
 (defvar gerrit-change-singleline-columns
-  '(number branch subject)
+  '(number owner branch subject)
   "List of shown columns for change-selection.
 
   List of columns that should be displayed in functions that ask
@@ -148,6 +148,7 @@
 
   Currently supported columns are:
   'number (the change number)
+  'owner (the change owner)
   'branch (the branch of the change)
   'subject (the subject of the commit msg)
   'project (the project name)")
@@ -185,6 +186,16 @@ you can use 'is:open (project:A OR project:B OR project:C)'"
     (when (member 'number gerrit-change-singleline-columns)
       (push (propertize (number-to-string
                          (alist-get '_number change)) 'face 'magit-hash) columns))
+    (when (member 'owner gerrit-change-singleline-columns)
+      (push (propertize (format "%-20s"
+                                ;; TODO abbreviate if author name longer
+                                ;; than 20chars
+             (alist-get (gerrit--alist-get-recursive
+                         'owner '_account_id change)
+                        ;; requires the alist to be initialized using
+                        ;; (gerrit--init-accounts)
+                        gerrit--accounts-alist))
+             'face 'magit-log-author) columns))
     (when (member 'project gerrit-change-singleline-columns)
       (push (propertize (alist-get 'project change) 'face 'magit-branch-remote) columns))
     (when (member 'branch gerrit-change-singleline-columns)
@@ -1031,6 +1042,7 @@ locally and is referenced in
 (defun gerrit--select-change-from-matching-changes (search-string)
   ;; see https://gerrit-review.googlesource.com/Documentation/user-search.html
   ;; clients can let-bind `gerrit-change-singleline-columns'
+  (gerrit--init-accounts)
   (let* ((open-changes (seq-map #'gerrit-download-format-change
                                 (gerrit-rest-change-query
                                  (or search-string "is:open"))))

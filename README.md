@@ -34,6 +34,8 @@ Jannuary 2022:
 
 * Legacy git-review functions were dropped. The
   `gerrit-use-gitreview-interface` variable is no longer used.
+* Support displaying the owner-name in the displayed changes in
+  `gerrit-download`.
 
 October 2021:
 
