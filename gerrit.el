@@ -80,12 +80,13 @@
   :group 'gerrit
   :type 'int)
 
-(defun gerrit--init-accounts ()
+(defun gerrit-get-accounts-alist ()
   "Intialize `gerrit--accounts-alist`."
   (unless gerrit--accounts-alist
     (message "Fetching gerrit accounts ...")
     (setq gerrit--accounts-alist (gerrit-rest--get-gerrit-accounts))
-    (message "Fetched gerrit accounts (len=%d)" (length gerrit--accounts-alist))))
+    (message "Fetched gerrit accounts (len=%d)" (length gerrit--accounts-alist)))
+  gerrit--accounts-alist)
 
 (defun gerrit--read-assignee ()
   "Ask for the name of an assignee."
@@ -192,9 +193,7 @@ you can use 'is:open (project:A OR project:B OR project:C)'"
                                 ;; than 20chars
              (alist-get (gerrit--alist-get-recursive
                          'owner '_account_id change)
-                        ;; requires the alist to be initialized using
-                        ;; (gerrit--init-accounts)
-                        gerrit--accounts-alist))
+                        (gerrit-get-accounts-alist)))
              'face 'magit-log-author) columns))
     (when (member 'project gerrit-change-singleline-columns)
       (push (propertize (alist-get 'project change) 'face 'magit-branch-remote) columns))
@@ -231,7 +230,7 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
                            (number-to-string change-nr)))
          (change-owner (alist-get (gerrit--alist-get-recursive
                                    'owner '_account_id change-metadata)
-                                  gerrit--accounts-alist))
+                                  (gerrit-get-accounts-alist)))
          (local-branch (format "review/%s/%s"
                                ;; change-owner is 'escaped' by git-review (_
                                ;; instead of . is used). git-review uses
@@ -448,12 +447,11 @@ which is not the same as nil."
   :reader 'gerrit-upload:--read-reviewers)
 
 (defun gerrit-upload:--read-reviewers (prompt _initial-input _history)
-  (gerrit--init-accounts)
   ;; FIXME the sorting order here seems to be different than the one used in
   ;; completing-read! Maybe this is just an ivy issue
   (completing-read-multiple
    prompt
-   (seq-map #'cdr gerrit--accounts-alist) ;; usernames
+   (seq-map #'cdr (gerrit-get-accounts-alist)) ;; usernames
    nil
    nil
    nil))
@@ -473,14 +471,13 @@ which is not the same as nil."
   :reader 'gerrit-upload:--read-topic)
 
 (defun gerrit-upload:--read-assignee (prompt _initial-input history)
-  (gerrit--init-accounts)
   ;; (gerrit--read-assignee) this doesn't update the history
 
   ;; using the history here doesn't have an effect (maybe it does, but for
   ;; ivy-completing-read it doesn't)
   (completing-read
    prompt
-   (seq-map #'cdr gerrit--accounts-alist) ;; usernames
+   (seq-map #'cdr (gerrit-get-accounts-alist)) ;; usernames
    nil ;; predicate
    t ;; require match
    nil ;; initial ;; Maybe it makes sense to use the last/first history element here
@@ -889,9 +886,9 @@ shown in the section buffer."
              ("ABANDONED" "Abandoned")
              (_ "")))))
 
-    ,(propertize (or (alist-get (alist-get 'owner change-metadata) gerrit--accounts-alist) "")
+    ,(propertize (or (alist-get (alist-get 'owner change-metadata) (gerrit-get-accounts-alist)) "")
                  'face 'magit-log-author)
-    ,(propertize (or (alist-get (alist-get 'assignee change-metadata) gerrit--accounts-alist) "")
+    ,(propertize (or (alist-get (alist-get 'assignee change-metadata) (gerrit-get-accounts-alist)) "")
                  'face 'magit-log-author)
     ,(alist-get 'repo change-metadata)
     ,(propertize (alist-get 'branch change-metadata)
@@ -910,7 +907,6 @@ shown in the section buffer."
 
 (defun gerrit-dashboard--get-data (expression)
   "Return a list with \"tabulated-list-entries\" matching a gerrit search query EXPRESSION."
-  (gerrit--init-accounts)
   (seq-map (lambda (change)
              `(nil ,(gerrit-dashboard--change-metadata-2-entry
                     (gerrit-dashboard--get-change-metadata change))))
@@ -1042,7 +1038,6 @@ locally and is referenced in
 (defun gerrit--select-change-from-matching-changes (search-string)
   ;; see https://gerrit-review.googlesource.com/Documentation/user-search.html
   ;; clients can let-bind `gerrit-change-singleline-columns'
-  (gerrit--init-accounts)
   (let* ((open-changes (seq-map #'gerrit-download-format-change
                                 (gerrit-rest-change-query
                                  (or search-string "is:open"))))
@@ -1075,7 +1070,6 @@ current project."
                                  ;; TODO add support for other filter options
                                  (t
                                   nil))))))))
-  (gerrit--init-accounts)
   (gerrit-download--new changenr))
 
 (defun gerrit-download:--in-known-repo (changenr)
@@ -1093,7 +1087,6 @@ workspace of the project."
        ;; branch:...?)
        gerrit-interesting-open-changes-filter))))
 
-  (gerrit--init-accounts)
   ;; 1) get change metadata
   ;; 2) determine workspace directory (based on branch and projectname)
   ;; 3) switch to workspace
@@ -1139,7 +1132,6 @@ workspace of the project."
      (concat "status:open project:"
              (gerrit-get-current-project)))))
 
-  (gerrit--init-accounts)
   (gerrit-download--new changenr))
 
 (defun gerrit-upload ()
