@@ -873,41 +873,46 @@ shown in the section buffer."
                      datestr)))
             abbr))))
 
+(defun gerrit-dashboard--cell-formatter (change-metadata column-name)
+  (pcase column-name
+    ("Number" (propertize
+               (number-to-string (alist-get 'number change-metadata))
+               'face 'magit-hash))
+    ("Subject" (propertize (alist-get 'subject change-metadata) 'face 'magit-section-highlight))
+    ("Status" (if (eq (alist-get 'mergeable change-metadata) :json-false)
+                  (propertize "Merge conflict" 'face 'gerrit-fail)
+                (if (alist-get 'wip change-metadata)
+                    "WIP"
+                  (let ((status (alist-get 'status change-metadata)))
+                    (pcase status
+                      ("NEW" "-")
+                      ("MERGED" (propertize "Merged" 'face 'gerrit-success))
+                      ("ABANDONED" "Abandoned")
+                      (_ ""))))))
+    ("Owner" (propertize (or (alist-get (alist-get 'owner change-metadata) (gerrit-get-accounts-alist)) "")
+                         'face 'magit-log-author))
+    ("Assignee" (propertize (or (alist-get (alist-get 'assignee change-metadata) (gerrit-get-accounts-alist)) "")
+                            'face 'magit-log-author))
+    ("Repo" (alist-get 'repo change-metadata))
+    ("Branch" (propertize (alist-get 'branch change-metadata)
+                          'face 'magit-branch-remote))
+    ("Topic" (propertize (or (alist-get 'topic change-metadata) "")
+                         'face 'magit-tag))
+    ("Updated" (gerrit--format-abbrev-date (alist-get 'updated change-metadata)))
+    ("SZ"
+     ;; TODO finish this
+     (if (< (+ (alist-get 'deletions change-metadata)
+               (alist-get 'insertions change-metadata)) 15) "S" "L"))
+    ("CR" (gerrit--code-review-label-to-numberstr (alist-get 'CR-vote change-metadata)))
+    ("V" (gerrit--verify-label-to-numberstr (alist-get 'verified change-metadata)))))
+
 (defun gerrit-dashboard--change-metadata-2-entry (change-metadata)
-  `[,(propertize
-      (number-to-string (alist-get 'number change-metadata))
-      'face 'magit-hash)
-    ,(propertize (alist-get 'subject change-metadata) 'face 'magit-section-highlight)
-
-    ,(if (eq (alist-get 'mergeable change-metadata) :json-false)
-         (propertize "Merge conflict" 'face 'gerrit-fail)
-       (if (alist-get 'wip change-metadata)
-           "WIP"
-         (let ((status (alist-get 'status change-metadata)))
-           (pcase status
-             ("NEW" "-")
-             ("MERGED" (propertize "Merged" 'face 'gerrit-success))
-             ("ABANDONED" "Abandoned")
-             (_ "")))))
-
-    ,(propertize (or (alist-get (alist-get 'owner change-metadata) (gerrit-get-accounts-alist)) "")
-                 'face 'magit-log-author)
-    ,(propertize (or (alist-get (alist-get 'assignee change-metadata) (gerrit-get-accounts-alist)) "")
-                 'face 'magit-log-author)
-    ,(alist-get 'repo change-metadata)
-    ,(propertize (alist-get 'branch change-metadata)
-                 'face 'magit-branch-remote)
-    ,(propertize (or (alist-get 'topic change-metadata) "")
-                 'face 'magit-tag)
-
-    ,(gerrit--format-abbrev-date (alist-get 'updated change-metadata))
-
-    ;; TODO finish this
-    ,(if (< (+ (alist-get 'deletions change-metadata)
-               (alist-get 'insertions change-metadata)) 15) "S" "L")
-    ,(gerrit--code-review-label-to-numberstr (alist-get 'CR-vote change-metadata))
-    ,(gerrit--verify-label-to-numberstr (alist-get 'verified change-metadata))
-    ])
+  ;; iterate over the columns and use pcase to determine the value then use
+  ;; seq-into 'vector to convert the list to a vector
+  (seq-into (seq-map (lambda (elt)
+                       (gerrit-dashboard--cell-formatter change-metadata (car elt)))
+                     gerrit-dashboard-columns)
+            'vector))
 
 (defun gerrit-dashboard--get-data (expression)
   "Return a list with \"tabulated-list-entries\" matching a gerrit search query EXPRESSION."

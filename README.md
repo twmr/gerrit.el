@@ -30,6 +30,10 @@ This code is tested using gerrit=2.16 and the gerrit version used on
 
 ## News
 
+Februrary 2022:
+
+* Fix formatting issue when `gerrit-dashboard-columns` is customized.
+
 Jannuary 2022:
 
 * Legacy git-review functions were dropped. The
