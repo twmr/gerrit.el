@@ -88,11 +88,14 @@
     (message "Fetched gerrit accounts (len=%d)" (length gerrit--accounts-alist)))
   gerrit--accounts-alist)
 
+(defun gerrit-get-usernames ()
+   (seq-map #'cdr (gerrit-get-accounts-alist)))
+
 (defun gerrit--read-assignee ()
   "Ask for the name of an assignee."
   (completing-read
    "Assignee: "
-   (seq-map #'cdr gerrit--accounts-alist) ;; usernames
+   (gerrit-get-usernames)
    nil ;; predicate
    t ;; require match
    nil ;; initial
@@ -451,7 +454,7 @@ which is not the same as nil."
   ;; completing-read! Maybe this is just an ivy issue
   (completing-read-multiple
    prompt
-   (seq-map #'cdr (gerrit-get-accounts-alist)) ;; usernames
+   (gerrit-get-usernames)
    nil
    nil
    nil))
@@ -477,7 +480,7 @@ which is not the same as nil."
   ;; ivy-completing-read it doesn't)
   (completing-read
    prompt
-   (seq-map #'cdr (gerrit-get-accounts-alist)) ;; usernames
+   (gerrit-get-usernames)
    nil ;; predicate
    t ;; require match
    nil ;; initial ;; Maybe it makes sense to use the last/first history element here
