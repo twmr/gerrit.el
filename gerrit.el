@@ -75,6 +75,11 @@
   :group 'gerrit
   :type 'string)
 
+(defcustom gerrit-use-ssl t
+  "Whether or not to connect to gerrit instance with SSL or not."
+  :group 'gerrit
+  :type 'boolean)
+
 (defcustom gerrit-change-max-nr-digits 5
   "Number of digits used for displaying gerrit changes."
   :group 'gerrit
@@ -103,7 +108,10 @@
    ;; def
    nil))
 
-
+(defun gerrit--get-protocol ()
+  (if gerrit-use-ssl
+      "https://"
+    "http://"))
 
 ;; gerrit-upload* and gerrit-download* functions
 ;;
@@ -307,7 +315,7 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'.
     (unless (file-exists-p hook-file)
       (message "downloading commit-msg hook file")
       (url-copy-file
-       (concat "https://" gerrit-host  "/tools/hooks/commit-msg") hook-file)
+       (concat (gerrit--get-protocol) gerrit-host  "/tools/hooks/commit-msg") hook-file)
       (set-file-modes hook-file #o755))))
 
 (defun gerrit-push-and-assign (assignee &rest push-args)
@@ -566,7 +574,8 @@ The prefix magit- prefix is required by `magit-insert-section'.")
   "Open the gerrit change under point in the browser."
   (interactive)
   (browse-url (format
-               "https://%s/c/%s"
+               "%s%s/c/%s"
+               (gerrit--get-protocol)
                gerrit-host
                ;; (oref (magit-current-section) value) returns the object
                ;; passed as the 2nd arg to (magit-insert-section)
@@ -938,7 +947,8 @@ shown in the section buffer."
   "Open the change under point in a browser."
   (interactive)
   (browse-url (format
-               "https://%s/c/%s"
+               "%s%s/c/%s"
+               (gerrit--get-protocol)
                gerrit-host
                (gerrit-dashboard--entry-number))))
 

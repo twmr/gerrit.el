@@ -80,7 +80,7 @@ down the URL structure to send the request."
          `(("Content-Type" . "application/json")
            ("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
         (url-request-data data)
-        (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix path)))
+        (target (concat (gerrit--get-protocol) gerrit-host gerrit-rest-endpoint-prefix path)))
 
     (with-current-buffer (url-retrieve-synchronously target t)
       (gerrit-rest--read-json
@@ -313,7 +313,7 @@ to CHANGENR is not locally cloned."
         (url-request-extra-headers
          `(("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
         (url-request-data nil)
-        (target (concat "https://" gerrit-host gerrit-rest-endpoint-prefix
+        (target (concat (gerrit--get-protocol) gerrit-host gerrit-rest-endpoint-prefix
                         (format "/changes/%s/revisions/current/patch" changenr))))
     (message "Opening patch of %s" changenr)
     (setq gerrit-patch-buffer (get-buffer-create "*gerrit-patch*"))
