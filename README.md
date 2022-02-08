@@ -33,6 +33,7 @@ This code is tested using gerrit=2.16 and the gerrit version used on
 Februrary 2022:
 
 * Fix formatting issue when `gerrit-dashboard-columns` is customized.
+* Allow toggling between HTTPS and HTTP by changing `gerrit-use-ssl`.
 
 Jannuary 2022:
 
