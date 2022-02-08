@@ -56,6 +56,10 @@ servers it needs to be set to an empty string."
       (base64-encode-string
        (concat username ":" password)))))
 
+(defun gerrit-rest-username ()
+  (let ((pass-entry (auth-source-user-and-password gerrit-host)))
+    (nth 0 pass-entry)))
+
 (defmacro gerrit-rest--read-json (str)
   "Read json string STR."
   (if (progn
@@ -83,24 +87,27 @@ down the URL structure to send the request."
         (target (concat (gerrit--get-protocol) gerrit-host gerrit-rest-endpoint-prefix path)))
 
     (with-current-buffer (url-retrieve-synchronously target t)
-      (gerrit-rest--read-json
-       (progn
-         (goto-char url-http-end-of-headers)
-         ;; if there is an error in search-forward-regexp, write
-         ;; the buffer contents to a *gerrit-rest-status* buffer
-         (if-let ((pos (search-forward-regexp "^)]}'$" nil t)))
-             (buffer-substring pos (point-max))
-           ;; ")]}'" was not found in the REST response
-           (let ((buffer (get-buffer-create "*gerrit-rest-status*"))
-                 (contents (buffer-substring (point-min) (point-max))))
-             (with-current-buffer buffer
-               (goto-char (point-max))
-               (insert ?\n)
-               (insert (format "%s: %s (%s)" url-request-method target url-request-extra-headers))
-               (insert ?\n)
-               (insert contents)
-               (error (concat "error with gerrit request (take a look at the "
-                              "*gerrit-rest-status* buffer for more information"))))))))))
+      (if (string-equal method "POST")
+          ;; TODO read output and check if it was successful??
+          t
+        (gerrit-rest--read-json
+         (progn
+           (goto-char url-http-end-of-headers)
+           ;; if there is an error in search-forward-regexp, write
+           ;; the buffer contents to a *gerrit-rest-status* buffer
+           (if-let ((pos (search-forward-regexp "^)]}'$" nil t)))
+               (buffer-substring pos (point-max))
+             ;; ")]}'" was not found in the REST response
+             (let ((buffer (get-buffer-create "*gerrit-rest-status*"))
+                   (contents (buffer-substring (point-min) (point-max))))
+               (with-current-buffer buffer
+                 (goto-char (point-max))
+                 (insert ?\n)
+                 (insert (format "%s: %s (%s)" url-request-method target url-request-extra-headers))
+                 (insert ?\n)
+                 (insert contents)
+                 (error (concat "error with gerrit request (take a look at the "
+                                "*gerrit-rest-status* buffer for more information")))))))))))
 
 (defun gerrit-rest--escape-project (project)
   "Escape project name PROJECT for usage in REST API requets."
@@ -201,12 +208,13 @@ down the URL structure to send the request."
                                            `((reviewer . ,reviewer))) 'utf-8)
                     (format "/changes/%s/reviewers/%s"  changenr reviewer)))
 
-(defun gerrit-rest-change-remove-reviewer (changenr reviewer)
-  "Remove REVIEWER from a change with nr CHANGENR."
+(defun gerrit-rest-change-delete-reviewer (changenr reviewer)
+  "Delete REVIEWER from a change with nr CHANGENR."
   (interactive "sEnter a changenr: \nsEnter reviewer: ")
-  (gerrit-rest-sync "DELETE"
-                    nil
-                    (format "/changes/%s/reviewers/%s"  changenr reviewer)))
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode
+                                           '((notify . "None"))) 'utf-8)
+                    (format "/changes/%s/reviewers/%s/delete"  changenr reviewer)))
 
 (defun gerrit-rest-change-set-topic (changenr topic)
   "Set the topic to TOPIC of a change CHANGENR."
@@ -231,7 +239,7 @@ down the URL structure to send the request."
   ;; note that filenames are returned as symbols
   (gerrit-rest-sync "GET" nil (format "/changes/%s/comments" changenr)))
 
-(defun gerrit-rest-change-set-vote (changenr vote message)
+(defun gerrit-rest-change-set-cr-vote (changenr vote message)
   "Set a Code-Review vote VOTE of a change CHANGENR.
 A comment MESSAGE can be provided."
   (interactive "sEnter a changenr: \nsEnter vote [-2, -1, 0, +1, +2]: \nsEnter message: ")
@@ -242,7 +250,15 @@ A comment MESSAGE can be provided."
                                                ((Code-Review . ,vote))))) 'utf-8)
                     (format "/changes/%s/revisions/current/review" changenr)))
 
-(defun gerrit-rest-change-verify (changenr vote message)
+(defun gerrit-rest-change-delete-cr-vote (changenr username)
+  "Delete a Code-Review vote VOTE from a change CHANGENR from the user USERNAME."
+  (interactive "sEnter a changenr: \nsEnter a username: ")
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode
+                                           '((notify . "None"))) 'utf-8)
+                    (format "/changes/%s/reviewers/%s/votes/Code-Review/delete" changenr username)))
+
+(defun gerrit-rest-change-set-verified-vote (changenr vote message)
   "Verify a change CHANGENR by voting with VOTE.
 A comment MESSAGE can be provided."
   (interactive "sEnter a changenr: \nsEnter vote [-1, 0, +1]: \nsEnter message: ")
@@ -252,6 +268,14 @@ A comment MESSAGE can be provided."
                                              (labels .
                                                ((Verified . ,vote))))) 'utf-8)
                     (format "/changes/%s/revisions/current/review" changenr)))
+
+(defun gerrit-rest-change-delete-verified-vote (changenr username)
+  "Delete a Verified vote VOTE from a change CHANGENR from te user USERNAME."
+  (interactive "sEnter a changenr: \nsEnter a username: ")
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode
+                                           '((notify . "None"))) 'utf-8)
+                    (format "/changes/%s/reviewers/%s/votes/Verified/delete" changenr username)))
 
 (defun gerrit-rest-change-set-Work-in-Progress (changenr)
   "Set the state of the change CHANGENR to Work-in-Progress."
@@ -362,31 +386,47 @@ to CHANGENR is not locally cloned."
             (message "Adding reviewer %s to %s" reviewer changenr)
             (gerrit-rest-change-add-reviewer changenr reviewer))))
 
-(defun gerrit-rest-topic-remove-reviewer (topic reviewer)
-  "Remove a REVIEWER from all changes of a TOPIC."
+(defun gerrit-rest-topic-delete-reviewer (topic reviewer)
+  "Delete REVIEWER from all changes of a TOPIC."
  (interactive "sEnter a topic: \nsEnter reviewer: ")
  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
           (let ((changenr (gerrit-rest--change-info-to-unique-changeid change-info)))
             (message "Removing reviewer %s from %s" reviewer changenr)
-            (gerrit-rest-change-remove-reviewer changenr reviewer))))
+            (gerrit-rest-change-delete-reviewer changenr reviewer))))
 
-(defun gerrit-rest-topic-set-vote (topic vote message)
+(defun gerrit-rest-topic-set-cr-vote (topic vote message)
   "Set a Code-Review vote VOTE for all changes of a topic TOPIC.
 A comment MESSAGE can be provided."
  (interactive "sEnter a topic: \nsEnter vote [-2, -1, 0, +1, +2]: \nsEnter message: ")
  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
           (let ((changenr (gerrit-rest--change-info-to-unique-changeid change-info)))
             (message "Setting vote %s for %s" vote changenr)
-            (gerrit-rest-change-set-vote changenr vote message))))
+            (gerrit-rest-change-set-cr-vote changenr vote message))))
 
-(defun gerrit-rest-topic-verify (topic vote message)
+(defun gerrit-rest-topic-delete-cr-vote (topic username)
+  "Delete Code-Review vote from all changes of a topic TOPIC from user USERNAME."
+ (interactive "sEnter a topic: \nsEnter a username: ")
+ (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
+          (let ((changenr (gerrit-rest--change-info-to-unique-changeid change-info)))
+            (message "Removing CR vote from %s from %s" changenr username)
+            (gerrit-rest-change-delete-cr-vote changenr username))))
+
+(defun gerrit-rest-topic-set-verified-vote (topic vote message)
   "Verify a topic TOPIC by voting with VOTE.
 A comment MESSAGE can be provided."
  (interactive "sEnter a topic: \nsEnter vote [-1, 0, +1]: \nsEnter message: ")
  (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
           (let ((changenr (gerrit-rest--change-info-to-unique-changeid change-info)))
-            (message "Setting Verify-vote %s for %s" vote changenr)
-            (gerrit-rest-change-verify changenr vote message))))
+            (message "Setting Verified vote %s for %s" vote changenr)
+            (gerrit-rest-change-set-verified-vote changenr vote message))))
+
+(defun gerrit-rest-topic-delete-verified-vote (topic username)
+  "Delete Verified vote from all changes of a topic TOPIC from user USERNAME."
+ (interactive "sEnter a topic: \nsEnter a username: ")
+ (cl-loop for change-info in (gerrit-rest-get-topic-info topic) do
+          (let ((changenr (gerrit-rest--change-info-to-unique-changeid change-info)))
+            (message "Removing Verified vote from %s from %s" changenr username)
+            (gerrit-rest-change-delete-verified-vote changenr username))))
 
 (provide 'gerrit-rest)
 
