@@ -21,7 +21,7 @@
    (list (transient-args 'gerrit-upload-transient)))
   (message "args: %s" args))
 
-(define-transient-command gerrit-upload-transient ()
+(transient-define-prefix gerrit-upload-transient ()
   "Test Transient Title"
   ["Arguments"
    ;; ("r" "Add reviewer" "reviewers=") ;; TODO multi-value
