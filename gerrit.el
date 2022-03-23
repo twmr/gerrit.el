@@ -971,6 +971,16 @@ locally and is referenced in
   (interactive)
   (gerrit-section-topic-info (gerrit-dashboard--topic)))
 
+(defun gerrit-dashboard-set-verified-vote-topic ()
+  (interactive)
+  ;; TODO interactively ask for vote + message
+  (gerrit-rest-topic-set-verified-vote (gerrit-dashboard--topic) "+1" ""))
+
+(defun gerrit-dashboard-set-cr-vote-topic ()
+  (interactive)
+  ;; TODO interactively ask for vote + message
+  (gerrit-rest-topic-set-cr-vote (gerrit-dashboard--topic) "+2" ""))
+
 (defun gerrit-dashboard-assign-change ()
   "Set assignee of the change under point."
   (interactive)
@@ -1018,8 +1028,8 @@ locally and is referenced in
     (goto-char ppos)))
 
 (defvar gerrit-dashboard-mode-map
+  ;; TODO convert this into a transient
   (let ((map (make-sparse-keymap)))
-    ;; TODO vote, ....
     (define-key map (kbd "a") 'gerrit-dashboard-assign-change)
     (define-key map (kbd "A") 'gerrit-dashboard-assign-change-to-me)
     (define-key map (kbd "g") 'gerrit-dashboard--refresh--and-point-restore)
@@ -1027,6 +1037,11 @@ locally and is referenced in
     (define-key map (kbd "d") 'gerrit-dashboard-download-change)
     (define-key map (kbd "RET") 'gerrit-dashboard-open-change)
     (define-key map (kbd "t") 'gerrit-dashboard-open-topic)
+    ;; votes
+    (define-key map (kbd "V") 'gerrit-dashboard-set-verified-vote-topic)
+    (define-key map (kbd "C") 'gerrit-dashboard-set-cr-vote-topic)
+    ;; TODO submit
+
     ;; <C-down> -> forward-paragraph
    map))
 
