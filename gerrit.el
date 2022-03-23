@@ -62,7 +62,7 @@
     ("Incoming reviews" .  "is:open -owner:self -is:wip -is:ignored (reviewer:self OR assignee:self)")
     ("CCed On" . "is:open -is:ignored cc:self")
     ("Recently closed" . "is:closed -is:ignored (-is:wip OR owner:self) (owner:self OR reviewer:self OR assignee:self OR cc:self) limit:15"))
-  "Query search string that is used for the data shown in the gerrit-dashboard.")
+  "Query search string that is used for the data shown in the `gerrit-dashboard'.")
 
 (defgroup gerrit nil
   "Maintain a menu of recently opened files."
@@ -94,6 +94,7 @@
   gerrit--accounts-alist)
 
 (defun gerrit-get-usernames ()
+  "Get all known usernames known to the gerrit server."
    (seq-map #'cdr (gerrit-get-accounts-alist)))
 
 (defun gerrit--read-assignee ()
@@ -218,8 +219,7 @@ you can use 'is:open (project:A OR project:B OR project:C)'"
 (defun gerrit-download--get-refspec (change-metadata)
   "Return the refspec of a gerrit change from CHANGE-METADATA.
 
-This refspec is a string of the form 'refs/changes/xx/xx/x'.
-"
+This refspec is a string of the form 'refs/changes/xx/xx/x'."
   ;; this is important for determining the refspec needed for
   ;; git-fetch
   ;; change-ref is e.g. "refs/changes/16/35216/2"
@@ -522,10 +522,14 @@ section header."
 
 
 (defun gerrit-magit-insert-status ()
-  "Show all open gerrit reviews when called in the magit-status-section via `magit-status-section-hook'."
+  "Show all open gerrit reviews.
+
+When called in the magit-status-section via `magit-status-section-hook'
+all open gerrit review are shown in the magit status buffer."
 
  (when-let ((fetched-reviews (condition-case nil
-                                 (gerrit-rest-open-reviews-for-project (gerrit-get-current-project))
+                                 (gerrit-rest-open-reviews-for-project
+                                  (gerrit-get-current-project))
                                (error '()))))
    (magit-insert-section (open-reviews)
      (magit-insert-heading "Open Gerrit Reviews")
@@ -845,7 +849,10 @@ shown in the section buffer."
       (error nil))))
 
 (defun gerrit-dashboard--get-change-metadata (change)
-  "Convert a json object returned by the `gerrit-rest-change-query` for CHANGE into an alist."
+  "Convert a json object for CHANGE into an alist.
+
+An object returned by the `gerrit-rest-change-query' is converted into an
+alist."
   `((number . ,(alist-get '_number change)) ;; int
     (subject . ,(alist-get 'subject change)) ;; string
     (status . ,(alist-get 'status change)) ;; string
@@ -924,7 +931,7 @@ shown in the section buffer."
             'vector))
 
 (defun gerrit-dashboard--get-data (expression)
-  "Return a list with \"tabulated-list-entries\" matching a gerrit search query EXPRESSION."
+  "Return a list with \"tabulated-list-entries\" matching a query EXPRESSION."
   (seq-map (lambda (change)
              `(nil ,(gerrit-dashboard--change-metadata-2-entry
                     (gerrit-dashboard--get-change-metadata change))))
