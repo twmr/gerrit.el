@@ -33,8 +33,8 @@ This code is tested using gerrit=2.16 and the gerrit version used on
 March 2022:
 
 * Add support for voting to gerrit-dashboard
-**  <kbd>V</kdb> set a "Verified" vote for the entire topic under point
-**  <kbd>C</kdb> set a "Code-Review" vote for the entire topic under point
+  * <kbd>V</kbd> set a "Verified" vote for the entire topic under point
+  * <kbd>C</kbd> set a "Code-Review" vote for the entire topic under point
 
 Februrary 2022:
 
