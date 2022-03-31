@@ -289,16 +289,16 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'."
                        (error "Branch tracking incompatibility: Tracking %s/%s instead of %s/%s"
                               tracked-remote tracked-branch
                               (gerrit-get-remote) change-branch)))
-                   (magit-call-git "checkout" local-branch)
-                   (magit-call-git "reset" "--hard" "FETCH_HEAD"))
+                   (magit-git "checkout" local-branch)
+                   (magit-git "reset" "--hard" "FETCH_HEAD"))
 
-               (magit-call-git "checkout" "-b" local-branch "FETCH_HEAD")
+               (magit-git "checkout" "-b" local-branch "FETCH_HEAD")
                ;; set upstream here (see checkout_review function in cmd.py)
                ;; this upstream branch is needed for rebasing
-               (magit-call-git "branch"
-                               "--set-upstream-to"
-                               (format "%s/%s" (gerrit-get-remote) change-branch)
-                               local-branch))
+               (magit-git "branch"
+                          "--set-upstream-to"
+                          (format "%s/%s" (gerrit-get-remote) change-branch)
+                          local-branch))
              (magit-refresh))))))))
 
 (defun gerrit-download--new (changenr)
