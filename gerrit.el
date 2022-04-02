@@ -290,10 +290,8 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'."
                               tracked-remote tracked-branch
                               (gerrit-get-remote) change-branch)))
                    ;; TODO autostash support
-                   (magit-git "checkout" local-branch)
-                   ;; the reset is needed to update the branch to branch to
-                   ;; the HEAD of the just fetched commit(s).
-                   (magit-git "reset" "--hard" "FETCH_HEAD"))
+                   ;; -B resets the branch to FETCH_HEAD in our case.
+                   (magit-git "checkout" "-B" local-branch "FETCH_HEAD"))
 
                ;; TODO autstash support
                ;; no branch exists that can be reused and updated -> create
