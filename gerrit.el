@@ -281,7 +281,7 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'."
                        (branch-exists (magit-git-success
                                        "show-ref" "--verify" "--quiet" local-ref)))
                  (progn
-                   ;; since local-branch exists, gerrit--get-tracked never returns nil
+                   ;; since `local-branch' exists, `gerrit--get-tracked' never returns nil
                    (seq-let (tracked-remote tracked-branch) (gerrit--get-tracked local-branch)
                      (unless (and (equal tracked-remote (gerrit-get-remote))
                                   (equal tracked-branch change-branch))
@@ -289,9 +289,15 @@ This refspec is a string of the form 'refs/changes/xx/xx/x'."
                        (error "Branch tracking incompatibility: Tracking %s/%s instead of %s/%s"
                               tracked-remote tracked-branch
                               (gerrit-get-remote) change-branch)))
+                   ;; TODO autostash support
                    (magit-git "checkout" local-branch)
+                   ;; the reset is needed to update the branch to branch to
+                   ;; the HEAD of the just fetched commit(s).
                    (magit-git "reset" "--hard" "FETCH_HEAD"))
 
+               ;; TODO autstash support
+               ;; no branch exists that can be reused and updated -> create
+               ;; a new one.
                (magit-git "checkout" "-b" local-branch "FETCH_HEAD")
                ;; set upstream here (see checkout_review function in cmd.py)
                ;; this upstream branch is needed for rebasing
