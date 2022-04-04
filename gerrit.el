@@ -893,11 +893,40 @@ alist."
                      datestr)))
             abbr))))
 
+(defun gerrit-dashboard--button-open-change (&optional button)
+  (interactive)
+  ;; this is a version of gerrit-dashboard-open-change, but just for buttons
+  ;; displayed inside the dashboard
+  (gerrit-rest-change-patch (button-get button 'change-id)))
+
+(defun gerrit-dashboard--button-open-assignee-query (&optional button)
+  (interactive)
+  (gerrit-query (concat "assignee:" (button-get button 'assignee))))
+
+(defun gerrit-dashboard--button-open-owner-query (&optional button)
+  (interactive)
+  (gerrit-query (concat "owner:" (button-get button 'owner))))
+
+(defun gerrit-dashboard--button-open-branch-query (&optional button)
+  (interactive)
+  (gerrit-query (concat "branch:" (button-get button 'branch))))
+
+(defun gerrit-dashboard--button-open-repo-query (&optional button)
+  (interactive)
+  (gerrit-query (concat "project:" (button-get button 'repo))))
+
+(defun gerrit-dashboard--button-open-topic-query (&optional button)
+  (interactive)
+  (gerrit-query (concat "topic:" (button-get button 'topic))))
+
 (defun gerrit-dashboard--cell-formatter (change-metadata column-name)
   (pcase column-name
-    ("Number" (propertize
-               (number-to-string (alist-get 'number change-metadata))
-               'face 'magit-hash))
+    ("Number" (let ((change-id (number-to-string (alist-get 'number change-metadata))))
+                `(,(propertize change-id  'face 'magit-hash)
+                  change-id ,change-id
+                  follow-link t
+                  ;; for this to work, an optional button parameter is needed
+                  action gerrit-dashboard--button-open-change)))
     ("Subject" (propertize (alist-get 'subject change-metadata) 'face 'magit-section-highlight))
     ("Status" (if (eq (alist-get 'mergeable change-metadata) :json-false)
                   (propertize "Merge conflict" 'face 'gerrit-fail)
@@ -909,15 +938,38 @@ alist."
                       ("MERGED" (propertize "Merged" 'face 'gerrit-success))
                       ("ABANDONED" "Abandoned")
                       (_ ""))))))
-    ("Owner" (propertize (or (alist-get (alist-get 'owner change-metadata) (gerrit-get-accounts-alist)) "")
-                         'face 'magit-log-author))
-    ("Assignee" (propertize (or (alist-get (alist-get 'assignee change-metadata) (gerrit-get-accounts-alist)) "")
-                            'face 'magit-log-author))
-    ("Repo" (alist-get 'repo change-metadata))
-    ("Branch" (propertize (alist-get 'branch change-metadata)
-                          'face 'magit-branch-remote))
-    ("Topic" (propertize (or (alist-get 'topic change-metadata) "")
-                         'face 'magit-tag))
+    ("Owner" (if-let ((owner (alist-get (alist-get 'owner change-metadata) (gerrit-get-accounts-alist))))
+                 `(,(propertize owner 'face 'magit-log-author)
+                   owner ,owner
+                   follow-link t
+                   action gerrit-dashboard--button-open-owner-query)
+               ;; empty owner
+               ""))
+    ("Assignee" (if-let ((assignee
+                          (alist-get (alist-get 'assignee change-metadata) (gerrit-get-accounts-alist))))
+                    `(,(propertize assignee 'face 'magit-log-author)
+                      assignee ,assignee
+                      follow-link t
+                      action gerrit-dashboard--button-open-assignee-query)
+                  ;; empty assignee (not clickable)
+                  ""))
+    ("Repo" (let ((repo (alist-get 'repo change-metadata)))
+              `(,repo
+                repo ,repo
+                follow-link t
+                action gerrit-dashboard--button-open-repo-query)))
+    ("Branch" (let ((branch (alist-get 'branch change-metadata)))
+                `(,(propertize branch 'face 'magit-branch-remote)
+                  branch ,branch
+                  follow-link t
+                  action gerrit-dashboard--button-open-branch-query)))
+    ("Topic" (if-let ((topic (alist-get 'topic change-metadata)))
+                 `(,(propertize topic 'face 'magit-tag)
+                   topic , topic
+                   follow-link t
+                   action gerrit-dashboard--button-open-topic-query)
+               ;; empty topic
+               ""))
     ("Updated" (gerrit--format-abbrev-date (alist-get 'updated change-metadata)))
     ("SZ"
      ;; TODO finish this
@@ -1014,13 +1066,20 @@ locally and is referenced in
   (seq-reduce (lambda (acc conscell)
                 (let ((section-data
                        (gerrit-dashboard--get-data (cdr conscell))))
-                  (append acc `((nil [""
-                                      ,(propertize
-                                        (format "%s (%d)" (car conscell) (length section-data))
-                                        'face 'gerrit-section)
-                                      ;; is there an easier way to add len(columns)-2 times ""?
-                                      ,@(seq-map (lambda (_) "") (number-sequence 2 (1- (length gerrit-dashboard-columns))))]))
-                          section-data)))
+                  ;; don't show header line if length of
+                  ;; gerrit-dashboard-query-alist is 1 and (car conscell) is
+                  ;; nil
+                  (if (car conscell)
+                    (append acc `((nil [""
+                                        ,(propertize
+                                          (format "%s (%d)" (car conscell) (length section-data))
+                                          'face 'gerrit-section)
+                                        ;; is there an easier way to add len(columns)-2 times ""?
+                                        ,@(seq-map (lambda (_) "") (number-sequence
+                                                               2 (1- (length gerrit-dashboard-columns))))]))
+                            section-data)
+                    ;; don't display a header line
+                    (append acc section-data))))
               gerrit-dashboard-query-alist '()))
 
 (defun gerrit-dashboard--refresh ()
@@ -1038,6 +1097,12 @@ locally and is referenced in
     (gerrit-dashboard--refresh)
     (goto-char ppos)))
 
+(defun gerrit-dashboard-edit-query ()
+  (interactive)
+  ;; TODO generalize this, currently the determination of the query string
+  ;; only works in dashboards with a single section.
+  (gerrit-query (read-string "Enter query string: " (cdar gerrit-dashboard-query-alist))))
+
 (defvar gerrit-dashboard-mode-map
   ;; TODO convert this into a transient
   (let ((map (make-sparse-keymap)))
@@ -1048,6 +1113,8 @@ locally and is referenced in
     (define-key map (kbd "d") 'gerrit-dashboard-download-change)
     (define-key map (kbd "RET") 'gerrit-dashboard-open-change)
     (define-key map (kbd "t") 'gerrit-dashboard-open-topic)
+    ;; TODO completion would be extremely nice
+    (define-key map (kbd "e") 'gerrit-dashboard-edit-query)
     ;; votes
     (define-key map (kbd "V") 'gerrit-dashboard-set-verified-vote-topic)
     (define-key map (kbd "C") 'gerrit-dashboard-set-cr-vote-topic)
@@ -1076,6 +1143,17 @@ locally and is referenced in
   "Show a dashboard in a new buffer."
   (interactive)
   (switch-to-buffer gerrit-dashboard-buffer-name)
+  (gerrit-dashboard-mode))
+
+(defun gerrit-query (query)
+  "Perform a query QUERY and display it in a dashboard buffer."
+  ;; TODO offer completion in interactive ...
+  ;; TODO offer a list of candidates (history)
+  (interactive "sEnter a query string: ")
+  (switch-to-buffer (format "gerrit:%s" query))
+  (setq gerrit-dashboard-query-alist
+        ;; if car is nil gerrit.el will not display a section line
+        `((nil . ,(concat query " limit:50"))))
   (gerrit-dashboard-mode))
 
 

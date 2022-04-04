@@ -30,11 +30,17 @@ This code is tested using gerrit=2.16 and the gerrit version used on
 
 ## News
 
+April 2022:
+
+* Add a new interactive `gerrit-query` function, which display the results
+  of a user defined gerrit query.
+* Display clickable links in the gerrit-dashboard.
+
 March 2022:
 
-* Add support for voting to gerrit-dashboard
-  * <kbd>V</kbd> set a "Verified" vote for the entire topic under point
-  * <kbd>C</kbd> set a "Code-Review" vote for the entire topic under point
+* Add support for voting to gerrit-dashboard.
+  * <kbd>V</kbd> set a "Verified" vote for the entire topic under point.
+  * <kbd>C</kbd> set a "Code-Review" vote for the entire topic under point.
 
 Februrary 2022:
 
@@ -160,9 +166,14 @@ web-interface.  The currently supported keybindings in a dashboard buffer are
 * <kbd>g</kbd> Refresh
 * <kbd>o</kbd> Open change under point in browser using `browse-url`
 * <kbd>d</kbd> Download change under point in a local clone of the repository
-* <kbd>t</kbd> Switch to a buffer containing a topic-overview of the change under point
+* <kbd>t</kbd> Switch to a buffer containing a topic-overview of the change
+  under point
+* <kbd>e</kbd> Edit the query and open a new buffer with query results
 * <kbd>RET</kbd> Download patch of change under point and display it in new
   buffer
+
+It is possible to click on the links in the dashboard buffer to open new
+query buffers like in the gerrit webfrontend.
 
 If you want to create multiple dashboards you can create a dashboard using
 
