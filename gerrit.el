@@ -996,7 +996,7 @@ alist."
 (defun gerrit-dashboard--entry-number ()
   "Return the change number as a string of a change under point."
   (interactive)
-  (aref (tabulated-list-get-entry) 0))
+  (car (aref (tabulated-list-get-entry) 0)))
 
 (defun gerrit-dashboard--topic ()
   "Return the topicname as a string of a change under point."
