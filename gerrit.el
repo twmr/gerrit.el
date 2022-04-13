@@ -796,18 +796,20 @@ shown in the section buffer."
 ;; dashboard
 
 (defvar gerrit-dashboard-columns
-  [("Number" 8)
-   ("Subject" 55)
-   ("Status" 10)
-   ("Owner" 15)
-   ("Assignee" 15)
-   ("Repo" 24)
-   ("Branch" 12)
-   ("Topic" 15)
-   ("Updated" 8)
-   ("SZ" 3)
-   ("CR" 2)
-   ("V" 2)]
+  ;; The last argument in every entry of the list is used to turn on
+  ;; sorting (see variable docstring of `tabulated-list-format'.
+  [("Number" 8 t)
+   ("Subject" 55 t)
+   ("Status" 10 t)
+   ("Owner" 15 t)
+   ("Assignee" 15 t)
+   ("Repo" 24 t)
+   ("Branch" 12 t)
+   ("Topic" 15 t)
+   ("Updated" 8 t)
+   ("SZ" 3 t)
+   ("CR" 2 t)
+   ("V" 2 t)]
   "Column-names and column-sizes of the gerrit dashboard.")
 
 (defface gerrit-fail

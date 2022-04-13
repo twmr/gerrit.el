@@ -35,6 +35,9 @@ April 2022:
 * Add a new interactive `gerrit-query` function, which display the results
   of a user defined gerrit query.
 * Display clickable links in the gerrit-dashboard.
+* Add support for sorting the columns in the dashboard buffers: To
+  sort by column either click on the column that you want to sort or
+  use `tabulated-list-sort` (<kbd>S</kbd>). [Requested by Gerald]
 
 March 2022:
 
