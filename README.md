@@ -101,25 +101,6 @@ machine gerrithostname.org
 ```
 Note: Depending on your auth configuration, Gerrit may expect a generated HTTP password (ex. if you have `git_basic_auth_policy="HTTP_LDAP"`). If there is an HTTP credentials section in your user's account settings page, then an HTTP password needs to be generated and supplied in your auth-source file.
 
-### Keyring
-
-Make sure that emacs was compiled with dbus support (requires devel packages
-of libdbus).
-
-Load `dbus` emacs library using `(load-library 'dbus)`.
-
-Make sure that `(dbus-list-names :session)` returns a non-empty list,
-otherwise dbus is not working
-
-Load the `secrets` library, which depends on a working dbus setup.
-
-`(load-library 'secrets)` and check that the `secrets-enabled` variable is
-`t`.
-
-Now you can list the secrets using `secrets-show-secrets`.
-
-**TODO** extend/finalize this documentation.
-
 ## Pre-commit hook
 
 As you know, there is a gerrit pre-commit hook that must be installed for
