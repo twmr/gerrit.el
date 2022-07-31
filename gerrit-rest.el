@@ -42,7 +42,7 @@
 (defvar url-http-end-of-headers)
 
 (defcustom gerrit-rest-endpoint-prefix "/a"
-  "String that is appended to 'gerrit-host`.
+  "String that is appended to `gerrit-host'.
 For newer gerrit servers this needs to be set to /a, whereas on older
 servers it needs to be set to an empty string."
   :group 'gerrit
