@@ -198,7 +198,7 @@ down the URL structure to send the request."
   ;; TODO query open topics
   (interactive "sEnter a topic name: ")
   (gerrit-rest-sync-v2 "GET" "/changes/"
-		       :params `(("q" (concat "is:open+topic:" ,topicname))
+		       :params `(("q" ,(concat "is:open+topic:" topicname))
 				 ("o" "DOWNLOAD_COMMANDS")
 				 ("o" "CURRENT_REVISION")
 				 ("o" "CURRENT_COMMIT")
@@ -225,7 +225,7 @@ down the URL structure to send the request."
   ;; see https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
   (let* ((limit-entries 25)
          (resp (gerrit-rest-sync-v2 "GET" "/changes/"
-				    :params `(("q" (concat "is:open+project:" ,project))
+				    :params `(("q" ,(concat "is:open+project:" project))
 					      ("o" "CURRENT_REVISION")
 					      ("o" "CURRENT_COMMIT")
 					      ("o" "DETAILED_LABELS")
