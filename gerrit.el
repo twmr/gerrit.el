@@ -56,12 +56,14 @@
 
 (defvar gerrit-dashboard-buffer-name "*gerrit-dashboard*" nil)
 (defvar gerrit-dashboard-query-alist
-  '(("Assigned to me" . "assignee:self (-is:wip OR owner:self OR assignee:self) is:open -is:ignored")
-    ("Work in progress" . "is:open owner:self is:wip")
-    ("Outgoing reviews" . "is:open owner:self -is:wip -is:ignored")
-    ("Incoming reviews" .  "is:open -owner:self -is:wip -is:ignored (reviewer:self OR assignee:self)")
-    ("CCed On" . "is:open -is:ignored cc:self")
-    ("Recently closed" . "is:closed -is:ignored (-is:wip OR owner:self) (owner:self OR reviewer:self OR assignee:self OR cc:self) limit:15"))
+    '(("Has draft comments" . "has:draft")
+      ("Your turn" . "attention:self")
+      ("Assigned to me" . "assignee:self (-is:wip OR owner:self OR assignee:self) is:open -is:ignored")
+      ("Work in progress" . "is:open owner:self is:wip")
+      ("Outgoing reviews" . "is:open owner:self -is:wip -is:ignored")
+      ("Incoming reviews" . "is:open -owner:self -is:wip -is:ignored (reviewer:self OR assignee:self)")
+      ("CCed on" . "is:open -is:ignored cc:self")
+      ("Recently closed" . "is:closed -is:ignored (-is:wip OR owner:self) (owner:self OR reviewer:self OR assignee:self OR cc:self) limit:15"))
   "Query search string that is used for the data shown in the `gerrit-dashboard'.")
 
 (defgroup gerrit nil

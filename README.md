@@ -30,6 +30,12 @@ This code is tested using gerrit=2.16 and the gerrit version used on
 
 ## News
 
+August 2022:
+
+* [internal] Introduce new `gerrit-rest-sync-v2`.
+* Update `gerrit-dashboard-query-alist` (Include the "Your turn" in
+  the query, which requires a new-ish gerrit server release >= 3.3).
+
 April 2022:
 
 * Add a new interactive `gerrit-query` function, which display the results
