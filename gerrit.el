@@ -162,15 +162,15 @@
   the user to select a change from a list of changes.
 
   Currently supported columns are:
-  \='number (the change number)
-  \='owner (the change owner)
-  \='branch (the branch of the change)
-  \='subject (the subject of the commit msg)
-  \='project (the project name)")
+  'number (the change number)
+  'owner (the change owner)
+  'branch (the branch of the change)
+  'subject (the subject of the commit msg)
+  'project (the project name)")
 
 ;; TODO introduce a function?
 (defcustom gerrit-project-to-local-workspace-alist nil
-  "This alist can be used for specifying the \='known\=' gerrit projects.
+  "This alist can be used for specifying the 'known' gerrit projects.
 
 The alist is needed for determining the workspace directory for
 certain gerrit projects.
@@ -191,7 +191,7 @@ Each element is a list comprising ((PROJECT BRANCH) WORKSPACE) ..."
   "Filter string used for querying gerrit changes.
 
 If you are interested only in the changes for certain projects,
-you can use \='is:open (project:A OR project:B OR project:C)\='"
+you can use 'is:open (project:A OR project:B OR project:C)'"
   :group 'gerrit
   :type 'string)
 
@@ -221,7 +221,7 @@ you can use \='is:open (project:A OR project:B OR project:C)\='"
 (defun gerrit-download--get-refspec (change-metadata)
   "Return the refspec of a gerrit change from CHANGE-METADATA.
 
-This refspec is a string of the form \='refs/changes/xx/xx/x\='."
+This refspec is a string of the form 'refs/changes/xx/xx/x'."
   ;; this is important for determining the refspec needed for
   ;; git-fetch
   ;; change-ref is e.g. "refs/changes/16/35216/2"
@@ -618,7 +618,7 @@ The returned string is not prefixed with the remote."
         (cadr (s-split "/" upstream-branch)))))
 
 (defun gerrit-get-current-project ()
-  "Return the gerrit project name, e.g.,\='software/jobdeck\='."
+  "Return the gerrit project name, e.g., 'software/jobdeck'."
   (interactive)
   (let* ((remote-url (car
                       (magit-config-get-from-cached-list
@@ -658,12 +658,11 @@ A string like the following is returned:
 myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
   (let ((branch (substring-no-properties (gerrit-get-upstream-branch)))
         (project (substring-no-properties (gerrit-get-current-project))))
-    (url-hexify-string (concat
-			project
-			"~"
-			branch
-			"~"
-			(gerrit-get-changeid-from-current-commit)))))
+    (concat (gerrit-rest--escape-project project)
+            "~"
+            branch
+            "~"
+            (gerrit-get-changeid-from-current-commit))))
 
 
 
