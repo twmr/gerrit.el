@@ -76,10 +76,22 @@ servers it needs to be set to an empty string."
            (json-false nil))
        (json-read-from-string ,str))))
 
+(defun gerrit-rest--write-to-status-buffer (target)
+  (let ((buffer (get-buffer-create "*gerrit-rest-status*"))
+        (contents (buffer-substring (point-min) (point-max))))
+    (with-current-buffer buffer
+      (goto-char (point-max))
+      (insert ?\n)
+      (insert (format "%s: %s (%s)" url-request-method target url-request-extra-headers))
+      (insert ?\n)
+      (insert contents))))
+  
+
 (cl-defun gerrit-rest-sync-v2 (method endpoint
 				      &key
 				      params
- 				      data)
+ 				      data
+				      debug)
   "Perform an API request to the ENDPOINT using METHOD.
 Optional arg PARAMS may be provided to specify parmeters for the request url.
 The optional arg DATA may be used as inputs for POST/PUT requests."
@@ -105,18 +117,14 @@ The optional arg DATA may be used as inputs for POST/PUT requests."
            ;; if there is an error in search-forward-regexp, write
            ;; the buffer contents to a *gerrit-rest-status* buffer
            (if-let ((pos (search-forward-regexp "^)]}'$" nil t)))
-	       (buffer-substring pos (point-max))
+	       (progn
+		 (when debug
+		   (gerrit-rest--write-to-status-buffer target))
+		 (buffer-substring pos (point-max)))
 	     ;; ")]}'" was not found in the REST response
-	     (let ((buffer (get-buffer-create "*gerrit-rest-status*"))
-                   (contents (buffer-substring (point-min) (point-max))))
-	       (with-current-buffer buffer
-                 (goto-char (point-max))
-                 (insert ?\n)
-                 (insert (format "%s: %s (%s)" url-request-method target url-request-extra-headers))
-                 (insert ?\n)
-                 (insert contents)
-                 (error (concat "error with gerrit request (take a look at the "
-                                "*gerrit-rest-status* buffer for more information")))))))))))
+	     (gerrit-rest--write-to-status-buffer target)
+             (error (concat "error with gerrit request (take a look at the "
+                            "*gerrit-rest-status* buffer for more information")))))))))
 
 ;; TODO deprecate gerrit-rest-sync
 (defun gerrit-rest-sync (method data &optional path)
