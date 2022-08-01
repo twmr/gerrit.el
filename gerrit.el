@@ -55,7 +55,7 @@
 (defvar gerrit--accounts-alist nil)
 
 (defvar gerrit-dashboard-buffer-name "*gerrit-dashboard*" nil)
-(defvar gerrit-dashboard-query-alist
+(defvar-local gerrit-dashboard-query-alist
     '(("Has draft comments" . "has:draft")
       ("Your turn" . "attention:self")
       ("Assigned to me" . "assignee:self (-is:wip OR owner:self OR assignee:self) is:open -is:ignored")
@@ -797,7 +797,7 @@ shown in the section buffer."
 
 ;; dashboard
 
-(defvar gerrit-dashboard-columns
+(defvar-local gerrit-dashboard-columns
   ;; The last argument in every entry of the list is used to turn on
   ;; sorting (see variable docstring of `tabulated-list-format'.
   [("Number" 8 t)
@@ -1129,25 +1129,15 @@ locally and is referenced in
 
 (define-derived-mode gerrit-dashboard-mode tabulated-list-mode "gerrit-dashboard"
   "gerrit-dashboard mode"
-  (use-local-map gerrit-dashboard-mode-map)
-
-  ;; all lines that don't start with a changenr are header-lines that are
-  ;; treated as the beginning of a paragraph
-  (setq-local paragraph-start "^[^0-9]")
-
-  ;; some variables have to be made buffer-local s.t. refreshing of
-  ;; dashboards works as expected.
-  (setq-local gerrit-dashboard-columns gerrit-dashboard-columns)
-  (setq-local gerrit-dashboard-query-alist gerrit-dashboard-query-alist)
-
-  (gerrit-dashboard--refresh))
+  (use-local-map gerrit-dashboard-mode-map))
 
 ;;;###autoload
 (defun gerrit-dashboard ()
   "Show a dashboard in a new buffer."
   (interactive)
   (switch-to-buffer gerrit-dashboard-buffer-name)
-  (gerrit-dashboard-mode))
+  (gerrit-dashboard-mode)
+  (gerrit-dashboard--refresh))
 
 (defun gerrit-query (query)
   "Perform a query QUERY and display it in a dashboard buffer."
@@ -1155,10 +1145,11 @@ locally and is referenced in
   ;; TODO offer a list of candidates (history)
   (interactive "sEnter a query string: ")
   (switch-to-buffer (format "gerrit:%s" query))
-  (setq gerrit-dashboard-query-alist
-        ;; if car is nil gerrit.el will not display a section line
+  (gerrit-dashboard-mode)
+  (setq-local gerrit-dashboard-query-alist
+        ;; if car is nil, gerrit.el will not display a section line
         `((nil . ,(concat query " limit:50"))))
-  (gerrit-dashboard-mode))
+  (gerrit-dashboard--refresh))
 
 
 
