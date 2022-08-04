@@ -75,6 +75,57 @@ servers it needs to be set to an empty string."
            (json-false nil))
        (json-read-from-string ,str))))
 
+(defun gerrit-rest--write-to-status-buffer (target)
+  (let ((buffer (get-buffer-create "*gerrit-rest-status*"))
+        (contents (buffer-substring (point-min) (point-max))))
+    (with-current-buffer buffer
+      (goto-char (point-max))
+      (insert ?\n)
+      (insert (format "%s: %s (%s)" url-request-method target url-request-extra-headers))
+      (insert ?\n)
+      (insert contents))))
+  
+
+(cl-defun gerrit-rest-sync-v2 (method endpoint
+				      &key
+				      params
+ 				      data
+				      debug)
+  "Perform an API request to the ENDPOINT using METHOD.
+Optional arg PARAMS may be provided to specify parmeters for the request url.
+The optional arg DATA may be used as inputs for POST/PUT requests."
+  (let ((url-request-method method)
+        (url-request-extra-headers
+         `(("Content-Type" . "application/json")
+           ("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
+        (url-request-data data)
+        (target (concat (gerrit--get-protocol)
+			gerrit-host
+			gerrit-rest-endpoint-prefix
+			endpoint
+			(when params
+			  (concat "?" (url-build-query-string params))))))
+
+    (with-current-buffer (url-retrieve-synchronously target t)
+      (if (string-equal method "POST")
+          ;; TODO read output and check if it was successful??
+          t
+        (gerrit-rest--read-json
+         (progn
+           (goto-char url-http-end-of-headers)
+           ;; if there is an error in search-forward-regexp, write
+           ;; the buffer contents to a *gerrit-rest-status* buffer
+           (if-let ((pos (search-forward-regexp "^)]}'$" nil t)))
+	       (progn
+		 (when debug
+		   (gerrit-rest--write-to-status-buffer target))
+		 (buffer-substring pos (point-max)))
+	     ;; ")]}'" was not found in the REST response
+	     (gerrit-rest--write-to-status-buffer target)
+             (error (concat "error with gerrit request (take a look at the "
+                            "*gerrit-rest-status* buffer for more information")))))))))
+
+;; TODO deprecate gerrit-rest-sync
 (defun gerrit-rest-sync (method data &optional path)
   "Interact with the API using method METHOD and data DATA.
 Optional arg PATH may be provided to specify another location further
@@ -151,14 +202,13 @@ down the URL structure to send the request."
   ;; TODO create new buffer and insert stuff there
   ;; TODO query open topics
   (interactive "sEnter a topic name: ")
-  (let* ((fmtstr (concat "/changes/?q=is:open+topic:%s&"
-                         "o=DOWNLOAD_COMMANDS&"
-                         "o=CURRENT_REVISION&"
-                         "o=CURRENT_COMMIT&"
-                         "o=DETAILED_LABELS&"
-                         "o=DETAILED_ACCOUNTS"))
-         (req (format fmtstr topicname)))
-    (gerrit-rest-sync "GET" nil req)))
+  (gerrit-rest-sync-v2 "GET" "/changes/"
+		       :params `(("q" ,(concat "is:open AND topic:" topicname))
+				 ("o" "DOWNLOAD_COMMANDS")
+				 ("o" "CURRENT_REVISION")
+				 ("o" "CURRENT_COMMIT")
+				 ("o" "DETAILED_LABELS")
+				 ("o" "DETAILED_ACCOUNTS"))))
 
 (defun gerrit-rest--get-gerrit-accounts ()
   "Return an alist of all active gerrit users."
@@ -176,14 +226,13 @@ down the URL structure to send the request."
   (interactive "sEnter gerrit project: ")
   ;; see https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
   (let* ((limit-entries 25)
-         (req (format (concat "/changes/?q=is:open+project:%s&"
-                              "o=CURRENT_REVISION&"
-                              "o=CURRENT_COMMIT&"
-                              "o=DETAILED_LABELS&"
-                              (format "n=%d&" limit-entries)
-                              "o=DETAILED_ACCOUNTS")
-                      (funcall #'gerrit-rest--escape-project project)))
-         (resp (gerrit-rest-sync "GET" nil req)))
+         (resp (gerrit-rest-sync-v2 "GET" "/changes/"
+				    :params `(("q" ,(concat "is:open AND project:" project))
+					      ("o" "CURRENT_REVISION")
+					      ("o" "CURRENT_COMMIT")
+					      ("o" "DETAILED_LABELS")
+					      ("o" "DETAILED_ACCOUNTS")
+					      ("n" ,limit-entries)))))
     ;; (setq open-reviews-response resp) ;; for debugging only (use M-x ielm)
     resp))
 
