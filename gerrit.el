@@ -805,7 +805,9 @@ shown in the section buffer."
    ("Subject" 55 t)
    ("Status" 10 t)
    ("Owner" 15 t)
-   ("Assignee" 15 t)
+   ;; ("Assignee" 15 t) ;; TODO remove this entry at runtime if the gerrit version > 3.4 and the legacy assignee support is disabled
+   ("Reviewers" 25 nil)
+   ;; ("CC" 15 nil)
    ("Repo" 24 t)
    ("Branch" 12 t)
    ("Topic" 15 t)
@@ -868,6 +870,12 @@ alist."
     ;; alist-get 'owner => (_account_id . 1017133)
     (owner . ,(gerrit--alist-get-recursive 'owner '_account_id change))
     (assignee . ,(cdr (car (alist-get 'assignee change)))) ;; optional string
+    (reviewers . ,(seq-map (lambda (account_info)
+			     (alist-get '_account_id account_info))
+			   (gerrit--alist-get-recursive 'reviewers 'REVIEWER change)))
+    (cc . ,(seq-map (lambda (account_info)
+		      (alist-get '_account_id account_info))
+		    (gerrit--alist-get-recursive 'reviewers 'CC change)))
     (repo . ,(alist-get 'project change)) ;; string
     (branch . ,(alist-get 'branch change)) ;; string
     (topic . ,(alist-get 'topic change)) ;; optional string
@@ -907,6 +915,14 @@ alist."
 (defun gerrit-dashboard--button-open-assignee-query (&optional button)
   (interactive)
   (gerrit-query (concat "assignee:" (button-get button 'assignee))))
+
+(defun gerrit-dashboard--button-open-reviewers-query (&optional button)
+  (interactive)
+  (gerrit-query (concat "reviewers:" (car (button-get button 'reviewers)))))
+
+(defun gerrit-dashboard--button-open-cc-query (&optional button)
+  (interactive)
+  (gerrit-query (concat "cc:" (car (button-get button 'reviewers)))))
 
 (defun gerrit-dashboard--button-open-owner-query (&optional button)
   (interactive)
@@ -958,6 +974,30 @@ alist."
                       action gerrit-dashboard--button-open-assignee-query)
                   ;; empty assignee (not clickable)
                   ""))
+    ("Reviewers" (if-let ((reviewers
+			   (seq-map
+			    (lambda (reviewer-info)
+                              (alist-get reviewer-info (gerrit-get-accounts-alist)))
+			    (alist-get 'reviewers change-metadata))))
+		     ;; TODO create multiple links (one for each reviewer)
+                     `(,(propertize (s-join " " reviewers) 'face 'magit-log-author)
+                       reviewers ,reviewers
+                       follow-link t
+                       action gerrit-dashboard--button-open-reviewers-query)
+                   ;; empty reviewers (not clickable)
+                   ""))
+    ("CC" (if-let ((reviewers
+			   (seq-map
+			    (lambda (reviewer-info)
+                              (alist-get reviewer-info (gerrit-get-accounts-alist)))
+			    (alist-get 'cc change-metadata))))
+	             ;; TODO create multiple links (one for each CC
+                     `(,(propertize (s-join " " reviewers) 'face 'magit-log-author)
+                       reviewers ,reviewers
+                       follow-link t
+                       action gerrit-dashboard--button-open-cc-query)
+                   ;; empty reviewers (not clickable)
+                   ""))
     ("Repo" (let ((repo (alist-get 'repo change-metadata)))
               `(,repo
                 repo ,repo
