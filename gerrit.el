@@ -810,7 +810,11 @@ shown in the section buffer."
    ("Subject" 55 t)
    ("Status" 10 t)
    ("Owner" 15 t)
-   ("Assignee" 15 t)
+   ;; TODO remove this entry at runtime if the gerrit version > 3.4
+   ;; and the legacy assignee support is disabled
+   ;; ("Assignee" 15 t)
+   ("Reviewers" 25 nil)
+   ;; ("CC" 15 nil)
    ("Repo" 24 t)
    ("Branch" 12 t)
    ("Topic" 15 t)
@@ -965,6 +969,26 @@ alist."
                       action gerrit-dashboard--button-open-assignee-query)
                   ;; empty assignee (not clickable)
                   ""))
+    ("Reviewers" (if-let ((reviewers
+			   (seq-map
+			    (lambda (reviewer-info)
+			      ;; return a real name of a reviewer
+                              (alist-get 'name (alist-get reviewer-info
+							  (gerrit-get-accounts-alist))))
+			    (alist-get 'reviewers change-metadata))))
+		     ;; TODO create multiple links (one for each reviewer)
+                     (propertize (s-join " " reviewers) 'face 'magit-log-author)
+                   ;; empty reviewers (not clickable)
+                   ""))
+    ("CC" (if-let ((reviewers
+			   (seq-map
+			    (lambda (reviewer-info)
+			      ;; return a real name of a reviewer in CC
+                              (alist-get 'name (alist-get reviewer-info
+							  (gerrit-get-accounts-alist))))
+			    (alist-get 'cc change-metadata))))
+              (propertize (s-join " " reviewers) 'face 'magit-log-author)
+            ""))
     ("Repo" (let ((repo (alist-get 'repo change-metadata)))
               `(,repo
                 repo ,repo

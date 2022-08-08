@@ -25,7 +25,7 @@ following features in addition to uploading new changes (and new patchsets)
 Furthermore, a minimalistic open-reviews status-section
 (`gerrit-magit-insert-status`) for magit status buffers is available.
 
-This code is tested using gerrit=2.16 and the gerrit version used on
+This code is tested using gerrit=3.5 and the gerrit version used on
 `review.gerrithub.org`.
 
 ## News
@@ -38,6 +38,11 @@ August 2022:
 * Update storage format of `gerrit--accounts-alist`. This allows
   displaying the real names of the users instead usernames in the
   dashboards and the query frontends.
+* Display the reviewers instead of the assignee in the default
+  dashboard. It is still possible to display the assignee by adding an
+  assignee entry to `gerrit-dashboard-columns`.
+* Add support for displaying the CC list in the dashboard. To add the CC
+  list to the dashboard add "CC" to `gerrit-dashboard-columns`.
 
 April 2022:
 
