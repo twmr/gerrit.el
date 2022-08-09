@@ -35,6 +35,9 @@ August 2022:
 * [internal] Introduce new `gerrit-rest-sync-v2`.
 * Update `gerrit-dashboard-query-alist` (Include the "Your turn" in
   the query, which requires a new-ish gerrit server release >= 3.3).
+* Update storage format of `gerrit--accounts-alist`. This allows
+  displaying the real names of the users instead usernames in the
+  dashboards and the query frontends.
 
 April 2022:
 

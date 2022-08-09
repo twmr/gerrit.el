@@ -97,7 +97,8 @@
 
 (defun gerrit-get-usernames ()
   "Get all known usernames known to the gerrit server."
-   (seq-map #'cdr (gerrit-get-accounts-alist)))
+  (seq-map (lambda (account-entry) (alist-get 'username (cdr account-entry)))
+	   (gerrit-get-accounts-alist)))
 
 (defun gerrit--read-assignee ()
   "Ask for the name of an assignee."
@@ -202,13 +203,15 @@ you can use \='is:open (project:A OR project:B OR project:C)\='"
       (push (propertize (number-to-string
                          (alist-get '_number change)) 'face 'magit-hash) columns))
     (when (member 'owner gerrit-change-singleline-columns)
-      (push (propertize (format "%-20s"
-                                ;; TODO abbreviate if author name longer
-                                ;; than 20chars
-             (alist-get (gerrit--alist-get-recursive
-                         'owner '_account_id change)
-                        (gerrit-get-accounts-alist)))
-             'face 'magit-log-author) columns))
+      (push (propertize
+	     (format "%-20s"
+                     ;; TODO abbreviate if author name longer
+                     ;; than 20chars
+		     (gerrit--alist-get-recursive
+		      (gerrit--alist-get-recursive 'owner '_account_id change)
+		      'name
+		      (gerrit-get-accounts-alist)))
+	     'face 'magit-log-author) columns))
     (when (member 'project gerrit-change-singleline-columns)
       (push (format "%-28s" (alist-get 'project change)) columns))
     (when (member 'branch gerrit-change-singleline-columns)
@@ -242,9 +245,11 @@ This refspec is a string of the form \='refs/changes/xx/xx/x\='."
          (change-branch (alist-get 'branch change-metadata))
          (change-topic (or (alist-get 'topic change-metadata)
                            (number-to-string change-nr)))
-         (change-owner (alist-get (gerrit--alist-get-recursive
-                                   'owner '_account_id change-metadata)
-                                  (gerrit-get-accounts-alist)))
+         (change-owner (gerrit--alist-get-recursive
+			(gerrit--alist-get-recursive
+                         'owner '_account_id change-metadata)
+			'username
+                        (gerrit-get-accounts-alist)))
          (local-branch (format "review/%s/%s"
                                ;; change-owner is 'escaped' by git-review (_
                                ;; instead of . is used). git-review uses
@@ -943,17 +948,19 @@ alist."
                       ("MERGED" (propertize "Merged" 'face 'gerrit-success))
                       ("ABANDONED" "Abandoned")
                       (_ ""))))))
-    ("Owner" (if-let ((owner (alist-get (alist-get 'owner change-metadata) (gerrit-get-accounts-alist))))
-                 `(,(propertize owner 'face 'magit-log-author)
-                   owner ,owner
+    ("Owner" (if-let ((owner (alist-get (alist-get 'owner change-metadata)
+					(gerrit-get-accounts-alist))))
+                 `(,(propertize (alist-get 'name owner) 'face 'magit-log-author)
+                   owner ,(alist-get 'username owner)
                    follow-link t
                    action gerrit-dashboard--button-open-owner-query)
                ;; empty owner
                ""))
     ("Assignee" (if-let ((assignee
-                          (alist-get (alist-get 'assignee change-metadata) (gerrit-get-accounts-alist))))
-                    `(,(propertize assignee 'face 'magit-log-author)
-                      assignee ,assignee
+                          (alist-get (alist-get 'assignee change-metadata)
+				     (gerrit-get-accounts-alist))))
+                    `(,(propertize (alist-get 'name assignee) 'face 'magit-log-author)
+                      assignee ,(alist-get 'username assignee)
                       follow-link t
                       action gerrit-dashboard--button-open-assignee-query)
                   ;; empty assignee (not clickable)

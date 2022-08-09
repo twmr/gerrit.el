@@ -210,7 +210,7 @@ down the URL structure to send the request."
   (interactive)
   (condition-case nil
       (mapcar (lambda (account-info) (cons (cdr (assoc '_account_id account-info))
-                                      (cdr (assoc 'username account-info))))
+					   account-info))
               ;; see https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html
               ;; and https://gerrit-review.googlesource.com/Documentation/user-search-accounts.html#_search_operators
               (gerrit-rest-sync-v2 "GET" "/accounts/"
