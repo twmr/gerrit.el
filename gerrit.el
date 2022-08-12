@@ -87,6 +87,14 @@
   :group 'gerrit
   :type 'int)
 
+(defcustom gerrit-dashboard-attention-icon "!"
+  "Character or icon used for the attention-set indicator.
+
+This attention-set indicator is prepended in the dashboard to the
+user names."
+  :group 'gerrit
+  :type 'string)
+
 (defun gerrit-get-accounts-alist ()
   "Intialize `gerrit--accounts-alist`."
   (unless gerrit--accounts-alist
@@ -877,6 +885,18 @@ alist."
     ;; alist-get 'owner => (_account_id . 1017133)
     (owner . ,(gerrit--alist-get-recursive 'owner '_account_id change))
     (assignee . ,(cdr (car (alist-get 'assignee change)))) ;; optional string
+
+    ;; all account-ids of all users in the attention set
+    (attention-set . ,(seq-map (lambda (attention-entry)
+				 (gerrit--alist-get-recursive 'account '_account_id
+							      (cdr attention-entry)))
+			       (alist-get 'attention_set change)))
+    (reviewers . ,(seq-map (lambda (account_info)
+                             (alist-get '_account_id account_info))
+                           (gerrit--alist-get-recursive 'reviewers 'REVIEWER change)))
+    (cc . ,(seq-map (lambda (account_info)
+                      (alist-get '_account_id account_info))
+                    (gerrit--alist-get-recursive 'reviewers 'CC change)))
     (repo . ,(alist-get 'project change)) ;; string
     (branch . ,(alist-get 'branch change)) ;; string
     (topic . ,(alist-get 'topic change)) ;; optional string
@@ -952,14 +972,19 @@ alist."
                       ("MERGED" (propertize "Merged" 'face 'gerrit-success))
                       ("ABANDONED" "Abandoned")
                       (_ ""))))))
-    ("Owner" (if-let ((owner (alist-get (alist-get 'owner change-metadata)
-					(gerrit-get-accounts-alist))))
-                 `(,(propertize (alist-get 'name owner) 'face 'magit-log-author)
-                   owner ,(alist-get 'username owner)
-                   follow-link t
-                   action gerrit-dashboard--button-open-owner-query)
-               ;; empty owner
-               ""))
+    ("Owner" (let* ((owner-account-id  (alist-get 'owner change-metadata))
+		    (part-of-attention-set (memq owner-account-id
+						 (alist-get 'attention-set change-metadata))))
+	       (if-let ((owner (alist-get owner-account-id (gerrit-get-accounts-alist))))
+                   `(,(propertize (concat (if part-of-attention-set
+					      gerrit-dashboard-attention-icon "")
+					  (alist-get 'name owner))
+				  'face 'magit-log-author)
+                     owner ,(alist-get 'username owner)
+                     follow-link t
+                     action gerrit-dashboard--button-open-owner-query)
+		 ;; empty owner
+		 "")))
     ("Assignee" (if-let ((assignee
                           (alist-get (alist-get 'assignee change-metadata)
 				     (gerrit-get-accounts-alist))))
@@ -969,17 +994,37 @@ alist."
                       action gerrit-dashboard--button-open-assignee-query)
                   ;; empty assignee (not clickable)
                   ""))
-    ("Reviewers" (if-let ((reviewers
-			   (seq-map
-			    (lambda (reviewer-info)
-			      ;; return a real name of a reviewer
-                              (alist-get 'name (alist-get reviewer-info
-							  (gerrit-get-accounts-alist))))
-			    (alist-get 'reviewers change-metadata))))
-		     ;; TODO create multiple links (one for each reviewer)
-                     (propertize (s-join " " reviewers) 'face 'magit-log-author)
-                   ;; empty reviewers (not clickable)
-                   ""))
+    ("Reviewers" (let ((attention-set (alist-get 'attention-set change-metadata))
+ 		       (owner-account-id (alist-get 'owner change-metadata)))
+		   ;; TODO exclude the owner from the reviewers
+		   (if-let
+		       ((reviewers
+			 (delq nil
+			       (seq-map
+				(lambda (reviewer-account-id)
+				  (unless (eq reviewer-account-id owner-account-id)
+				    ;; don't display the owner in the reviewers
+				    
+				    (let* ((part-of-attention-set
+					    (memq reviewer-account-id attention-set))
+					   (first-name
+					    (car
+					     (split-string
+					      (alist-get 'name (alist-get
+								reviewer-account-id
+								(gerrit-get-accounts-alist)))))))
+				      (if part-of-attention-set
+					  (propertize (concat
+						       gerrit-dashboard-attention-icon
+						       first-name)
+						      'face 'magit-log-author)
+					first-name))))
+				(alist-get 'reviewers change-metadata)))))
+		       ;; TODO create multiple links (one for each reviewer)
+		       ;;(propertize (s-join " " reviewers) 'face 'magit-log-author) 
+		       (s-join " " reviewers)
+		     ;; empty reviewers (not clickable)
+		     "")))
     ("CC" (if-let ((reviewers
 			   (seq-map
 			    (lambda (reviewer-info)
