@@ -82,6 +82,19 @@
   :group 'gerrit
   :type 'boolean)
 
+(defcustom gerrit-use-attention-set t
+  "Whether or not to use the new attention set feature.
+
+New gerrit release (beginning with gerrit 3.4) support the new
+attention set feature, which is however configurable in the
+server config (see enable_attention_set in the REST api call
+https://gerrit-review.googlesource.com/Documentation/rest-api-config.html).
+For simplicity gerrit.el uses a def-custom instead of using the
+field from the REST api, but this might be changed in a future
+version."
+  :group 'gerrit
+  :type 'boolean)
+
 (defcustom gerrit-change-max-nr-digits 5
   "Number of digits used for displaying gerrit changes."
   :group 'gerrit
@@ -994,6 +1007,8 @@ alist."
                       action gerrit-dashboard--button-open-assignee-query)
                   ;; empty assignee (not clickable)
                   ""))
+
+    ;; TODO add support for gerrit-use-attention-set
     ("Reviewers" (let ((attention-set (alist-get 'attention-set change-metadata))
  		       (owner-account-id (alist-get 'owner change-metadata)))
 		   ;; TODO exclude the owner from the reviewers
