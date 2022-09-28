@@ -30,6 +30,11 @@ This code is tested using gerrit=3.5 and the gerrit version used on
 
 ## News
 
+September 2022:
+
+* Add "--no-verify" option to `gerrit-upload-transient`, which allows
+  skipping the pre-push git hooks.
+
 August 2022:
 
 * [internal] Introduce new `gerrit-rest-sync-v2`.

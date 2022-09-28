@@ -407,6 +407,7 @@ A section in the respective process buffer is created."
 
   (let (assignee
         push-opts
+	no-verify
         (remote (gerrit-get-remote))
         (refspec (gerrit-upload--get-refspec)))
     ;; there are a bunch of push options that are supported by gerrit:
@@ -430,18 +431,25 @@ A section in the respective process buffer is created."
                     (push "ready" push-opts))
                    ((string= "wip" arg)
                     (push "wip" push-opts))
-                   (t
-                    (error (format "no match for arg: %s" arg)))))
+		   ((string= "--no-verify" arg)
+		    (setq no-verify t))))
 
     (when push-opts
       (setq refspec (concat refspec "%" (s-join "," push-opts))))
 
-    (gerrit-push-and-assign
-     assignee
-     "--no-follow-tags" ;; don't error when encountering local tags, which
-                        ;; are absent from gerrit.
-     remote
-     (concat "HEAD:"  refspec))))
+    ;; is there an easier way for conditinally skipping "--no-verify"
+    ;; from the arguement list for gerrit-push-and-assign?
+    (let ((push-args))
+      (when no-verify
+	(push "--no-verify" push-args))
+      (push remote push-args)
+      (push (concat "HEAD:" refspec) push-args)
+      (apply #'gerrit-push-and-assign
+	     assignee
+	     ;; don't error when encountering local tags, which
+	     ;; are absent from gerrit.
+	     "--no-follow-tags"		       
+	     (nreverse push-args)))))
 
 (transient-define-prefix gerrit-upload-transient ()
   "Transient used for uploading changes to gerrit"
@@ -451,6 +459,7 @@ A section in the respective process buffer is created."
    ("w" "Work in Progress" "wip")
    ("v" "Ready for Review" "ready")
    (gerrit-upload:--topic)
+   ("-n" "Disable pre-push hooks" "--no-verify")
   ]
   ["Actions"
    ("u" "Upload" gerrit-upload:--action)])
