@@ -1090,14 +1090,26 @@ alist."
 (defun gerrit-dashboard--get-data (expression)
   "Return a list with \"tabulated-list-entries\" matching a query EXPRESSION."
   (seq-map (lambda (change)
-             `(nil ,(gerrit-dashboard--change-metadata-2-entry
-                    (gerrit-dashboard--get-change-metadata change))))
+	     ;; not sure if the IDs have to be unique ... *thinking*
+             `(;; tabulated-list-get-id
+	       ,(gerrit--format-unique-changeid
+		 (alist-get 'project change)
+		 (alist-get 'branch change)
+		 (number-to-string (alist-get '_number change)))
+	       ;; tabulated-list-get-entry
+	       ,(gerrit-dashboard--change-metadata-2-entry
+                 (gerrit-dashboard--get-change-metadata change))))
            (gerrit-rest-change-query expression)))
 
 (defun gerrit-dashboard--entry-number ()
   "Return the change number as a string of a change under point."
   (interactive)
-  (car (aref (tabulated-list-get-entry) 0)))
+  (tabulated-list-get-id))
+
+;; (defun gerrit-dashboard--reviewer-or-owner ()
+;;   "Return the user-name of a reviewer or of the owner under point."
+;;   (interactive)
+;;   (car (aref (tabulated-list-get-entry) 0)))
 
 (defun gerrit-dashboard--topic ()
   "Return the topicname as a string of a change under point."
@@ -1144,6 +1156,16 @@ locally and is referenced in
   (interactive)
   ;; TODO interactively ask for vote + message
   (gerrit-rest-topic-set-cr-vote (gerrit-dashboard--topic) "+2" ""))
+
+;; (defun gerrit-dashboard-toggle-attention-or-modify-attention-set ()
+;;   "Toggle the attention-set flag of the user under point or open a popup."
+;;   (interactive)
+;;   (let ((change-number (gerrit-dashboard--entry-number))
+;;         (assignee (gerrit--read-assignee)))
+;;     (message "setting assignee of change %s to %s" change-number assignee)
+;;     (gerrit-rest-change-set-assignee change-number assignee)
+;;     ;; refresh dashboard
+;;     (gerrit-dashboard--refresh--and-point-restore)))
 
 (defun gerrit-dashboard-assign-change ()
   "Set assignee of the change under point."
@@ -1207,6 +1229,7 @@ locally and is referenced in
 (defvar gerrit-dashboard-mode-map
   ;; TODO convert this into a transient
   (let ((map (make-sparse-keymap)))
+    ;; (define-key map (kbd "~") 'gerrit-dashboard-toggle-attention-or-modify-attention-set)
     (define-key map (kbd "a") 'gerrit-dashboard-assign-change)
     (define-key map (kbd "A") 'gerrit-dashboard-assign-change-to-me)
     (define-key map (kbd "g") 'gerrit-dashboard--refresh--and-point-restore)
