@@ -677,6 +677,14 @@ I8473b95934b5732ac55d26311a706c9c2bde9940"
       (error "Commit message doesn't end with a change-id"))
     (s-chop-prefix "Change-Id: " change-id-line)))
 
+(defun gerrit--format-unique-changeid (project branch changeid)
+  (url-hexify-string (concat
+			project
+			"~"
+			branch
+			"~"
+			changeid)))
+
 (defun gerrit-get-unique-changeid-from-current-commit ()
   "Determine the unique change-id from the current commit.
 
@@ -684,12 +692,9 @@ A string like the following is returned:
 myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
   (let ((branch (substring-no-properties (gerrit-get-upstream-branch)))
         (project (substring-no-properties (gerrit-get-current-project))))
-    (url-hexify-string (concat
-			project
-			"~"
-			branch
-			"~"
-			(gerrit-get-changeid-from-current-commit)))))
+    (gerrit--format-unique-changeid
+     project branch (gerrit-get-changeid-from-current-commit))))
+
 
 
 
