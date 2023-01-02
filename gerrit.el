@@ -305,6 +305,7 @@ This refspec is a string of the form \='refs/changes/xx/xx/x\='."
                               tracked-remote tracked-branch
                               (gerrit-get-remote) change-branch)))
                    ;; TODO autostash support
+                   ;; (magit-git "stash" "create" "download-via-gerrit.el")
                    ;; -B resets the branch to FETCH_HEAD in our case.
                    (magit-git "checkout" "-B" local-branch "FETCH_HEAD"))
 
