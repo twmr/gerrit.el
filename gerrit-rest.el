@@ -37,8 +37,7 @@
 (require 'cl-lib)
 (require 'cl-extra) ;; for cl-prettyprint
 
-(defvar gerrit-host) ;; defined in gerrit.el
-(declare-function gerrit--get-protocol "gerrit.el")
+(defvar gerrit-host)
 (defvar gerrit-patch-buffer)
 (defvar url-http-end-of-headers)
 
@@ -161,10 +160,14 @@ down the URL structure to send the request."
                  (error (concat "error with gerrit request (take a look at the "
                                 "*gerrit-rest-status* buffer for more information")))))))))))
 
+(defun gerrit-rest--escape-project (project)
+  "Escape project name PROJECT for usage in REST API requests."
+  (url-hexify-string project))
+
 (defun gerrit-rest-get-server-version ()
   "Return the gerrit server version."
   (interactive)
-  (let ((versionstr (gerrit-rest-sync-v2 "GET" "/config/server/version")))
+  (let ((versionstr (gerrit-rest-sync "GET" nil "/config/server/version")))
     (when (called-interactively-p 'interactive)
       (message versionstr))
     versionstr))
@@ -172,7 +175,7 @@ down the URL structure to send the request."
 (defun gerrit-rest-get-server-info ()
   "Return the gerrit server info."
   (interactive)
-  (let ((serverinfo (gerrit-rest-sync-v2 "GET" "/config/server/info")))
+  (let ((serverinfo (gerrit-rest-sync "GET" nil "/config/server/info")))
     (when (called-interactively-p 'interactive)
       (switch-to-buffer (get-buffer-create "*gerrit-server-info*"))
       (erase-buffer)
@@ -185,12 +188,14 @@ down the URL structure to send the request."
 (defun gerrit-rest-get-change-info (changenr)
   "Return information about an open change with CHANGENR."
   (interactive "sEnter a changenr name: ")
-  (gerrit-rest-sync-v2 "GET" (format "/changes/%s/" changenr)
-		       :params '(("o" "DOWNLOAD_COMMANDS")
-				 ("o" "CURRENT_REVISION")
-				 ("o" "CURRENT_COMMIT")
-				 ("o" "DETAILED_LABELS")
-				 ("o" "DETAILED_ACCOUNTS"))))
+  (let* ((req (concat "/changes/"
+                      changenr
+                      "?o=DOWNLOAD_COMMANDS&"
+                      "o=CURRENT_REVISION&"
+                      "o=CURRENT_COMMIT&"
+                      "o=DETAILED_LABELS&"
+                      "o=DETAILED_ACCOUNTS")))
+         (gerrit-rest-sync "GET" nil req)))
 
 (defun gerrit-rest-get-topic-info (topicname)
   "Return information about an open topic with TOPICNAME."
@@ -213,10 +218,7 @@ down the URL structure to send the request."
 					   account-info))
               ;; see https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html
               ;; and https://gerrit-review.googlesource.com/Documentation/user-search-accounts.html#_search_operators
-              (gerrit-rest-sync-v2 "GET" "/accounts/"
-				   :params '(("q" "is:active")
-					     ("o" "DETAILS")
-					     ("S" 0))))
+              (gerrit-rest-sync "GET" nil "/accounts/?q=is:active&o=DETAILS&S=0"))
     (error '())))
 
 (defun gerrit-rest-open-reviews-for-project (project)
@@ -241,139 +243,137 @@ down the URL structure to send the request."
   "Set the assignee to ASSIGNEE of a change with nr CHANGENR."
   (interactive "sEnter a changenr: \nsEnter assignee: ")
   ;; TODO error handling?
-  (gerrit-rest-sync-v2 "PUT"
-		       (format "/changes/%s/assignee"  changenr)
-                       :data (encode-coding-string (json-encode
-						    `((assignee . ,assignee))) 'utf-8)))
+  (gerrit-rest-sync "PUT"
+                    (encode-coding-string (json-encode
+                                           `((assignee . ,assignee))) 'utf-8)
+                    (format "/changes/%s/assignee"  changenr)))
 
 (defun gerrit-rest-change-add-reviewer (changenr reviewer)
   "Add REVIEWER to a change with nr CHANGENR."
   (interactive "sEnter a changenr: \nsEnter reviewer: ")
   ;; Do we want to verify the return entity?
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/reviewers/%s"  changenr reviewer)
-                       :data (encode-coding-string (json-encode
-						    `((reviewer . ,reviewer))) 'utf-8)))
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode
+                                           `((reviewer . ,reviewer))) 'utf-8)
+                    (format "/changes/%s/reviewers/%s"  changenr reviewer)))
 
 (defun gerrit-rest-change-delete-reviewer (changenr reviewer)
   "Delete REVIEWER from a change with nr CHANGENR."
   (interactive "sEnter a changenr: \nsEnter reviewer: ")
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/reviewers/%s/delete"  changenr reviewer)
-                       :data (encode-coding-string (json-encode
-						    '((notify . "None"))) 'utf-8)))
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode
+                                           '((notify . "None"))) 'utf-8)
+                    (format "/changes/%s/reviewers/%s/delete"  changenr reviewer)))
 
 (defun gerrit-rest-change-set-topic (changenr topic)
   "Set the topic to TOPIC of a change CHANGENR."
   (interactive "sEnter a changenr: \nsEnter topic: ")
-  (gerrit-rest-sync-v2 "PUT"
-                       (format "/changes/%s/topic" changenr)
-                       :data (encode-coding-string (json-encode
-						    `((topic . ,topic))) 'utf-8)))
+  (gerrit-rest-sync "PUT"
+                    (encode-coding-string (json-encode
+                                           `((topic . ,topic))) 'utf-8)
+                    (format "/changes/%s/topic" changenr)))
 
 (defun gerrit-rest-change-delete-topic (changenr)
   "Delete the topic of a change CHANGENR."
   (interactive "sEnter a changenr: ")
-  (gerrit-rest-sync-v2 "DELETE"
-                       (format "/changes/%s/topic" changenr)))
+  (gerrit-rest-sync "DELETE"
+                    nil
+                    (format "/changes/%s/topic" changenr)))
 
 (defun gerrit-rest-change-get-messages (changenr)
   ;; note that filenames are returned as symbols
-  (gerrit-rest-sync-v2 "GET" (format "/changes/%s/messages" changenr)))
+  (gerrit-rest-sync "GET" nil (format "/changes/%s/messages" changenr)))
 
 (defun gerrit-rest-change-get-comments (changenr)
   ;; note that filenames are returned as symbols
-  (gerrit-rest-sync-v2 "GET" (format "/changes/%s/comments" changenr)))
+  (gerrit-rest-sync "GET" nil (format "/changes/%s/comments" changenr)))
 
 (defun gerrit-rest-change-set-cr-vote (changenr vote message)
   "Set a Code-Review vote VOTE of a change CHANGENR.
 A comment MESSAGE can be provided."
   (interactive "sEnter a changenr: \nsEnter vote [-2, -1, 0, +1, +2]: \nsEnter message: ")
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/revisions/current/review" changenr)
-                       :data (encode-coding-string (json-encode
-						    `((message . ,message)
-						      (labels .
-							((Code-Review . ,vote))))) 'utf-8)))
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode
+                                           `((message . ,message)
+                                             (labels .
+                                               ((Code-Review . ,vote))))) 'utf-8)
+                    (format "/changes/%s/revisions/current/review" changenr)))
 
 (defun gerrit-rest-change-delete-cr-vote (changenr username)
   "Delete a Code-Review vote VOTE from a change CHANGENR from the user USERNAME."
   (interactive "sEnter a changenr: \nsEnter a username: ")
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/reviewers/%s/votes/Code-Review/delete"
-			       changenr username)
-                       :data (encode-coding-string (json-encode
-                                              '((notify . "None"))) 'utf-8)))
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode
+                                           '((notify . "None"))) 'utf-8)
+                    (format "/changes/%s/reviewers/%s/votes/Code-Review/delete" changenr username)))
 
 (defun gerrit-rest-change-set-verified-vote (changenr vote message)
   "Verify a change CHANGENR by voting with VOTE.
 A comment MESSAGE can be provided."
   (interactive "sEnter a changenr: \nsEnter vote [-1, 0, +1]: \nsEnter message: ")
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/revisions/current/review" changenr)
-                       :data (encode-coding-string (json-encode
-                                              `((message . ,message)
-						(labels .
-						  ((Verified . ,vote))))) 'utf-8)))
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode
+                                           `((message . ,message)
+                                             (labels .
+                                               ((Verified . ,vote))))) 'utf-8)
+                    (format "/changes/%s/revisions/current/review" changenr)))
 
 (defun gerrit-rest-change-delete-verified-vote (changenr username)
   "Delete a Verified vote VOTE from a change CHANGENR from te user USERNAME."
   (interactive "sEnter a changenr: \nsEnter a username: ")
-  (gerrit-rest-sync-v2 "POST"
-                    (format "/changes/%s/reviewers/%s/votes/Verified/delete" changenr username)
-                    :data (encode-coding-string (json-encode
-						 '((notify . "None"))) 'utf-8)))
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode
+                                           '((notify . "None"))) 'utf-8)
+                    (format "/changes/%s/reviewers/%s/votes/Verified/delete" changenr username)))
 
 (defun gerrit-rest-change-set-Work-in-Progress (changenr)
   "Set the state of the change CHANGENR to Work-in-Progress."
   (interactive "sEnter a changenr: ")
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/wip" changenr)
-		       :data (encode-coding-string
-			      (json-encode
-			       `((message . ,"Set using gerrit.el"))) 'utf-8)))
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode
+                                           `((message . ,"Set using gerrit.el"))) 'utf-8)
+                    (format "/changes/%s/wip" changenr)))
 
 (defun gerrit-rest-change-set-Ready-for-Review (changenr)
   "Set the state of the change CHANGENR to Reday-for-Review."
   (interactive "sEnter a changenr: ")
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/ready" changenr)
-		       :data (encode-coding-string
-			      (json-encode
-			       `((message . ,"Set using gerrit.el"))) 'utf-8)))
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode
+                                           `((message . ,"Set using gerrit.el"))) 'utf-8)
+                    (format "/changes/%s/ready" changenr)))
 
 (defun gerrit-rest-change-add-comment (changenr comment)
   "Add a comment message COMMENT to latest version of change CHANGENR."
   (interactive "sEnter changenr: \nsEnter comment: ")
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/revisions/current/review" changenr)
-		       :data (encode-coding-string
-			      (json-encode
-                               `((message . ,comment))) 'utf-8)))
+  (gerrit-rest-sync "POST"
+                    (encode-coding-string (json-encode
+                                           `((message . ,comment))) 'utf-8)
+                    (format "/changes/%s/revisions/current/review" changenr)))
 
 (defun gerrit-rest-change-get-labels (changenr)
   "Return the current labels dictionary of a change CHANGENR."
   (interactive "sEnter changenr: ")
   (let* ((req (format "/changes/%s/revisions/current/review" changenr))
-         (resp (gerrit-rest-sync-v2 "GET" req)))
+         (resp (gerrit-rest-sync "GET" nil req)))
     (assoc 'labels (cdr resp))))
 
 (defun gerrit-rest-change-query (expression)
   "Return information about changes that match EXPRESSION."
   (interactive "sEnter a search expression: ")
-  (gerrit-rest-sync-v2 "GET" "/changes/"
-		       :params `(("q" ,expression)
-				 ("o" "CURRENT_REVISION")
-				 ("o" "CURRENT_COMMIT")
-				 ("o" "LABELS")
-				 ;; "o=DETAILED_LABELS"
-				 ;; "o=DETAILED_ACCOUNTS"
-				 )))
+  (gerrit-rest-sync "GET" nil
+                    (concat (format "/changes/?q=%s&" expression)
+                            "o=CURRENT_REVISION&"
+                            "o=CURRENT_COMMIT&"
+                            "o=LABELS"
+                            ;; "o=DETAILED_LABELS"
+                            ;; "o=DETAILED_ACCOUNTS"))
+                            )))
 
 (defun gerrit-rest-change-get (changenr)
   "Return information about change with CHANGENR."
   (interactive "sEnter changenr: ")
-  (gerrit-rest-sync-v2 "GET" (format "/changes/%s" changenr)))
+  (gerrit-rest-sync "GET" nil
+                   (format "/changes/%s" changenr)))
 
 (defun gerrit-rest-change-patch (changenr)
   "Download latest patch of change with CHANGENR and open it in new buffer.
@@ -386,9 +386,7 @@ to CHANGENR is not locally cloned."
         (url-request-extra-headers
          `(("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
         (url-request-data nil)
-        (target (concat (gerrit--get-protocol)
-			gerrit-host
-			gerrit-rest-endpoint-prefix
+        (target (concat (gerrit--get-protocol) gerrit-host gerrit-rest-endpoint-prefix
                         (format "/changes/%s/revisions/current/patch" changenr))))
     (message "Opening patch of %s" changenr)
     (setq gerrit-patch-buffer (get-buffer-create "*gerrit-patch*"))
@@ -415,12 +413,11 @@ to CHANGENR is not locally cloned."
 ;;  topic commands
 
 (defun gerrit-rest--change-info-to-unique-changeid (change-info)
-  (url-hexify-string
-   (concat (alist-get 'project change-info)
-	   "~"
-	   (alist-get 'branch change-info)
-	   "~"
-	   (alist-get 'change_id change-info))))
+  (concat (gerrit-rest--escape-project (alist-get 'project change-info))
+          "~"
+          (alist-get 'branch change-info)
+          "~"
+          (alist-get 'change_id change-info)))
 
 (defun gerrit-rest-topic-set-assignee (topic assignee)
   "Set the ASSIGNEE of all changes of a TOPIC."

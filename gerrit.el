@@ -55,7 +55,7 @@
 (defvar gerrit--accounts-alist nil)
 
 (defvar gerrit-dashboard-buffer-name "*gerrit-dashboard*" nil)
-(defvar gerrit-dashboard-query-alist
+(defvar-local gerrit-dashboard-query-alist
     '(("Has draft comments" . "has:draft")
       ("Your turn" . "attention:self")
       ("Assigned to me" . "assignee:self (-is:wip OR owner:self OR assignee:self) is:open -is:ignored")
@@ -171,15 +171,15 @@ user names."
   the user to select a change from a list of changes.
 
   Currently supported columns are:
-  \='number (the change number)
-  \='owner (the change owner)
-  \='branch (the branch of the change)
-  \='subject (the subject of the commit msg)
-  \='project (the project name)")
+  'number (the change number)
+  'owner (the change owner)
+  'branch (the branch of the change)
+  'subject (the subject of the commit msg)
+  'project (the project name)")
 
 ;; TODO introduce a function?
 (defcustom gerrit-project-to-local-workspace-alist nil
-  "This alist can be used for specifying the \='known\=' gerrit projects.
+  "This alist can be used for specifying the 'known' gerrit projects.
 
 The alist is needed for determining the workspace directory for
 certain gerrit projects.
@@ -200,7 +200,7 @@ Each element is a list comprising ((PROJECT BRANCH) WORKSPACE) ..."
   "Filter string used for querying gerrit changes.
 
 If you are interested only in the changes for certain projects,
-you can use \='is:open (project:A OR project:B OR project:C)\='"
+you can use 'is:open (project:A OR project:B OR project:C)'"
   :group 'gerrit
   :type 'string)
 
@@ -232,7 +232,7 @@ you can use \='is:open (project:A OR project:B OR project:C)\='"
 (defun gerrit-download--get-refspec (change-metadata)
   "Return the refspec of a gerrit change from CHANGE-METADATA.
 
-This refspec is a string of the form \='refs/changes/xx/xx/x\='."
+This refspec is a string of the form 'refs/changes/xx/xx/x'."
   ;; this is important for determining the refspec needed for
   ;; git-fetch
   ;; change-ref is e.g. "refs/changes/16/35216/2"
@@ -641,7 +641,7 @@ The returned string is not prefixed with the remote."
         (cadr (s-split "/" upstream-branch)))))
 
 (defun gerrit-get-current-project ()
-  "Return the gerrit project name, e.g.,\='software/jobdeck\='."
+  "Return the gerrit project name, e.g., 'software/jobdeck'."
   (interactive)
   (let* ((remote-url (car
                       (magit-config-get-from-cached-list
@@ -681,12 +681,11 @@ A string like the following is returned:
 myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
   (let ((branch (substring-no-properties (gerrit-get-upstream-branch)))
         (project (substring-no-properties (gerrit-get-current-project))))
-    (url-hexify-string (concat
-			project
-			"~"
-			branch
-			"~"
-			(gerrit-get-changeid-from-current-commit)))))
+    (concat (gerrit-rest--escape-project project)
+            "~"
+            branch
+            "~"
+            (gerrit-get-changeid-from-current-commit))))
 
 
 
@@ -821,7 +820,7 @@ shown in the section buffer."
 
 ;; dashboard
 
-(defvar gerrit-dashboard-columns
+(defvar-local gerrit-dashboard-columns
   ;; The last argument in every entry of the list is used to turn on
   ;; sorting (see variable docstring of `tabulated-list-format'.
   [("Number" 8 t)
@@ -1216,25 +1215,15 @@ locally and is referenced in
 
 (define-derived-mode gerrit-dashboard-mode tabulated-list-mode "gerrit-dashboard"
   "gerrit-dashboard mode"
-  (use-local-map gerrit-dashboard-mode-map)
-
-  ;; all lines that don't start with a changenr are header-lines that are
-  ;; treated as the beginning of a paragraph
-  (setq-local paragraph-start "^[^0-9]")
-
-  ;; some variables have to be made buffer-local s.t. refreshing of
-  ;; dashboards works as expected.
-  (setq-local gerrit-dashboard-columns gerrit-dashboard-columns)
-  (setq-local gerrit-dashboard-query-alist gerrit-dashboard-query-alist)
-
-  (gerrit-dashboard--refresh))
+  (use-local-map gerrit-dashboard-mode-map))
 
 ;;;###autoload
 (defun gerrit-dashboard ()
   "Show a dashboard in a new buffer."
   (interactive)
   (switch-to-buffer gerrit-dashboard-buffer-name)
-  (gerrit-dashboard-mode))
+  (gerrit-dashboard-mode)
+  (gerrit-dashboard--refresh))
 
 (defun gerrit-query (query)
   "Perform a query QUERY and display it in a dashboard buffer."
@@ -1242,10 +1231,11 @@ locally and is referenced in
   ;; TODO offer a list of candidates (history)
   (interactive "sEnter a query string: ")
   (switch-to-buffer (format "gerrit:%s" query))
-  (setq gerrit-dashboard-query-alist
-        ;; if car is nil gerrit.el will not display a section line
+  (gerrit-dashboard-mode)
+  (setq-local gerrit-dashboard-query-alist
+        ;; if car is nil, gerrit.el will not display a section line
         `((nil . ,(concat query " limit:50"))))
-  (gerrit-dashboard-mode))
+  (gerrit-dashboard--refresh))
 
 
 
