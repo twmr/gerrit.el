@@ -97,8 +97,7 @@ Optional arg PARAMS may be provided to specify parmeters for the request url.
 The optional arg DATA may be used as inputs for POST/PUT requests."
   (let ((url-request-method method)
         (url-request-extra-headers
-         `(("Content-Type" . "application/json")
-           ("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
+         `(("Authorization" . ,(concat "Basic " (gerrit-rest-authentication)))))
         (url-request-data data)
         (target (concat (gerrit--get-protocol)
 			gerrit-host
@@ -106,6 +105,10 @@ The optional arg DATA may be used as inputs for POST/PUT requests."
 			endpoint
 			(when params
 			  (concat "?" (url-build-query-string params))))))
+
+    (when data
+      (add-to-list 'url-request-extra-headers
+                   '("Content-Type" . "application/json")))
 
     (with-current-buffer (url-retrieve-synchronously target t)
       (if (string-equal method "POST")
