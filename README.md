@@ -30,6 +30,15 @@ This code is tested using gerrit=3.5 and the gerrit version used on
 
 ## News
 
+Dezember 2023:
+
+* Fix invalid json in request problems with
+`gerrit-rest-change-delete-cr-vote`,
+`gerrit-rest-change-delete-reviewer` and
+`gerrit-rest-change-delete-verified-vote`.
+
+Use DELETE method for deleting verified votes + Improve rest-sync-v2
+
 September 2022:
 
 * Add "--no-verify" option to `gerrit-upload-transient`, which allows

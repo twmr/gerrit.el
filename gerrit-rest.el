@@ -111,9 +111,14 @@ The optional arg DATA may be used as inputs for POST/PUT requests."
                    '("Content-Type" . "application/json")))
 
     (with-current-buffer (url-retrieve-synchronously target t)
-      (if (string-equal method "POST")
-          ;; TODO read output and check if it was successful??
-          t
+      ;; I need to skip the read-json code when there is nothing to parse in the output
+      ;; Is there a better way to do what I want?
+
+      ;; The gerrit-rest api doc explicitly mentions that in the
+      ;; success case 204 is returned for some of the requests
+      (if (equal url-http-response-status 204) ;; HTTP No-Content
+          nil
+        ;; How should we handle other response codes?
         (gerrit-rest--read-json
          (progn
            (goto-char url-http-end-of-headers)
@@ -121,11 +126,13 @@ The optional arg DATA may be used as inputs for POST/PUT requests."
            ;; the buffer contents to a *gerrit-rest-status* buffer
            (if-let ((pos (search-forward-regexp "^)]}'$" nil t)))
 	       (progn
-		 (when debug
+	         (when debug
 		   (gerrit-rest--write-to-status-buffer target))
-		 (buffer-substring pos (point-max)))
+	         (buffer-substring pos (point-max)))
 	     ;; ")]}'" was not found in the REST response
 	     (gerrit-rest--write-to-status-buffer target)
+             ;; TODO if the output is not json and a single line ->
+             ;; show it in the error message
              (error (concat "error with gerrit request (take a look at the "
                             "*gerrit-rest-status* buffer for more information")))))))))
 
@@ -264,7 +271,7 @@ down the URL structure to send the request."
   (gerrit-rest-sync-v2 "POST"
                        (format "/changes/%s/reviewers/%s/delete"  changenr reviewer)
                        :data (encode-coding-string (json-encode
-						    '((notify . "None"))) 'utf-8)))
+						    '((notify . "NONE"))) 'utf-8)))
 
 (defun gerrit-rest-change-set-topic (changenr topic)
   "Set the topic to TOPIC of a change CHANGENR."
@@ -306,7 +313,7 @@ A comment MESSAGE can be provided."
                        (format "/changes/%s/reviewers/%s/votes/Code-Review/delete"
 			       changenr username)
                        :data (encode-coding-string (json-encode
-                                              '((notify . "None"))) 'utf-8)))
+                                              '((notify . "NONE"))) 'utf-8)))
 
 (defun gerrit-rest-change-set-verified-vote (changenr vote message)
   "Verify a change CHANGENR by voting with VOTE.
@@ -322,10 +329,13 @@ A comment MESSAGE can be provided."
 (defun gerrit-rest-change-delete-verified-vote (changenr username)
   "Delete a Verified vote VOTE from a change CHANGENR from te user USERNAME."
   (interactive "sEnter a changenr: \nsEnter a username: ")
+  ;; As an alternative the DELETE method could be used:
+  ;; (gerrit-rest-sync-v2 "DELETE"
+  ;;                      (format "/changes/%s/reviewers/%s/votes/Verified" changenr username)))
   (gerrit-rest-sync-v2 "POST"
-                    (format "/changes/%s/reviewers/%s/votes/Verified/delete" changenr username)
-                    :data (encode-coding-string (json-encode
-						 '((notify . "None"))) 'utf-8)))
+                       (format "/changes/%s/reviewers/%s/votes/Verified/delete" changenr username)
+                       :data (encode-coding-string (json-encode
+                                                    '((notify . "NONE"))) 'utf-8)))
 
 (defun gerrit-rest-change-set-Work-in-Progress (changenr)
   "Set the state of the change CHANGENR to Work-in-Progress."
