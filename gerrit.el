@@ -259,11 +259,14 @@ This refspec is a string of the form \='refs/changes/xx/xx/x\='."
                         'username
                         (gerrit-get-accounts-alist)))
          (local-branch (format "review/%s/%s"
-                               ;; change-owner is 'escaped' by git-review (_
-                               ;; instead of . is used). git-review uses
-                               ;; re.sub(r'\W+', "_", ownername), which was
-                               ;; introduced 2011 (commit 08bd9c). I don't
-                               ;; know why they did it.
+                               ;; change-owner is 'escaped' by
+                               ;; git-review (all non-alphanumeric
+                               ;; characters are replaced by _:
+                               ;; git-review uses re.sub(r'\W+', "_",
+                               ;; ownername), which was introduced
+                               ;; 2011 (commit 08bd9c)). It could be
+                               ;; that this was done to avoid problems
+                               ;; with white-space in branch names.
                                (replace-regexp-in-string "\\W+" "_" change-owner)
                                change-topic)))
 
