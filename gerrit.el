@@ -253,6 +253,8 @@ This refspec is a string of the form \='refs/changes/xx/xx/x\='."
          (change-branch (alist-get 'branch change-metadata))
          (change-topic (or (alist-get 'topic change-metadata)
                            (number-to-string change-nr)))
+         ;; should we use the username for the branch names or the
+         ;; displayname if it is set??
          (change-owner (gerrit--alist-get-recursive
                         (gerrit--alist-get-recursive
                          'owner '_account_id change-metadata)
