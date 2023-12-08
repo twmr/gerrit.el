@@ -56,14 +56,14 @@
 
 (defvar gerrit-dashboard-buffer-name "*gerrit-dashboard*" nil)
 (defvar gerrit-dashboard-query-alist
-    '(("Has draft comments" . "has:draft")
-      ("Your turn" . "attention:self")
-      ("Assigned to me" . "assignee:self (-is:wip OR owner:self OR assignee:self) is:open -is:ignored")
-      ("Work in progress" . "is:open owner:self is:wip")
-      ("Outgoing reviews" . "is:open owner:self -is:wip -is:ignored")
-      ("Incoming reviews" . "is:open -owner:self -is:wip -is:ignored (reviewer:self OR assignee:self)")
-      ("CCed on" . "is:open -is:ignored cc:self")
-      ("Recently closed" . "is:closed -is:ignored (-is:wip OR owner:self) (owner:self OR reviewer:self OR assignee:self OR cc:self) limit:15"))
+  '(("Has draft comments" . "has:draft")
+    ("Your turn" . "attention:self")
+    ("Assigned to me" . "assignee:self (-is:wip OR owner:self OR assignee:self) is:open -is:ignored")
+    ("Work in progress" . "is:open owner:self is:wip")
+    ("Outgoing reviews" . "is:open owner:self -is:wip -is:ignored")
+    ("Incoming reviews" . "is:open -owner:self -is:wip -is:ignored (reviewer:self OR assignee:self)")
+    ("CCed on" . "is:open -is:ignored cc:self")
+    ("Recently closed" . "is:closed -is:ignored (-is:wip OR owner:self) (owner:self OR reviewer:self OR assignee:self OR cc:self) limit:15"))
   "Query search string that is used for the data shown in the `gerrit-dashboard'.")
 
 (defgroup gerrit nil
@@ -106,7 +106,7 @@ user names."
 (defun gerrit-get-usernames ()
   "Get all known usernames known to the gerrit server."
   (seq-map (lambda (account-entry) (alist-get 'username (cdr account-entry)))
-	   (gerrit-get-accounts-alist)))
+           (gerrit-get-accounts-alist)))
 
 (defun gerrit--read-assignee ()
   "Ask for the name of an assignee."
@@ -212,14 +212,14 @@ you can use \='is:open (project:A OR project:B OR project:C)\='"
                          (alist-get '_number change)) 'face 'magit-hash) columns))
     (when (member 'owner gerrit-change-singleline-columns)
       (push (propertize
-	     (format "%-20s"
+             (format "%-20s"
                      ;; TODO abbreviate if author name longer
                      ;; than 20chars
-		     (gerrit--alist-get-recursive
-		      (gerrit--alist-get-recursive 'owner '_account_id change)
-		      'name
-		      (gerrit-get-accounts-alist)))
-	     'face 'magit-log-author) columns))
+                     (gerrit--alist-get-recursive
+                      (gerrit--alist-get-recursive 'owner '_account_id change)
+                      'name
+                      (gerrit-get-accounts-alist)))
+             'face 'magit-log-author) columns))
     (when (member 'project gerrit-change-singleline-columns)
       (push (format "%-28s" (alist-get 'project change)) columns))
     (when (member 'branch gerrit-change-singleline-columns)
@@ -254,9 +254,9 @@ This refspec is a string of the form \='refs/changes/xx/xx/x\='."
          (change-topic (or (alist-get 'topic change-metadata)
                            (number-to-string change-nr)))
          (change-owner (gerrit--alist-get-recursive
-			(gerrit--alist-get-recursive
+                        (gerrit--alist-get-recursive
                          'owner '_account_id change-metadata)
-			'username
+                        'username
                         (gerrit-get-accounts-alist)))
          (local-branch (format "review/%s/%s"
                                ;; change-owner is 'escaped' by git-review (_
@@ -369,11 +369,11 @@ A section in the respective process buffer is created."
                  (when assignee
                    (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+" output)))
                        (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
-                                        (message "Setting assignee of %s to %s" changenr assignee)
-                                        (gerrit-rest-change-set-assignee changenr assignee)
-                                        (gerrit-magit-process-buffer-add-item
-                                         (format "Assignee of change %s was set to %s" changenr assignee)
-                                         "set-assignee" changenr)))
+                                             (message "Setting assignee of %s to %s" changenr assignee)
+                                             (gerrit-rest-change-set-assignee changenr assignee)
+                                             (gerrit-magit-process-buffer-add-item
+                                              (format "Assignee of change %s was set to %s" changenr assignee)
+                                              "set-assignee" changenr)))
                                matched-changes)))
                  (magit-process-sentinel process event))))))))))
 
@@ -408,7 +408,7 @@ A section in the respective process buffer is created."
 
   (let (assignee
         push-opts
-	no-verify
+        no-verify
         (remote (gerrit-get-remote))
         (refspec (gerrit-upload--get-refspec)))
     ;; there are a bunch of push options that are supported by gerrit:
@@ -432,8 +432,8 @@ A section in the respective process buffer is created."
                     (push "ready" push-opts))
                    ((string= "wip" arg)
                     (push "wip" push-opts))
-		   ((string= "--no-verify" arg)
-		    (setq no-verify t))))
+                   ((string= "--no-verify" arg)
+                    (setq no-verify t))))
 
     (when push-opts
       (setq refspec (concat refspec "%" (s-join "," push-opts))))
@@ -442,15 +442,15 @@ A section in the respective process buffer is created."
     ;; from the arguement list for gerrit-push-and-assign?
     (let ((push-args))
       (when no-verify
-	(push "--no-verify" push-args))
+        (push "--no-verify" push-args))
       (push remote push-args)
       (push (concat "HEAD:" refspec) push-args)
       (apply #'gerrit-push-and-assign
-	     assignee
-	     ;; don't error when encountering local tags, which
-	     ;; are absent from gerrit.
-	     "--no-follow-tags"		       
-	     (nreverse push-args)))))
+             assignee
+             ;; don't error when encountering local tags, which
+             ;; are absent from gerrit.
+             "--no-follow-tags"
+             (nreverse push-args)))))
 
 (transient-define-prefix gerrit-upload-transient ()
   "Transient used for uploading changes to gerrit"
@@ -461,7 +461,7 @@ A section in the respective process buffer is created."
    ("v" "Ready for Review" "ready")
    (gerrit-upload:--topic)
    ("-n" "Disable pre-push hooks" "--no-verify")
-  ]
+   ]
   ["Actions"
    ("u" "Upload" gerrit-upload:--action)])
 
@@ -543,11 +543,11 @@ section header."
   (with-temp-buffer
     (insert msg)
     (let ((msg-buffer (get-buffer (buffer-name))))
-    (with-current-buffer (magit-process-buffer t)
-      (magit-process-insert-section default-directory
-                                    "REST"
-                                    args nil
-                                    msg-buffer)))))
+      (with-current-buffer (magit-process-buffer t)
+        (magit-process-insert-section default-directory
+                                      "REST"
+                                      args nil
+                                      msg-buffer)))))
 
 
 (defun gerrit-magit-insert-status ()
@@ -556,43 +556,43 @@ section header."
 When called in the magit-status-section via `magit-status-section-hook'
 all open gerrit review are shown in the magit status buffer."
 
- (when-let ((fetched-reviews (condition-case nil
-                                 (gerrit-rest-open-reviews-for-project
-                                  (gerrit-get-current-project))
-                               (error '()))))
-   (magit-insert-section (open-reviews)
-     (magit-insert-heading "Open Gerrit Reviews")
-     (let* ((fetched-reviews-string-lists
-             (seq-map (lambda (change) (list
-                                   (number-to-string (cdr (assoc '_number change)))
-                                   (cdr (assoc 'branch change))
-                                   (or (cdr (assoc 'topic change)) "") ;; topic may be nil
-                                   (cdr (assoc 'subject change))))
-                      (seq-map #'cdr fetched-reviews)))
-            (max-column-sizes (seq-reduce
-                               (lambda (a b) (--zip-with (max it other)
-                                                    a ;; list of ints
-                                                    (seq-map #'length b) ;; convert list of strs to list of numbers
-                                                    ))
-                               ;; results is a list of lists of strings
-                               fetched-reviews-string-lists
-                               ;; initial value
-                               (mapcar #'length (car fetched-reviews-string-lists))))
+  (when-let ((fetched-reviews (condition-case nil
+                                  (gerrit-rest-open-reviews-for-project
+                                   (gerrit-get-current-project))
+                                (error '()))))
+    (magit-insert-section (open-reviews)
+      (magit-insert-heading "Open Gerrit Reviews")
+      (let* ((fetched-reviews-string-lists
+              (seq-map (lambda (change) (list
+                                         (number-to-string (cdr (assoc '_number change)))
+                                         (cdr (assoc 'branch change))
+                                         (or (cdr (assoc 'topic change)) "") ;; topic may be nil
+                                         (cdr (assoc 'subject change))))
+                       (seq-map #'cdr fetched-reviews)))
+             (max-column-sizes (seq-reduce
+                                (lambda (a b) (--zip-with (max it other)
+                                                          a ;; list of ints
+                                                          (seq-map #'length b) ;; convert list of strs to list of numbers
+                                                          ))
+                                ;; results is a list of lists of strings
+                                fetched-reviews-string-lists
+                                ;; initial value
+                                (mapcar #'length (car fetched-reviews-string-lists))))
 
-            ;; TODO only left-align topic and subject?
-            (format-str (mapconcat (lambda (x) (concat "%-" (number-to-string x) "s")) max-column-sizes " ")))
+             ;; TODO only left-align topic and subject?
+             (format-str (mapconcat (lambda (x) (concat "%-" (number-to-string x) "s")) max-column-sizes " ")))
 
-       (seq-do (lambda (review)
-                 (seq-let (number topic branch subject) review
-                   (magit-insert-section (open-reviews-issue review t)
-                     (magit-insert-heading
-                       (format format-str
-                               (propertize number 'face 'magit-hash)
-                               (propertize topic 'face 'magit-tag)
-                               (propertize branch 'face 'magit-branch-remote)
-                               (propertize subject 'face 'magit-section-highlight))))))
-               fetched-reviews-string-lists))
-     (insert ?\n))))
+        (seq-do (lambda (review)
+                  (seq-let (number topic branch subject) review
+                    (magit-insert-section (open-reviews-issue review t)
+                      (magit-insert-heading
+                        (format format-str
+                                (propertize number 'face 'magit-hash)
+                                (propertize topic 'face 'magit-tag)
+                                (propertize branch 'face 'magit-branch-remote)
+                                (propertize subject 'face 'magit-section-highlight))))))
+                fetched-reviews-string-lists))
+      (insert ?\n))))
 
 ;; don't rename this var, as it is required for magit-sections
 (defvar magit-open-reviews-issue-section-map
@@ -621,7 +621,7 @@ The prefix magit- prefix is required by `magit-insert-section'.")
   "Return the name of the remote."
   ;; TODO read the data from a cache
   (or (magit-git-string "config" "-f" (expand-file-name ".gitreview" (magit-toplevel))
-                       "--get" "gerrit.defaultremote")
+                        "--get" "gerrit.defaultremote")
       "origin"))
 
 (defun gerrit-get-upstream-branch ()
@@ -662,13 +662,13 @@ The returned string is not prefixed with the remote."
 A string like the following is returned:
 I8473b95934b5732ac55d26311a706c9c2bde9940"
   (let* (
-        (commit-message-lines (magit-git-lines "log" "-1" "--pretty=%B"))
-        (change-id-line
-         ;; in the case of cherry-picks, the Change-Id line may not be the
-         ;; last line of the commit message. Therefore, iterate over all
-         ;; lines of the commit until a match is found.
-         (cl-some (lambda (line) (and (s-starts-with? "Change-Id: " line) line))
-                  commit-message-lines)))
+         (commit-message-lines (magit-git-lines "log" "-1" "--pretty=%B"))
+         (change-id-line
+          ;; in the case of cherry-picks, the Change-Id line may not be the
+          ;; last line of the commit message. Therefore, iterate over all
+          ;; lines of the commit until a match is found.
+          (cl-some (lambda (line) (and (s-starts-with? "Change-Id: " line) line))
+                   commit-message-lines)))
 
     (unless change-id-line
       (error "Commit message doesn't end with a change-id"))
@@ -682,11 +682,11 @@ myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
   (let ((branch (substring-no-properties (gerrit-get-upstream-branch)))
         (project (substring-no-properties (gerrit-get-current-project))))
     (url-hexify-string (concat
-			project
-			"~"
-			branch
-			"~"
-			(gerrit-get-changeid-from-current-commit)))))
+                        project
+                        "~"
+                        branch
+                        "~"
+                        (gerrit-get-changeid-from-current-commit)))))
 
 
 
@@ -729,14 +729,14 @@ shown in the section buffer."
         (subject (alist-get 'subject change-info))
         (latest-commit-message
          (let ((revisions (alist-get 'revisions change-info))
-                (revision (alist-get 'current_revision change-info)))
+               (revision (alist-get 'current_revision change-info)))
            (gerrit--alist-get-recursive (intern revision) 'commit 'message revisions)))
         (comment-fmt (let ((max-author-width 17)
                            (max-date-width 10))
-                         (format "%%-%ds %%-%ds %%%ds"
-                             max-author-width
-                             (- (window-width) max-author-width max-date-width 2)
-                             max-date-width))))
+                       (format "%%-%ds %%-%ds %%%ds"
+                               max-author-width
+                               (- (window-width) max-author-width max-date-width 2)
+                               max-date-width))))
     (magit-insert-section (gerrit-change changenr)
       ;; projectname: First line of commit msg, maybe owner
       (magit-insert-heading
@@ -898,9 +898,9 @@ alist."
 
     ;; all account-ids of all users in the attention set
     (attention-set . ,(seq-map (lambda (attention-entry)
-				 (gerrit--alist-get-recursive 'account '_account_id
-							      (cdr attention-entry)))
-			       (alist-get 'attention_set change)))
+                                 (gerrit--alist-get-recursive 'account '_account_id
+                                                              (cdr attention-entry)))
+                               (alist-get 'attention_set change)))
     (reviewers . ,(seq-map (lambda (account_info)
                              (alist-get '_account_id account_info))
                            (gerrit--alist-get-recursive 'reviewers 'REVIEWER change)))
@@ -983,21 +983,21 @@ alist."
                       ("ABANDONED" "Abandoned")
                       (_ ""))))))
     ("Owner" (let* ((owner-account-id  (alist-get 'owner change-metadata))
-		    (part-of-attention-set (memq owner-account-id
-						 (alist-get 'attention-set change-metadata))))
-	       (if-let ((owner (alist-get owner-account-id (gerrit-get-accounts-alist))))
+                    (part-of-attention-set (memq owner-account-id
+                                                 (alist-get 'attention-set change-metadata))))
+               (if-let ((owner (alist-get owner-account-id (gerrit-get-accounts-alist))))
                    `(,(propertize (concat (if part-of-attention-set
-					      gerrit-dashboard-attention-icon "")
-					  (alist-get 'name owner))
-				  'face 'magit-log-author)
+                                              gerrit-dashboard-attention-icon "")
+                                          (alist-get 'name owner))
+                                  'face 'magit-log-author)
                      owner ,(alist-get 'username owner)
                      follow-link t
                      action gerrit-dashboard--button-open-owner-query)
-		 ;; empty owner
-		 "")))
+                 ;; empty owner
+                 "")))
     ("Assignee" (if-let ((assignee
                           (alist-get (alist-get 'assignee change-metadata)
-				     (gerrit-get-accounts-alist))))
+                                     (gerrit-get-accounts-alist))))
                     `(,(propertize (alist-get 'name assignee) 'face 'magit-log-author)
                       assignee ,(alist-get 'username assignee)
                       follow-link t
@@ -1005,43 +1005,43 @@ alist."
                   ;; empty assignee (not clickable)
                   ""))
     ("Reviewers" (let ((attention-set (alist-get 'attention-set change-metadata))
- 		       (owner-account-id (alist-get 'owner change-metadata)))
-		   ;; TODO exclude the owner from the reviewers
-		   (if-let
-		       ((reviewers
-			 (delq nil
-			       (seq-map
-				(lambda (reviewer-account-id)
-				  (unless (eq reviewer-account-id owner-account-id)
-				    ;; don't display the owner in the reviewers
-				    
-				    (let* ((part-of-attention-set
-					    (memq reviewer-account-id attention-set))
-					   (first-name
-					    (car
-					     (split-string
-					      (alist-get 'name (alist-get
-								reviewer-account-id
-								(gerrit-get-accounts-alist)))))))
-				      (if part-of-attention-set
-					  (propertize (concat
-						       gerrit-dashboard-attention-icon
-						       first-name)
-						      'face 'magit-log-author)
-					first-name))))
-				(alist-get 'reviewers change-metadata)))))
-		       ;; TODO create multiple links (one for each reviewer)
-		       ;;(propertize (s-join " " reviewers) 'face 'magit-log-author) 
-		       (s-join " " reviewers)
-		     ;; empty reviewers (not clickable)
-		     "")))
+                       (owner-account-id (alist-get 'owner change-metadata)))
+                   ;; TODO exclude the owner from the reviewers
+                   (if-let
+                       ((reviewers
+                         (delq nil
+                               (seq-map
+                                (lambda (reviewer-account-id)
+                                  (unless (eq reviewer-account-id owner-account-id)
+                                    ;; don't display the owner in the reviewers
+
+                                    (let* ((part-of-attention-set
+                                            (memq reviewer-account-id attention-set))
+                                           (first-name
+                                            (car
+                                             (split-string
+                                              (alist-get 'name (alist-get
+                                                                reviewer-account-id
+                                                                (gerrit-get-accounts-alist)))))))
+                                      (if part-of-attention-set
+                                          (propertize (concat
+                                                       gerrit-dashboard-attention-icon
+                                                       first-name)
+                                                      'face 'magit-log-author)
+                                        first-name))))
+                                (alist-get 'reviewers change-metadata)))))
+                       ;; TODO create multiple links (one for each reviewer)
+                       ;;(propertize (s-join " " reviewers) 'face 'magit-log-author)
+                       (s-join " " reviewers)
+                     ;; empty reviewers (not clickable)
+                     "")))
     ("CC" (if-let ((reviewers
-			   (seq-map
-			    (lambda (reviewer-info)
-			      ;; return a real name of a reviewer in CC
-                              (alist-get 'name (alist-get reviewer-info
-							  (gerrit-get-accounts-alist))))
-			    (alist-get 'cc change-metadata))))
+                    (seq-map
+                     (lambda (reviewer-info)
+                       ;; return a real name of a reviewer in CC
+                       (alist-get 'name (alist-get reviewer-info
+                                                   (gerrit-get-accounts-alist))))
+                     (alist-get 'cc change-metadata))))
               (propertize (s-join " " reviewers) 'face 'magit-log-author)
             ""))
     ("Repo" (let ((repo (alist-get 'repo change-metadata)))
@@ -1081,7 +1081,7 @@ alist."
   "Return a list with \"tabulated-list-entries\" matching a query EXPRESSION."
   (seq-map (lambda (change)
              `(nil ,(gerrit-dashboard--change-metadata-2-entry
-                    (gerrit-dashboard--get-change-metadata change))))
+                     (gerrit-dashboard--get-change-metadata change))))
            (gerrit-rest-change-query expression)))
 
 (defun gerrit-dashboard--entry-number ()
@@ -1147,7 +1147,7 @@ locally and is referenced in
 
 (defun gerrit-dashboard-assign-change-to-me ()
   "Set assignee of the change under point."
-   (interactive)
+  (interactive)
   (gerrit-rest-change-set-assignee (gerrit-dashboard--entry-number) "self")
   ;; refresh dashboard
   (gerrit-dashboard--refresh--and-point-restore))
@@ -1161,14 +1161,14 @@ locally and is referenced in
                   ;; gerrit-dashboard-query-alist is 1 and (car conscell) is
                   ;; nil
                   (if (car conscell)
-                    (append acc `((nil [""
-                                        ,(propertize
-                                          (format "%s (%d)" (car conscell) (length section-data))
-                                          'face 'gerrit-section)
-                                        ;; is there an easier way to add len(columns)-2 times ""?
-                                        ,@(seq-map (lambda (_) "") (number-sequence
-                                                               2 (1- (length gerrit-dashboard-columns))))]))
-                            section-data)
+                      (append acc `((nil [""
+                                          ,(propertize
+                                            (format "%s (%d)" (car conscell) (length section-data))
+                                            'face 'gerrit-section)
+                                          ;; is there an easier way to add len(columns)-2 times ""?
+                                          ,@(seq-map (lambda (_) "") (number-sequence
+                                                                      2 (1- (length gerrit-dashboard-columns))))]))
+                              section-data)
                     ;; don't display a header line
                     (append acc section-data))))
               gerrit-dashboard-query-alist '()))
@@ -1212,7 +1212,7 @@ locally and is referenced in
     ;; TODO submit
 
     ;; <C-down> -> forward-paragraph
-   map))
+    map))
 
 (define-derived-mode gerrit-dashboard-mode tabulated-list-mode "gerrit-dashboard"
   "gerrit-dashboard mode"
@@ -1309,7 +1309,7 @@ workspace of the project."
          (project-name (alist-get 'project change-metadata))
          (branch (alist-get 'branch change-metadata))
          (workspace-directory (or (cadr (assoc (list project-name branch)
-                                              gerrit-project-to-local-workspace-alist))
+                                               gerrit-project-to-local-workspace-alist))
                                   ;; TODO completion + write them to file
                                   (read-directory-name
                                    (format "Enter directory for project '%s': "
@@ -1329,7 +1329,7 @@ workspace of the project."
   ["Arguments"
    ;; TODO patch-set, default=latest
    (gerrit-download:--branch)
-  ]
+   ]
   ["Actions"
    ;; TODO display somewhere the name of the current repo (not sure if
    ;; emacs-transient supports this)
