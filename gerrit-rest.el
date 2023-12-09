@@ -217,17 +217,38 @@ down the URL structure to send the request."
                                  ("o" "DETAILED_ACCOUNTS"))))
 
 (defun gerrit-rest--get-gerrit-accounts ()
-  "Return an alist of all active gerrit users."
+  "Return an alist of account-info of all active gerrit users.
+The key or the alist is the account-id."
   (interactive)
   (condition-case nil
-      (mapcar (lambda (account-info) (cons (cdr (assoc '_account_id account-info))
-                                           account-info))
-              ;; see https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html
-              ;; and https://gerrit-review.googlesource.com/Documentation/user-search-accounts.html#_search_operators
-              (gerrit-rest-sync-v2 "GET" "/accounts/"
-                                   :params '(("q" "is:active")
-                                             ("o" "DETAILS")
-                                             ("S" 0))))
+      (let ((continue t)
+            (start-idx 0)
+            (accounts '()))
+        (while continue
+          (let ((response
+                 ;; see https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html
+                 ;; and https://gerrit-review.googlesource.com/Documentation/user-search-accounts.html#_search_operators
+
+                 ;; it might happen that this outputs: "Cannot go
+                 ;; beyond page " + indexConfig.maxPages() + " of
+                 ;; results" see
+                 ;; https://gerrit.googlesource.com/gerrit/+/refs/heads/master/java/com/google/gerrit/index/query/QueryProcessor.java#
+                 ;; TODO output a warning in this case telling the
+                 ;; user that not all account-infos can be fetched.
+                 (gerrit-rest-sync-v2 "GET" "/accounts/"
+                                      :params `(("q" "is:active")
+                                                ("o" "DETAILS")
+                                                ("S" ,start-idx)))))
+            (setq accounts (append
+                            accounts
+                            (mapcar (lambda (account-info) (cons (cdr (assoc '_account_id account-info))
+                                                                 account-info))
+                                    response)))
+            (setq start-idx (+ start-idx (length response)))
+            (setq continue (alist-get '_more_accounts (car (last response))))
+            ;; (message "start: %s, continue %s" start-idx continue)
+            ))
+        accounts)
     (error '())))
 
 (defun gerrit-rest-open-reviews-for-project (project)

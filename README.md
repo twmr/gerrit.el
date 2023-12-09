@@ -32,10 +32,12 @@ This code is tested using gerrit=3.5 and the gerrit version used on
 
 Dezember 2023:
 
+* Try to fetch as much gerrit account-info objects as possible at
+  startup.
 * Fix invalid json in request problems with
-`gerrit-rest-change-delete-cr-vote`,
-`gerrit-rest-change-delete-reviewer` and
-`gerrit-rest-change-delete-verified-vote`.
+  `gerrit-rest-change-delete-cr-vote`,
+  `gerrit-rest-change-delete-reviewer` and
+  `gerrit-rest-change-delete-verified-vote`.
 
 Use DELETE method for deleting verified votes + Improve rest-sync-v2
 
