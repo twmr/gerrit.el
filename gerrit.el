@@ -336,7 +336,7 @@ This refspec is a string of the form \='refs/changes/xx/xx/x\='."
 
 (defun gerrit--ensure-commit-msg-hook-exists ()
   "Create a commit-msg hook, if it doesn't exist."
-  (let ((hook-file (magit-gitdir "hooks/commit-msg")))
+  (let ((hook-file (magit-git-dir "hooks/commit-msg")))
     (unless (file-exists-p hook-file)
       (message "downloading commit-msg hook file")
       (url-copy-file
