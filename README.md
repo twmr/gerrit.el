@@ -34,6 +34,7 @@ February 2024:
 
 * Add `gerrit-rest-change-get-description` and
   `gerrit-rest-change-set-description`.
+* `gerrit-upload`: Do nothing if remote SHA1 matches SHA1 of HEAD.
 
 Dezember 2023:
 
