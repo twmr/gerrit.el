@@ -393,6 +393,24 @@ A comment MESSAGE can be provided."
          (resp (gerrit-rest-sync-v2 "GET" req)))
     (assoc 'labels (cdr resp))))
 
+(defun gerrit-rest-change-get-description (changenr patchsetnr)
+  "Return the description of a patchset with PATCHSETNR of a change CHANGENR."
+  (interactive "sEnter a changenr: \nsEnter a patchsetnr :")
+  (setq thi::patchsetnr 1)
+  (gerrit-rest-sync-v2 "GET"
+                       (format "/changes/%s/revisions/%s/description"
+                               changenr patchsetnr)))
+
+(defun gerrit-rest-change-set-description (changenr patchsetnr description)
+  "Set the description of a patchset with PATCHSETNR of a change CHANGENR."
+  (interactive "sEnter a changenr: \nsEnter a patchset: \nsEnter a description: ")
+  (gerrit-rest-sync-v2 "PUT"
+                       (format "/changes/%s/revisions/%s/description"
+                               changenr patchsetnr)
+                       :data (encode-coding-string
+                              (json-encode
+                               `((description . ,description))) 'utf-8)))
+
 (defun gerrit-rest-change-query (expression)
   "Return information about changes that match EXPRESSION."
   (interactive "sEnter a search expression: ")
