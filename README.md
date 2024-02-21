@@ -30,6 +30,11 @@ This code is tested using gerrit=3.5 and the gerrit version used on
 
 ## News
 
+February 2024:
+
+* Add `gerrit-rest-change-get-description` and
+  `gerrit-rest-change-set-description`.
+
 Dezember 2023:
 
 * Try to fetch as much gerrit account-info objects as possible at
