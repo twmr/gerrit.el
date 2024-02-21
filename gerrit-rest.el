@@ -396,7 +396,6 @@ A comment MESSAGE can be provided."
 (defun gerrit-rest-change-get-description (changenr patchsetnr)
   "Return the description of a patchset with PATCHSETNR of a change CHANGENR."
   (interactive "sEnter a changenr: \nsEnter a patchsetnr :")
-  (setq thi::patchsetnr 1)
   (gerrit-rest-sync-v2 "GET"
                        (format "/changes/%s/revisions/%s/description"
                                changenr patchsetnr)))
