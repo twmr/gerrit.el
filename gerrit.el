@@ -1356,11 +1356,29 @@ workspace of the project."
 
 (defun gerrit-upload ()
   (interactive)
-  (condition-case err
-      (gerrit-get-changeid-from-current-commit)
-    (error
-     (gerrit--ensure-commit-msg-hook-exists) ;; create commit-msg hook
-     (error (error-message-string err))))
+
+  ;; Sanity checks:
+  ;; * Check if the latest commit contains a ChangeId in the commit msg.
+  ;; * Check if the sha1 of the latest PS on the server is the same as
+  ;;   the SHA1 of the local HEAD.
+  (let* ((changeid
+          (condition-case err
+              (gerrit-get-unique-changeid-from-current-commit)
+            (error
+             (gerrit--ensure-commit-msg-hook-exists) ;; create commit-msg hook
+             (error (error-message-string err)))))
+         (change-info
+          (condition-case nil
+              (gerrit-rest-get-change-info changeid)
+            (error nil)))
+         (remote-revision (alist-get 'current_revision change-info))
+         (current-revision (magit-rev-parse "HEAD")))
+
+    (when (and remote-revision current-revision)
+      ;; (message "Remote revision: %s\nCurrent revision: %s"
+      ;;  remote-revision current-revision)
+      (when (string= remote-revision current-revision)
+        (error "The remote change/relation-chain is up to date."))))
 
   (call-interactively #'gerrit-upload-transient))
 
