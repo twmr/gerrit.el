@@ -58,7 +58,6 @@
 (defvar gerrit-dashboard-query-alist
   '(("Has draft comments" . "has:draft")
     ("Your turn" . "attention:self")
-    ("Assigned to me" . "assignee:self (-is:wip OR owner:self OR assignee:self) is:open -is:ignored")
     ("Work in progress" . "is:open owner:self is:wip")
     ("Outgoing reviews" . "is:open owner:self -is:wip -is:ignored")
     ("Incoming reviews" . "is:open -owner:self -is:wip -is:ignored (reviewer:self OR assignee:self)")
