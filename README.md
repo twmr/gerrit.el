@@ -30,6 +30,14 @@ This code is tested using gerrit=3.8 and the gerrit version used on
 
 ## News
 
+March 2024:
+
+* Renamed `gerrit-get-changeid-from-current-commit` to
+  `gerrit-get-changeid-from-commit` with optional revision parameter.
+* Renamed `gerrit-get-unique-changeid-from-current-commit` to
+  `gerrit-get-unique-changeid-from-commit` with optional revision
+  parameter.
+
 February 2024:
 
 * Add `gerrit-rest-change-get-description` and

@@ -661,13 +661,13 @@ The returned string is not prefixed with the remote."
            (match-string 1 remote-url))
           (t (error "Remote URL %s is not recognized" remote-url)))))
 
-(defun gerrit-get-changeid-from-current-commit ()
-  "Determine the change-id from the current commit.
+(defun gerrit-get-changeid-from-commit (&optional rev)
+  "Determine the change-id from the commit REV.
 
 A string like the following is returned:
 I8473b95934b5732ac55d26311a706c9c2bde9940"
   (let* (
-         (commit-message-lines (magit-git-lines "log" "-1" "--pretty=%B"))
+         (commit-message-lines (magit-git-lines "log" "-1" "--pretty=%B" rev))
          (change-id-line
           ;; in the case of cherry-picks, the Change-Id line may not be the
           ;; last line of the commit message. Therefore, iterate over all
@@ -679,8 +679,10 @@ I8473b95934b5732ac55d26311a706c9c2bde9940"
       (error "Commit message doesn't end with a change-id"))
     (s-chop-prefix "Change-Id: " change-id-line)))
 
-(defun gerrit-get-unique-changeid-from-current-commit ()
-  "Determine the unique change-id from the current commit.
+(defun gerrit-get-unique-changeid-from-commit (&optional rev)
+  "Determine the unique change-id from the commit at REV.
+
+If no revision is provided, the change-id from HEAD is returned.
 
 A string like the following is returned:
 myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
@@ -691,7 +693,7 @@ myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940"
                         "~"
                         branch
                         "~"
-                        (gerrit-get-changeid-from-current-commit)))))
+                        (gerrit-get-changeid-from-commit rev)))))
 
 
 
@@ -1362,7 +1364,7 @@ workspace of the project."
   ;;   the SHA1 of the local HEAD.
   (let* ((changeid
           (condition-case err
-              (gerrit-get-unique-changeid-from-current-commit)
+              (gerrit-get-unique-changeid-from-commit "HEAD")
             (error
              (gerrit--ensure-commit-msg-hook-exists) ;; create commit-msg hook
              (error (error-message-string err)))))
