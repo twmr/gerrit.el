@@ -1300,7 +1300,7 @@ workspace of the project."
   (interactive
    (list
     (let
-        ((gerrit-change-singleline-columns '(number branch project subject)))
+        ((gerrit-change-singleline-columns '(number owner branch project subject)))
       (gerrit--select-change-from-matching-changes
        ;; TODO add support for selecting branches (what if
        ;; gerrit-interesting-open-changes-filter already contains
