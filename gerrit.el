@@ -1334,7 +1334,6 @@ workspace of the project."
   ;; download specific branch (depends on project!)
 
   ["Arguments"
-   ;; TODO patch-set, default=latest
    (gerrit-download:--branch)
    ]
   ["Actions"
