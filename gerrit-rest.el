@@ -53,8 +53,8 @@ servers it needs to be set to an empty string."
 (defun gerrit-rest-authentication ()
   "Return an encoded string with gerrit username and password."
   (let ((pass-entry (auth-source-user-and-password gerrit-host)))
-    (when-let ((username (nth 0 pass-entry))
-               (password (nth 1 pass-entry)))
+    (when-let* ((username (nth 0 pass-entry))
+                (password (nth 1 pass-entry)))
       (base64-encode-string
        (concat username ":" password)))))
 
@@ -125,7 +125,7 @@ The optional arg DATA may be used as inputs for POST/PUT requests."
            (goto-char url-http-end-of-headers)
            ;; if there is an error in search-forward-regexp, write
            ;; the buffer contents to a *gerrit-rest-status* buffer
-           (if-let ((pos (search-forward-regexp "^)]}'$" nil t)))
+           (if-let* ((pos (search-forward-regexp "^)]}'$" nil t)))
                (progn
                  (when debug
                    (gerrit-rest--write-to-status-buffer target))
@@ -158,7 +158,7 @@ down the URL structure to send the request."
            (goto-char url-http-end-of-headers)
            ;; if there is an error in search-forward-regexp, write
            ;; the buffer contents to a *gerrit-rest-status* buffer
-           (if-let ((pos (search-forward-regexp "^)]}'$" nil t)))
+           (if-let* ((pos (search-forward-regexp "^)]}'$" nil t)))
                (buffer-substring pos (point-max))
              ;; ")]}'" was not found in the REST response
              (let ((buffer (get-buffer-create "*gerrit-rest-status*"))

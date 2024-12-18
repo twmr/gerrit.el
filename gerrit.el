@@ -356,10 +356,10 @@ A section in the respective process buffer is created."
        (when (memq (process-status process) '(exit signal))
          (when (buffer-live-p (process-buffer process))
            (with-current-buffer (process-buffer process)
-             (when-let ((section (get-text-property (point) 'magit-section))
-                        (output (buffer-substring-no-properties
-                                 (oref section content)
-                                 (oref section end))))
+             (when-let* ((section (get-text-property (point) 'magit-section))
+                         (output (buffer-substring-no-properties
+                                  (oref section content)
+                                  (oref section end))))
                (if (not (zerop (process-exit-status process)))
                    ;; error
                    (magit-process-sentinel process event)
@@ -372,7 +372,7 @@ A section in the respective process buffer is created."
                  ;; Alternatively we could perform a gerrit query with owner:me and set the
                  ;; assignee for the latest change(s).
                  (when assignee
-                   (if-let ((matched-changes (s-match-strings-all "/\\+/[0-9]+" output)))
+                   (if-let* ((matched-changes (s-match-strings-all "/\\+/[0-9]+" output)))
                        (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
                                              (message "Setting assignee of %s to %s" changenr assignee)
                                              (gerrit-rest-change-set-assignee changenr assignee)
@@ -479,7 +479,7 @@ A section in the respective process buffer is created."
 ARGUMENT and VALUE are the values of the respective slots of OBJ.
 If VALUE is nil, then return nil.  VALUE may be the empty string,
 which is not the same as nil."
-  (when-let ((value (oref obj value)))
+  (when-let* ((value (oref obj value)))
     (if (listp value) (setq value (string-join value ",")))
     (concat (oref obj argument) value)))
 
@@ -561,10 +561,10 @@ section header."
 When called in the magit-status-section via `magit-status-section-hook'
 all open gerrit review are shown in the magit status buffer."
 
-  (when-let ((fetched-reviews (condition-case nil
-                                  (gerrit-rest-open-reviews-for-project
-                                   (gerrit-get-current-project))
-                                (error '()))))
+  (when-let* ((fetched-reviews (condition-case nil
+                                   (gerrit-rest-open-reviews-for-project
+                                    (gerrit-get-current-project))
+                                 (error '()))))
     (magit-insert-section (open-reviews)
       (magit-insert-heading "Open Gerrit Reviews")
       (let* ((fetched-reviews-string-lists
@@ -634,14 +634,14 @@ The prefix magit- prefix is required by `magit-insert-section'.")
 
 The returned string is not prefixed with the remote."
   ;; TODO read the data from a cache
-  (or (when-let ((upstream-branch (magit-get-upstream-branch)))
+  (or (when-let* ((upstream-branch (magit-get-upstream-branch)))
         (cadr (s-split "/" upstream-branch)))
       (magit-git-string "config" "-f" (expand-file-name ".gitreview" (magit-toplevel))
                         "--get" "gerrit.defaultbranch")
-      (when-let ((upstream-branch (magit-read-upstream-branch
-                                   nil
-                                   (concat "No upstream branch is configured, please specify one "
-                                           "(starting with the remote)"))))
+      (when-let* ((upstream-branch (magit-read-upstream-branch
+                                    nil
+                                    (concat "No upstream branch is configured, please specify one "
+                                            "(starting with the remote)"))))
         (magit-set-upstream-branch (magit-get-current-branch) upstream-branch)
         (cadr (s-split "/" upstream-branch)))))
 
@@ -751,9 +751,9 @@ shown in the section buffer."
         (concat project " ")
         (propertize subject 'font-lock-face 'magit-section-heading))
 
-      ;; maybe when-let can be removed, since all commit
+      ;; maybe when-let* can be removed, since all commit
       ;; messages are multiline (they include a Change-Id line)
-      (when-let (commit-msg-body (cdr (s-split-up-to "\n" latest-commit-message 1)))
+      (when-let* (commit-msg-body (cdr (s-split-up-to "\n" latest-commit-message 1)))
         (insert (s-trim-left (s-join "\n" commit-msg-body))))
 
       (cl-loop for message-info in (cl-remove-if-not #'gerrit-section-filter
@@ -992,7 +992,7 @@ alist."
     ("Owner" (let* ((owner-account-id  (alist-get 'owner change-metadata))
                     (part-of-attention-set (memq owner-account-id
                                                  (alist-get 'attention-set change-metadata))))
-               (if-let ((owner (alist-get owner-account-id (gerrit-get-accounts-alist))))
+               (if-let* ((owner (alist-get owner-account-id (gerrit-get-accounts-alist))))
                    `(,(propertize (concat (if part-of-attention-set
                                               gerrit-dashboard-attention-icon "")
                                           (alist-get 'name owner))
@@ -1002,9 +1002,9 @@ alist."
                      action gerrit-dashboard--button-open-owner-query)
                  ;; empty owner
                  "")))
-    ("Assignee" (if-let ((assignee
-                          (alist-get (alist-get 'assignee change-metadata)
-                                     (gerrit-get-accounts-alist))))
+    ("Assignee" (if-let* ((assignee
+                           (alist-get (alist-get 'assignee change-metadata)
+                                      (gerrit-get-accounts-alist))))
                     `(,(propertize (alist-get 'name assignee) 'face 'magit-log-author)
                       assignee ,(alist-get 'username assignee)
                       follow-link t
@@ -1014,7 +1014,7 @@ alist."
     ("Reviewers" (let ((attention-set (alist-get 'attention-set change-metadata))
                        (owner-account-id (alist-get 'owner change-metadata)))
                    ;; TODO exclude the owner from the reviewers
-                   (if-let
+                   (if-let*
                        ((reviewers
                          (delq nil
                                (seq-map
@@ -1042,13 +1042,13 @@ alist."
                        (s-join " " reviewers)
                      ;; empty reviewers (not clickable)
                      "")))
-    ("CC" (if-let ((reviewers
-                    (seq-map
-                     (lambda (reviewer-info)
-                       ;; return a real name of a reviewer in CC
-                       (alist-get 'name (alist-get reviewer-info
-                                                   (gerrit-get-accounts-alist))))
-                     (alist-get 'cc change-metadata))))
+    ("CC" (if-let* ((reviewers
+                     (seq-map
+                      (lambda (reviewer-info)
+                        ;; return a real name of a reviewer in CC
+                        (alist-get 'name (alist-get reviewer-info
+                                                    (gerrit-get-accounts-alist))))
+                      (alist-get 'cc change-metadata))))
               (propertize (s-join " " reviewers) 'face 'magit-log-author)
             ""))
     ("Repo" (let ((repo (alist-get 'repo change-metadata)))
@@ -1061,7 +1061,7 @@ alist."
                   branch ,branch
                   follow-link t
                   action gerrit-dashboard--button-open-branch-query)))
-    ("Topic" (if-let ((topic (alist-get 'topic change-metadata)))
+    ("Topic" (if-let* ((topic (alist-get 'topic change-metadata)))
                  `(,(propertize topic 'face 'magit-tag)
                    topic , topic
                    follow-link t
