@@ -861,7 +861,7 @@ shown in the section buffer."
   :group 'faces)
 
 (defface gerrit-section
-  '((t (:inherit 'magit-section-heading)))
+  '((t (:inherit magit-section-heading)))
   "Used for the section names in the dashboard."
   :group 'faces)
 
