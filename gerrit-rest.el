@@ -449,16 +449,16 @@ to CHANGENR is not locally cloned."
     (with-current-buffer gerrit-patch-buffer
       (let ((inhibit-read-only t))
         (erase-buffer)
-	(url-insert-file-contents target)
-	(base64-decode-region (point-min) (point-max))
-	(delete-trailing-whitespace)
-	(decode-coding-region (point-min) (point-max) 'utf-8))
+        (url-insert-file-contents target)
+        (base64-decode-region (point-min) (point-max))
+        (delete-trailing-whitespace)
+        (decode-coding-region (point-min) (point-max) 'utf-8))
 
       (unless buffer-read-only
-	(read-only-mode t))
+        (read-only-mode t))
       ;; using magit-diff-mode would be nice here, but it doesn't work.
       (unless (bound-and-true-p diff-mode)
-	(diff-mode))
+        (diff-mode))
       ;; currently [TAB] is bound to diff-hunk-next. Do we want to change it
       ;; to `outline-cycle'?
       ;; beginning with emacs 28 set outline-minor-mode-cycle to t.
