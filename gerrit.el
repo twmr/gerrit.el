@@ -1091,25 +1091,25 @@ locally and is referenced in
   ;; only works in dashboards with a single section.
   (gerrit-query (read-string "Enter query string: " (cdar gerrit-dashboard-query-alist))))
 
-(defvar gerrit-dashboard-mode-map
+(defvar-keymap gerrit-dashboard-mode-map
   ;; TODO convert this into a transient
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "a") 'gerrit-dashboard-assign-change)
-    (define-key map (kbd "A") 'gerrit-dashboard-assign-change-to-me)
-    (define-key map (kbd "g") 'gerrit-dashboard--refresh--and-point-restore)
-    (define-key map (kbd "o") 'gerrit-dashboard-browse-change)
-    (define-key map (kbd "d") 'gerrit-dashboard-download-change)
-    (define-key map (kbd "RET") 'gerrit-dashboard-open-change)
-    (define-key map (kbd "t") 'gerrit-dashboard-open-topic)
-    ;; TODO completion would be extremely nice
-    (define-key map (kbd "e") 'gerrit-dashboard-edit-query)
-    ;; votes
-    (define-key map (kbd "V") 'gerrit-dashboard-set-verified-vote-topic)
-    (define-key map (kbd "C") 'gerrit-dashboard-set-cr-vote-topic)
-    ;; TODO submit
+  :doc "Keymap for `gerrit-dashboard` mode."
+  "a"   #'gerrit-dashboard-assign-change
+  "A"   #'gerrit-dashboard-assign-change-to-me
+  "g"   #'gerrit-dashboard--refresh--and-point-restore
+  "o"   #'gerrit-dashboard-browse-change
+  "d"   #'gerrit-dashboard-download-change
+  "RET" #'gerrit-dashboard-open-change
+  "t"   #'gerrit-dashboard-open-topic
+  ;; TODO completion would be extremely nice
+  "e"   #'gerrit-dashboard-edit-query
+  ;; votes
+  "V"   #'gerrit-dashboard-set-verified-vote-topic
+  "C"   #'gerrit-dashboard-set-cr-vote-topic
+  ;; TODO submit
 
-    ;; <C-down> -> forward-paragraph
-    map))
+  ;; <C-down> -> forward-paragraph
+  )
 
 (define-derived-mode gerrit-dashboard-mode tabulated-list-mode "gerrit-dashboard"
   "gerrit-dashboard mode"
