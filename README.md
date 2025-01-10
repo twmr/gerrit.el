@@ -17,7 +17,6 @@ The function `gerrit-upload` uses the `transient` package and provides the
 following features in addition to uploading new changes (and new patchsets)
 
 * specify reviewers
-* set an assignee
 * set a topic name
 * set WIP flag
 * set a ready-for-review flag
@@ -29,6 +28,11 @@ This code is tested using gerrit=3.8 and the gerrit version used on
 `review.gerrithub.org`.
 
 ## News
+
+Jan 2025:
+
+* Remove support for setting the assignee in `gerrit-upload`
+* Remove support for displaying and the asignee in the gerrit dashboard
 
 March 2024:
 

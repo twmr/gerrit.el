@@ -60,7 +60,7 @@
     ("Your turn" . "attention:self")
     ("Work in progress" . "is:open owner:self is:wip")
     ("Outgoing reviews" . "is:open owner:self -is:wip -is:ignored")
-    ("Incoming reviews" . "is:open -owner:self -is:wip -is:ignored (reviewer:self OR assignee:self)")
+    ("Incoming reviews" . "is:open -owner:self -is:wip -is:ignored reviewer:self")
     ("CCed on" . "is:open -is:ignored cc:self")
     ("Recently closed" . "is:closed -is:ignored (-is:wip OR owner:self) (owner:self OR reviewer:self OR assignee:self OR cc:self) limit:15"))
   "Query search string that is used for the data shown in the `gerrit-dashboard'.")
@@ -106,18 +106,6 @@ user names."
   "Get all known usernames known to the gerrit server."
   (seq-map (lambda (account-entry) (alist-get 'username (cdr account-entry)))
            (gerrit-get-accounts-alist)))
-
-(defun gerrit--read-assignee ()
-  "Ask for the name of an assignee."
-  (completing-read
-   "Assignee: "
-   (gerrit-get-usernames)
-   nil ;; predicate
-   t ;; require match
-   nil ;; initial
-   nil ;; hist (output only?)
-   ;; def
-   nil))
 
 (defun gerrit--get-protocol ()
   (if gerrit-use-ssl
@@ -343,45 +331,6 @@ This refspec is a string of the form \='refs/changes/xx/xx/x\='."
        (concat (gerrit--get-protocol) gerrit-host  "/tools/hooks/commit-msg") hook-file)
       (set-file-modes hook-file #o755))))
 
-(defun gerrit-push-and-assign (assignee &rest push-args)
-  "Execute Git push with PUSH-ARGS and assign changes to ASSIGNEE.
-
-A section in the respective process buffer is created."
-  (interactive)
-  (progn
-    (apply #'magit-run-git-async "push" push-args)
-    (set-process-sentinel
-     magit-this-process
-     (lambda (process event)
-       (when (memq (process-status process) '(exit signal))
-         (when (buffer-live-p (process-buffer process))
-           (with-current-buffer (process-buffer process)
-             (when-let* ((section (get-text-property (point) 'magit-section))
-                         (output (buffer-substring-no-properties
-                                  (oref section content)
-                                  (oref section end))))
-               (if (not (zerop (process-exit-status process)))
-                   ;; error
-                   (magit-process-sentinel process event)
-
-                 ;; success
-                 (process-put process 'inhibit-refresh t)
-
-                 ;; parse the output of "git push" and extract the change numbers. This
-                 ;; information is used for setting the specified assignee
-                 ;; Alternatively we could perform a gerrit query with owner:me and set the
-                 ;; assignee for the latest change(s).
-                 (when assignee
-                   (if-let* ((matched-changes (s-match-strings-all "/\\+/[0-9]+" output)))
-                       (seq-do (lambda (x) (let ((changenr (s-chop-prefix "/+/" (car x))))
-                                             (message "Setting assignee of %s to %s" changenr assignee)
-                                             (gerrit-rest-change-set-assignee changenr assignee)
-                                             (gerrit-magit-process-buffer-add-item
-                                              (format "Assignee of change %s was set to %s" changenr assignee)
-                                              "set-assignee" changenr)))
-                               matched-changes)))
-                 (magit-process-sentinel process event))))))))))
-
 (defun gerrit-upload--get-refspec ()
   (concat "refs/for/" (gerrit-get-upstream-branch)))
 
@@ -411,8 +360,7 @@ A section in the respective process buffer is created."
   (gerrit--ensure-commit-msg-hook-exists)
   ;; TODO check that all to-be-uploaded commits have a changeid line
 
-  (let (assignee
-        push-opts
+  (let (push-opts
         no-verify
         (remote (gerrit-get-remote))
         (refspec (gerrit-upload--get-refspec)))
@@ -429,8 +377,6 @@ A section in the respective process buffer is created."
                              ;; TODO check that reviewers are valid (by checking that all
                              ;; reviewers don't contain a white-space)
                              (push (concat "r=" reviewer) push-opts)))
-                   ((s-starts-with? "assignee=" arg)
-                    (setq assignee (s-chop-prefix "assignee=" arg)))
                    ((s-starts-with? "topic=" arg)
                     (push  arg push-opts))
                    ((string= "ready" arg)
@@ -450,8 +396,9 @@ A section in the respective process buffer is created."
         (push "--no-verify" push-args))
       (push remote push-args)
       (push (concat "HEAD:" refspec) push-args)
-      (apply #'gerrit-push-and-assign
-             assignee
+
+      (apply #'magit-run-git-async
+             "push"
              ;; don't error when encountering local tags, which
              ;; are absent from gerrit.
              "--no-follow-tags"
@@ -461,7 +408,6 @@ A section in the respective process buffer is created."
   "Transient used for uploading changes to gerrit"
   ["Arguments"
    (gerrit-upload:--reviewers)
-   (gerrit-upload:--assignee)
    ("w" "Work in Progress" "wip")
    ("v" "Ready for Review" "ready")
    (gerrit-upload:--topic)
@@ -502,34 +448,12 @@ which is not the same as nil."
    nil
    nil))
 
-(transient-define-argument gerrit-upload:--assignee ()
-  :description "Assignee"
-  :class 'transient-option
-  :key "a"
-  :argument "assignee="
-  :reader 'gerrit-upload:--read-assignee)
-
 (transient-define-argument gerrit-upload:--topic ()
   :description "Topic"
   :class 'transient-option
   :key "t"
   :argument "topic="
   :reader 'gerrit-upload:--read-topic)
-
-(defun gerrit-upload:--read-assignee (prompt _initial-input history)
-  ;; (gerrit--read-assignee) this doesn't update the history
-
-  ;; using the history here doesn't have an effect (maybe it does, but for
-  ;; ivy-completing-read it doesn't)
-  (completing-read
-   prompt
-   (gerrit-get-usernames)
-   nil ;; predicate
-   t ;; require match
-   nil ;; initial ;; Maybe it makes sense to use the last/first history element here
-   history ;; hist (output only?)
-   ;; def
-   nil))
 
 (defun gerrit-upload:--read-topic (prompt _initial-input history)
   (completing-read
@@ -836,9 +760,6 @@ shown in the section buffer."
    ("Subject" 55 t)
    ("Status" 10 t)
    ("Owner" 15 t)
-   ;; TODO remove this entry at runtime if the gerrit version > 3.4
-   ;; and the legacy assignee support is disabled
-   ;; ("Assignee" 15 t)
    ("Reviewers" 25 nil)
    ;; ("CC" 15 nil)
    ("Repo" 24 t)
@@ -902,7 +823,6 @@ alist."
     (status . ,(alist-get 'status change)) ;; string
     ;; alist-get 'owner => (_account_id . 1017133)
     (owner . ,(gerrit--alist-get-recursive 'owner '_account_id change))
-    (assignee . ,(cdr (car (alist-get 'assignee change)))) ;; optional string
 
     ;; all account-ids of all users in the attention set
     (attention-set . ,(seq-map (lambda (attention-entry)
@@ -950,10 +870,6 @@ alist."
   ;; this is a version of gerrit-dashboard-open-change, but just for buttons
   ;; displayed inside the dashboard
   (gerrit-rest-change-patch (button-get button 'change-id)))
-
-(defun gerrit-dashboard--button-open-assignee-query (&optional button)
-  (interactive)
-  (gerrit-query (concat "assignee:" (button-get button 'assignee))))
 
 (defun gerrit-dashboard--button-open-owner-query (&optional button)
   (interactive)
@@ -1003,15 +919,6 @@ alist."
                      action gerrit-dashboard--button-open-owner-query)
                  ;; empty owner
                  "")))
-    ("Assignee" (if-let* ((assignee
-                           (alist-get (alist-get 'assignee change-metadata)
-                                      (gerrit-get-accounts-alist))))
-                    `(,(propertize (alist-get 'name assignee) 'face 'magit-log-author)
-                      assignee ,(alist-get 'username assignee)
-                      follow-link t
-                      action gerrit-dashboard--button-open-assignee-query)
-                  ;; empty assignee (not clickable)
-                  ""))
     ("Reviewers" (let ((attention-set (alist-get 'attention-set change-metadata))
                        (owner-account-id (alist-get 'owner change-metadata)))
                    ;; TODO exclude the owner from the reviewers
@@ -1142,23 +1049,6 @@ locally and is referenced in
   (interactive)
   ;; TODO interactively ask for vote + message
   (gerrit-rest-topic-set-cr-vote (gerrit-dashboard--topic) "+2" ""))
-
-(defun gerrit-dashboard-assign-change ()
-  "Set assignee of the change under point."
-  (interactive)
-  (let ((change-number (gerrit-dashboard--entry-number))
-        (assignee (gerrit--read-assignee)))
-    (message "setting assignee of change %s to %s" change-number assignee)
-    (gerrit-rest-change-set-assignee change-number assignee)
-    ;; refresh dashboard
-    (gerrit-dashboard--refresh--and-point-restore)))
-
-(defun gerrit-dashboard-assign-change-to-me ()
-  "Set assignee of the change under point."
-  (interactive)
-  (gerrit-rest-change-set-assignee (gerrit-dashboard--entry-number) "self")
-  ;; refresh dashboard
-  (gerrit-dashboard--refresh--and-point-restore))
 
 (defun gerrit-dashboard--get-list-entries ()
   "Get the all entries used for \"tabulated-list-entries\"."
