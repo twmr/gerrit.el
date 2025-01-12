@@ -59,10 +59,10 @@
   '(("Has draft comments" . "has:draft")
     ("Your turn" . "attention:self")
     ("Work in progress" . "is:open owner:self is:wip")
-    ("Outgoing reviews" . "is:open owner:self -is:wip -is:ignored")
-    ("Incoming reviews" . "is:open -owner:self -is:wip -is:ignored reviewer:self")
-    ("CCed on" . "is:open -is:ignored cc:self")
-    ("Recently closed" . "is:closed -is:ignored (-is:wip OR owner:self) (owner:self OR reviewer:self OR assignee:self OR cc:self) limit:15"))
+    ("Outgoing reviews" . "is:open owner:self -is:wip")
+    ("Incoming reviews" . "is:open -owner:self -is:wip reviewer:self")
+    ("CCed on" . "is:open cc:self")
+    ("Recently closed" . "is:closed (-is:wip OR owner:self) (owner:self OR reviewer:self OR cc:self) limit:15"))
   "Query search string that is used for the data shown in the `gerrit-dashboard'.")
 
 (defgroup gerrit nil
