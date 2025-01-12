@@ -1059,13 +1059,12 @@ locally and is referenced in
                   ;; gerrit-dashboard-query-alist is 1 and (car conscell) is
                   ;; nil
                   (if (car conscell)
-                      (append acc `((nil [""
-                                          ,(propertize
+                      (append acc `((nil [,(propertize
                                             (format "%s (%d)" (car conscell) (length section-data))
                                             'face 'gerrit-section)
                                           ;; is there an easier way to add len(columns)-2 times ""?
                                           ,@(seq-map (lambda (_) "") (number-sequence
-                                                                      2 (1- (length gerrit-dashboard-columns))))]))
+                                                                      1 (1- (length gerrit-dashboard-columns))))]))
                               section-data)
                     ;; don't display a header line
                     (append acc section-data))))

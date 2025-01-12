@@ -31,8 +31,11 @@ This code is tested using gerrit=3.8 and the gerrit version used on
 
 Jan 2025:
 
-* Remove support for setting the assignee in `gerrit-upload`
-* Remove support for displaying and the asignee in the gerrit dashboard
+* Display section header-line in dashboard in first and not in second
+  column.
+* Remove support for setting the assignee in `gerrit-upload`.
+* Remove support for displaying and the asignee in the gerrit
+  dashboard.
 
 March 2024:
 
