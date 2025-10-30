@@ -7,6 +7,7 @@ EMACS="${EMACS:=emacs}"
 
 INIT_PACKAGE_EL="(progn
   (require 'package)
+  (setq package-install-upgrade-built-in t)
   (push '(\"melpa\" . \"https://melpa.org/packages/\") package-archives)
   (package-initialize))"
 
