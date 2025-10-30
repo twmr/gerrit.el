@@ -29,6 +29,10 @@ This code is tested using gerrit=3.8 and the gerrit version used on
 
 ## News
 
+Oct 2025:
+
+* Drop support for emacs-27 and test emacs-30 in CI.
+
 Jan 2025:
 
 * Display section header-line in dashboard in first and not in second
