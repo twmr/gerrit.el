@@ -15,6 +15,7 @@ INIT_PACKAGE_EL="(progn
          --eval "(unless package-archive-contents (package-refresh-contents))" \
          --eval "(unless (package-installed-p 'cl-lib) (package-install 'cl-lib))" \
          --eval "(unless (package-installed-p 'magit) (package-install 'magit))" \
+         --eval "(unless (package-installed-p 'dash) (package-install 'dash)" \
          --eval "(unless (package-installed-p 's) (package-install 's))"
 
 # Byte compile, failing on byte compiler errors, or on warnings unless ignored
@@ -28,7 +29,7 @@ fi
          --eval "$INIT_PACKAGE_EL" \
          -L . \
          -l gerrit.el \
-      	 -l gerrit-rest.el \
+         -l gerrit-rest.el \
          --eval "(setq byte-compile-error-on-warn ${ERROR_ON_WARN})" \
          -f batch-byte-compile \
          gerrit.el gerrit-rest.el test/gerrit.el-test.el
@@ -45,6 +46,6 @@ fi
          --eval "$INIT_PACKAGE_EL" \
          -L . \
          -l gerrit.el \
-       	 -l gerrit-rest.el \
+         -l gerrit-rest.el \
          -l test/gerrit.el-test.el \
          -f ert-run-tests-batch-and-exit
