@@ -4,7 +4,7 @@
 ;; Maintainer: Thomas Hisch <t.hisch@gmail.com>
 ;; URL: https://github.com/thisch/gerrit.el
 ;; Version: 0.1
-;; Package-Requires: ((emacs "25.1") (magit "2.13.1") (s "1.12.0") (dash "0.2.15"))
+;; Package-Requires: ((emacs "28.2") (magit "2.13.1") (s "1.12.0") (dash "0.2.15"))
 ;; Keywords: extensions
 
 ;; This program is free software; you can redistribute it and/or modify

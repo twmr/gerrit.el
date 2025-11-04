@@ -1,3 +1,4 @@
+;;; gerrit-manual-tests.el --- Gerrit test -*- lexical-binding: t; -*-
 (require 'cl-lib)
 (require 'gerrit-rest)
 (require 'gerrit)
