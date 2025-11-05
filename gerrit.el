@@ -1,8 +1,8 @@
 ;;; gerrit.el --- Gerrit client -*- lexical-binding: t; -*-
 
-;; Author: Thomas Hisch <t.hisch@gmail.com>
-;; Maintainer: Thomas Hisch <t.hisch@gmail.com>
-;; URL: https://github.com/thisch/gerrit.el
+;; Author: Thomas Wimmer <thomaswimmer@posteo.com>
+;; Maintainer: Thomas Wimmer <thomaswimmer@posteo.com>
+;; URL: https://github.com/twmr/gerrit.el
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "28.2") (magit "2.13.1") (s "1.12.0") (dash "0.2.15"))
 ;; Keywords: extensions

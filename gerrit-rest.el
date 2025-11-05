@@ -1,10 +1,10 @@
 ;;; gerrit-rest.el --- REST layer of gerrit.el -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2019 Thomas Hisch <t.hisch@gmail.com>
+;; Copyright (C) 2019 Thomas Wimmer <thomaswimmer@posteo.com>
 ;;
-;; Author: Thomas Hisch <t.hisch@gmail.com>
+;; Author: Thomas Wimmer <thomaswimmer@posteo.com>
 ;; Version: 0.1
-;; URL: https://github.com/thisch/gerrit.el
+;; URL: https://github.com/twmr/gerrit.el
 ;; Package-Requires: ((emacs "25.1") (magit "2.13.1"))
 
 ;; This file is not part of GNU Emacs.
