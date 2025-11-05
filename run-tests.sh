@@ -18,7 +18,7 @@ INIT_PACKAGE_EL="(progn
          --eval "(unless package-archive-contents (package-refresh-contents))" \
          --eval "(unless (package-installed-p 'cl-lib) (package-install 'cl-lib))" \
          --eval "(unless (package-installed-p 'magit) (package-install 'magit))" \
-         --eval "(unless (package-installed-p 'dash) (package-install 'dash)" \
+         --eval "(unless (package-installed-p 'dash) (package-install 'dash))" \
          --eval "(unless (package-installed-p 's) (package-install 's))"
 
 # Byte compile, failing on byte compiler errors, or on warnings unless ignored
