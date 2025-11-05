@@ -25,6 +25,6 @@ INIT_PACKAGE_EL="(progn
          --eval "$INIT_PACKAGE_EL" \
          -L . \
          -l gerrit.el \
-       	 -l gerrit-rest.el \
+         -l gerrit-rest.el \
          -l gerrit-manual-tests.el \
          -f ert-run-tests-batch-and-exit
