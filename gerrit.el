@@ -1094,8 +1094,6 @@ locally and is referenced in
 (defvar-keymap gerrit-dashboard-mode-map
   ;; TODO convert this into a transient
   :doc "Keymap for `gerrit-dashboard` mode."
-  "a"   #'gerrit-dashboard-assign-change
-  "A"   #'gerrit-dashboard-assign-change-to-me
   "g"   #'gerrit-dashboard--refresh--and-point-restore
   "o"   #'gerrit-dashboard-browse-change
   "d"   #'gerrit-dashboard-download-change
