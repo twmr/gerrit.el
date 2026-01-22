@@ -35,12 +35,17 @@
 (require 'json)
 (require 'cl-lib)
 (require 'cl-extra) ;; for cl-prettyprint
+(require 'url)
+(require 'url-auth)
+(require 'url-http)
 
 (defvar gerrit-host) ;; defined in gerrit.el
 (declare-function gerrit--get-protocol "gerrit.el")
 (defvar gerrit-patch-buffer)
+
 (defvar url-http-end-of-headers)
 (defvar url-http-response-status)
+
 
 (defcustom gerrit-rest-endpoint-prefix "/a"
   "String that is appended to `gerrit-host'.
