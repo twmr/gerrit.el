@@ -107,8 +107,8 @@ The optional arg DATA may be used as inputs for POST/PUT requests."
                           (concat "?" (url-build-query-string params))))))
 
     (when data
-      (add-to-list 'url-request-extra-headers
-                   '("Content-Type" . "application/json")))
+      (push '("Content-Type" . "application/json")
+            url-request-extra-headers))
 
     (with-current-buffer (url-retrieve-synchronously target t)
       ;; I need to skip the read-json code when there is nothing to parse in the output
