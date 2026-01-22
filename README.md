@@ -24,7 +24,7 @@ following features in addition to uploading new changes (and new patchsets)
 Furthermore, a minimalistic open-reviews status-section
 (`gerrit-magit-insert-status`) for magit status buffers is available.
 
-This code is tested using gerrit=3.8 and the gerrit version used on
+This code is tested using gerrit=3.9 and the gerrit version used on
 `review.gerrithub.org`.
 
 ## News
