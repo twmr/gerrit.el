@@ -5,7 +5,7 @@
 ;; Author: Thomas Wimmer <thomaswimmer@posteo.com>
 ;; Version: 0.1
 ;; URL: https://github.com/twmr/gerrit.el
-;; Package-Requires: ((emacs "25.1") (magit "2.13.1"))
+;; Package-Requires: ((emacs "26.1") (magit "2.13.1"))
 
 ;; This file is not part of GNU Emacs.
 
