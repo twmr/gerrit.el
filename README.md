@@ -29,6 +29,10 @@ This code is tested using gerrit=3.8 and the gerrit version used on
 
 ## News
 
+Jan 2026:
+
+* Drop support for emacs-28.
+
 Oct 2025:
 
 * Drop support for emacs-27 and test emacs-30 in CI.
