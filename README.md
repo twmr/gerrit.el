@@ -29,15 +29,15 @@ This code is tested using gerrit=3.8 and the gerrit version used on
 
 ## News
 
-Jan 2026:
+January 2026:
 
 * Drop support for emacs-28.
 
-Oct 2025:
+October 2025:
 
 * Drop support for emacs-27 and test emacs-30 in CI.
 
-Jan 2025:
+January 2025:
 
 * Display section header-line in dashboard in first and not in second
   column.
@@ -59,7 +59,7 @@ February 2024:
   `gerrit-rest-change-set-description`.
 * `gerrit-upload`: Do nothing if remote SHA1 matches SHA1 of HEAD.
 
-Dezember 2023:
+December 2023:
 
 * Try to fetch as much gerrit account-info objects as possible at
   startup.
@@ -104,12 +104,12 @@ March 2022:
   * <kbd>V</kbd> set a "Verified" vote for the entire topic under point.
   * <kbd>C</kbd> set a "Code-Review" vote for the entire topic under point.
 
-Februrary 2022:
+February 2022:
 
 * Fix formatting issue when `gerrit-dashboard-columns` is customized.
 * Allow toggling between HTTPS and HTTP by changing `gerrit-use-ssl`.
 
-Jannuary 2022:
+January 2022:
 
 * Legacy git-review functions were dropped. The
   `gerrit-use-gitreview-interface` variable is no longer used.
