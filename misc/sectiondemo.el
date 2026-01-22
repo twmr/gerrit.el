@@ -1,3 +1,7 @@
+;; sectiondemo.el --- Example of using gerrit.el -*- lexical-binding: t; -*-
+(require 'gerrit)
+(require 'magit)
+
 (defun gerrit-section-insert-comments ()
   (magit-insert-section (toplevel) ; without this, I can't toggle the repo
                                         ; sections for some reason.
