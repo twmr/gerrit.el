@@ -321,47 +321,51 @@ The key or the alist is the account-id."
   ;; note that filenames are returned as symbols
   (gerrit-rest-sync-v2 "GET" (format "/changes/%s/comments" changenr)))
 
+(defun gerrit-rest-change--set-label-vote (changenr label vote message)
+  "Set LABEL vote VOTE on CHANGENR.
+LABEL is a string such as \"Code-Review\" or \"Verified\".
+Optional MESSAGE is added as a review comment."
+  (gerrit-rest-sync-v2
+   "POST"
+   (format "/changes/%s/revisions/current/review" changenr)
+   :data (encode-coding-string
+          (json-encode
+           `((message . ,message)
+             (labels . ((,label . ,vote)))))
+          'utf-8)))
+
 (defun gerrit-rest-change-set-cr-vote (changenr vote message)
-  "Set a Code-Review vote VOTE of a change CHANGENR.
+  "Set a Code-Review vote VOTE on CHANGENR.
 A comment MESSAGE can be provided."
   (interactive "sEnter a changenr: \nsEnter vote [-2, -1, 0, +1, +2]: \nsEnter message: ")
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/revisions/current/review" changenr)
-                       :data (encode-coding-string (json-encode
-                                                    `((message . ,message)
-                                                      (labels .
-                                                              ((Code-Review . ,vote))))) 'utf-8)))
-
-(defun gerrit-rest-change-delete-cr-vote (changenr username)
-  "Delete a Code-Review vote VOTE from a change CHANGENR from the user USERNAME."
-  (interactive "sEnter a changenr: \nsEnter a username: ")
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/reviewers/%s/votes/Code-Review/delete"
-                               changenr username)
-                       :data (encode-coding-string (json-encode
-                                                    '((notify . "NONE"))) 'utf-8)))
+  (gerrit-rest-change--set-label-vote changenr "Code-Review" vote message))
 
 (defun gerrit-rest-change-set-verified-vote (changenr vote message)
-  "Verify a change CHANGENR by voting with VOTE.
+  "Set a Verified vote VOTE on CHANGENR.
 A comment MESSAGE can be provided."
   (interactive "sEnter a changenr: \nsEnter vote [-1, 0, +1]: \nsEnter message: ")
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/revisions/current/review" changenr)
-                       :data (encode-coding-string (json-encode
-                                                    `((message . ,message)
-                                                      (labels .
-                                                              ((Verified . ,vote))))) 'utf-8)))
+  (gerrit-rest-change--set-label-vote changenr "Verified" vote message))
 
-(defun gerrit-rest-change-delete-verified-vote (changenr username)
-  "Delete a Verified vote VOTE from a change CHANGENR from te user USERNAME."
-  (interactive "sEnter a changenr: \nsEnter a username: ")
+(defun gerrit-rest-change--delete-label-vote (changenr username label)
+  "Delete LABEL vote from CHANGENR by USERNAME.
+LABEL is a string, e.g. \"Code-Review\" or \"Verified\"."
   ;; As an alternative the DELETE method could be used:
   ;; (gerrit-rest-sync-v2 "DELETE"
-  ;;                      (format "/changes/%s/reviewers/%s/votes/Verified" changenr username)))
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/reviewers/%s/votes/Verified/delete" changenr username)
-                       :data (encode-coding-string (json-encode
-                                                    '((notify . "NONE"))) 'utf-8)))
+  ;;                      (format "/changes/%s/reviewers/%s/votes/%s"
+  ;;                              changenr username label)))
+  (gerrit-rest-sync-v2
+   "POST" (format "/changes/%s/reviewers/%s/votes/%s/delete" changenr username label)
+   :data (encode-coding-string (json-encode '((notify . "NONE"))) 'utf-8))
+
+(defun gerrit-rest-change-delete-cr-vote (changenr username)
+  "Delete a Code-Review vote from CHANGENR by USERNAME."
+  (interactive "sEnter a changenr: \nsEnter a username: ")
+  (gerrit-rest-change--delete-label-vote changenr username "Code-Review"))
+
+(defun gerrit-rest-change-delete-verified-vote (changenr username)
+  "Delete a Verified vote from CHANGENR by USERNAME."
+  (interactive "sEnter a changenr: \nsEnter a username: ")
+  (gerrit-rest-change--delete-label-vote changenr username "Verified"))
 
 (defun gerrit-rest-change-set-Work-in-Progress (changenr)
   "Set the state of the change CHANGENR to Work-in-Progress."
