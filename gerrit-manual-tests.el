@@ -3,7 +3,6 @@
 (require 'gerrit-rest)
 (require 'gerrit)
 
-
 (ert-deftest test-with-authorization-gh ()
   (let* (
         (gerrit-host "review.gerrithub.io")

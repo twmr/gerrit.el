@@ -355,7 +355,7 @@ LABEL is a string, e.g. \"Code-Review\" or \"Verified\"."
   ;;                              changenr username label)))
   (gerrit-rest-sync-v2
    "POST" (format "/changes/%s/reviewers/%s/votes/%s/delete" changenr username label)
-   :data (encode-coding-string (json-encode '((notify . "NONE"))) 'utf-8))
+   :data (encode-coding-string (json-encode '((notify . "NONE"))) 'utf-8)))
 
 (defun gerrit-rest-change-delete-cr-vote (changenr username)
   "Delete a Code-Review vote from CHANGENR by USERNAME."
@@ -370,20 +370,18 @@ LABEL is a string, e.g. \"Code-Review\" or \"Verified\"."
 (defun gerrit-rest-change-set-Work-in-Progress (changenr)
   "Set the state of the change CHANGENR to Work-in-Progress."
   (interactive "sEnter a changenr: ")
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/wip" changenr)
-                       :data (encode-coding-string
-                              (json-encode
-                               `((message . ,"Set using gerrit.el"))) 'utf-8)))
+  (gerrit-rest-sync-v2
+   "POST" (format "/changes/%s/wip" changenr)
+   :data (encode-coding-string
+          (json-encode '((message . "Set using gerrit.el"))) 'utf-8)))
 
 (defun gerrit-rest-change-set-Ready-for-Review (changenr)
   "Set the state of the change CHANGENR to Reday-for-Review."
   (interactive "sEnter a changenr: ")
-  (gerrit-rest-sync-v2 "POST"
-                       (format "/changes/%s/ready" changenr)
-                       :data (encode-coding-string
-                              (json-encode
-                               `((message . ,"Set using gerrit.el"))) 'utf-8)))
+  (gerrit-rest-sync-v2
+   "POST" (format "/changes/%s/ready" changenr)
+   :data (encode-coding-string
+          (json-encode '((message . "Set using gerrit.el"))) 'utf-8)))
 
 (defun gerrit-rest-change-add-comment (changenr comment)
   "Add a comment message COMMENT to latest version of change CHANGENR."
