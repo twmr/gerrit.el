@@ -1,3 +1,5 @@
+;;; gerrit-transient.el --- Gerrit transient example -*- lexical-binding: t; -*-
+
 ;; The transient history is saved when the kill-emacs-hook is run, which is
 ;; run when (kill-emacs) is called. Make sure that you run kill-emacs when
 ;; you stop emacs (or restart an emacs (systemd) service).  Note that
@@ -44,7 +46,7 @@
 ARGUMENT and VALUE are the values of the respective slots of OBJ.
 If VALUE is nil, then return nil.  VALUE may be the empty string,
 which is not the same as nil."
-  (when-let ((value (oref obj value)))
+  (when-let* ((value (oref obj value)))
     (if (listp value) (setq value (string-join value ",")))
     (concat (oref obj argument) value)))
 
@@ -58,7 +60,7 @@ which is not the same as nil."
   :reader 'gerrit-upload:--read-reviewers)
 
 (defun gerrit-upload:--read-reviewers (prompt _initial-input history)
-  (gerrit--init-accounts)
+  (gerrit-get-accounts-alist)
   (let ((val
   (completing-read-multiple
    prompt
@@ -88,7 +90,7 @@ which is not the same as nil."
   :reader 'gerrit-upload:--read-topic)
 
 (defun gerrit-upload:--read-assignee (prompt _initial-input history)
-  (gerrit--init-accounts)
+  (gerrit-get-accounts-alist)
   ;; (gerrit--read-assignee) this doesn't update the history
 
   ;; using the history here doesn't have an effect (maybe it doesn, but for
@@ -115,4 +117,4 @@ which is not the same as nil."
    nil nil nil
    history))
 
-(gerrit-upload-transient)
+(call-interactively gerrit-upload-transient)
