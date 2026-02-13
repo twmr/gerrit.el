@@ -1270,5 +1270,24 @@ workspace of the project."
 
   (call-interactively #'gerrit-upload-transient))
 
+;; DONE split this up into two parts (one that downloads the change and one that opens the overview page sing magit-show-commit
+(defun gerrit-download-and-open-overview (changenr)
+  ;; since a simple "is:open" query might return a lot of gerrit-changes, it
+  ;; is possible to filter the returned results by setting an variable
+  ;; called `gerrit-interesting-open-changes-filter'.
+  (interactive (list
+                (let
+                    ((gerrit-change-singleline-columns '(number branch project subject)))
+                  (gerrit--select-change-from-matching-changes
+                   gerrit-interesting-open-changes-filter))))
+
+  (gerrit--init-accounts)
+  (gerrit-download:--in-known-repo changenr)
+  ;; TODO run magit-show-commit
+  ;; only when the above change is downloaded to avoid window-flickering
+  (magit-show-commit "HEAD"))
+
+
+
 (provide 'gerrit)
 ;;; gerrit.el ends here
