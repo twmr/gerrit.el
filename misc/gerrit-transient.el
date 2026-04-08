@@ -59,7 +59,7 @@ which is not the same as nil."
   :multi-value t
   :reader 'gerrit-upload:--read-reviewers)
 
-(defun gerrit-upload:--read-reviewers (prompt _initial-input history)
+(defun gerrit-upload:--read-reviewers (prompt _initial-input _history)
   (gerrit-get-accounts-alist)
   (let ((val
   (completing-read-multiple
@@ -117,4 +117,4 @@ which is not the same as nil."
    nil nil nil
    history))
 
-(call-interactively gerrit-upload-transient)
+(call-interactively #'gerrit-upload-transient)
