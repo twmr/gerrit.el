@@ -935,9 +935,11 @@ alist."
                                            (first-name
                                             (car
                                              (split-string
-                                              (alist-get 'name (alist-get
-                                                                reviewer-account-id
-                                                                (gerrit-get-accounts-alist)))))))
+                                              (or
+                                               (alist-get 'name (alist-get
+                                                                 reviewer-account-id
+                                                                 (gerrit-get-accounts-alist)))
+                                               "N/A")))))
                                       (if part-of-attention-set
                                           (propertize (concat
                                                        gerrit-dashboard-attention-icon
@@ -954,8 +956,10 @@ alist."
                      (seq-map
                       (lambda (reviewer-info)
                         ;; return a real name of a reviewer in CC
-                        (alist-get 'name (alist-get reviewer-info
-                                                    (gerrit-get-accounts-alist))))
+                        (or
+                         (alist-get 'name (alist-get reviewer-info
+                                                     (gerrit-get-accounts-alist)))
+                         "N/A"))
                       (alist-get 'cc change-metadata))))
               (propertize (s-join " " reviewers) 'face 'magit-log-author)
             ""))
