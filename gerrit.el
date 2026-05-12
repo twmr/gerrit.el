@@ -202,10 +202,10 @@ you can use \='is:open (project:A OR project:B OR project:C)\='"
              (format "%-20s"
                      ;; TODO abbreviate if author name longer
                      ;; than 20chars
-                     (gerrit--alist-get-recursive
-                      (gerrit--alist-get-recursive 'owner '_account_id change)
-                      'name
-                      (gerrit-get-accounts-alist)))
+                     (or (gerrit--alist-get-recursive
+                          (gerrit--alist-get-recursive 'owner '_account_id change)
+                          'name
+                          (gerrit-get-accounts-alist)) "N/A"))
              'face 'magit-log-author) columns))
     (when (member 'project gerrit-change-singleline-columns)
       (push (format "%-28s" (alist-get 'project change)) columns))
@@ -242,11 +242,15 @@ This refspec is a string of the form \='refs/changes/xx/xx/x\='."
                            (number-to-string change-nr)))
          ;; should we use the username for the branch names or the
          ;; displayname if it is set??
-         (change-owner (gerrit--alist-get-recursive
-                        (gerrit--alist-get-recursive
-                         'owner '_account_id change-metadata)
-                        'username
-                        (gerrit-get-accounts-alist)))
+         (change-owner (or (gerrit--alist-get-recursive
+                            (gerrit--alist-get-recursive
+                             'owner '_account_id change-metadata)
+                            'username
+                            (gerrit-get-accounts-alist))
+                           ;; this string is used in the branch name
+                           ;; if the owner no longer exists in the
+                           ;; accounts db
+                           "not_available"))
          (local-branch (format "review/%s/%s"
                                ;; change-owner is 'escaped' by
                                ;; git-review (all non-alphanumeric
