@@ -1043,6 +1043,16 @@ locally and is referenced in
   (interactive)
   (gerrit-rest-change-patch (gerrit-dashboard--entry-number)))
 
+(defun gerrit-dashboard-set-cr-vote-change (vote message)
+  (interactive "sEnter vote [-2, -1, 0, +1, +2]: \nsEnter message: ")
+  (gerrit-rest-change--set-label-vote
+   (gerrit-dashboard--entry-number) "Code-Review" vote message))
+
+(defun gerrit-dashboard-set-verified-vote-change (vote message)
+  (interactive "sEnter vote [-1, 0, +1]: \nsEnter message: ")
+  (gerrit-rest-change--set-label-vote
+   (gerrit-dashboard--entry-number) "Verified" vote message))
+
 (defun gerrit-dashboard-open-topic ()
   "Open the topic information of a topic under point in a new buffer."
   (interactive)
@@ -1110,6 +1120,8 @@ locally and is referenced in
   ;; TODO completion would be extremely nice
   "e"   #'gerrit-dashboard-edit-query
   ;; votes
+  "v"   #'gerrit-dashboard-set-verified-vote-change
+  "c"   #'gerrit-dashboard-set-cr-vote-change
   "V"   #'gerrit-dashboard-set-verified-vote-topic
   "C"   #'gerrit-dashboard-set-cr-vote-topic
   ;; TODO submit
