@@ -531,6 +531,7 @@ all open gerrit review are shown in the magit status buffer."
 (defvar magit-open-reviews-issue-section-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") #'gerrit-magit-open-reviews--open-gerrit-change)
+    (define-key map (kbd "SPC") #'gerrit-magit-open-reviews--open-gerrit-patch)
     map)
   "Keymap for `magit-open-reviews' top level section.
 
@@ -549,6 +550,11 @@ The prefix magit- prefix is required by `magit-insert-section'.")
                ;; TODO change code s.t. s-chop-prefix is not needed
                (s-chop-prefix "#"
                               (nth 0 (oref (magit-current-section) value))))))
+
+(defun gerrit-magit-open-reviews--open-gerrit-patch ()
+  "Open the patch of the change under point in a new buffer."
+  (interactive)
+  (gerrit-rest-change-patch (nth 0 (oref (magit-current-section) value))))
 
 (defun gerrit-get-remote ()
   "Return the name of the remote."
